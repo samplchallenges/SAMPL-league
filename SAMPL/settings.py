@@ -25,7 +25,7 @@ SECRET_KEY = '7&gz49!+qmxwltqo*!_g$n+i)%qcn9c^%2kbwzlnwiuofj29!%'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["SAMPL-mvp.eba-ppmp34b7.us-west-2.elasticbeanstalk.com"]
+ALLOWED_HOSTS = ["samplmvp-env.eba-rhcwa63p.us-east-2.elasticbeanstalk.com"]
 
 
 # Application definition
