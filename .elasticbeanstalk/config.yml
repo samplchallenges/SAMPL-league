@@ -3,6 +3,25 @@ DateUpdated: 2021-02-05 14:02:27+00:00
 EnvironmentName: Samplmvp-env
 PlatformArn: arn:aws:elasticbeanstalk:us-east-2::platform/Python 3.7 running on 64bit
   Amazon Linux 2/3.1.5
+branch-defaults:
+  main:
+    environment: Samplmvp-env
+environment-defaults:
+  Samplmvp-env:
+    branch: null
+    repository: null
+global:
+  application_name: sampl-mvp
+  default_ec2_keyname: null
+  default_platform: Python 3.7 running on 64bit Amazon Linux 2
+  default_region: us-east-2
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: null
+  sc: git
+  workspace_type: Application
 settings:
   aws:autoscaling:asg:
     Availability Zones: Any
