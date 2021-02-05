@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ["samplmvp-env.eba-rhcwa63p.us-east-2.elasticbeanstalk.com"]
 # Application definition
 
 INSTALLED_APPS = [
+    'core.apps.CoreConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
