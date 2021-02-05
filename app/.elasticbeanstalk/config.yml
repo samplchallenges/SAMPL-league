@@ -12,7 +12,7 @@ environment-defaults:
     repository: null
 global:
   application_name: sampl-mvp
-  default_ec2_keyname: null
+  default_ec2_keyname: aws-eb
   default_platform: Python 3.7 running on 64bit Amazon Linux 2
   default_region: us-east-2
   include_git_submodules: true
@@ -80,7 +80,7 @@ settings:
   aws:elasticbeanstalk:container:python:
     NumProcesses: '1'
     NumThreads: '15'
-    WSGIPath: SAMPL.wsgi:application
+    WSGIPath: sampl.wsgi:application
   aws:elasticbeanstalk:control:
     DefaultSSHPort: '22'
     LaunchTimeout: '0'
