@@ -26,6 +26,6 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Setup eb cli
         run: |
-          pip3 instal awsebcli
+          pip3 install awsebcli
           eb list
           
