@@ -1,0 +1,104 @@
+ApplicationName: sampl-mvp
+DateUpdated: 2021-02-05 14:02:27+00:00
+EnvironmentName: Samplmvp-env
+PlatformArn: arn:aws:elasticbeanstalk:us-east-2::platform/Python 3.7 running on 64bit
+  Amazon Linux 2/3.1.5
+settings:
+  aws:autoscaling:asg:
+    Availability Zones: Any
+    Cooldown: '360'
+    Custom Availability Zones: ''
+    MaxSize: '1'
+    MinSize: '1'
+  aws:autoscaling:launchconfiguration:
+    BlockDeviceMappings: null
+    DisableIMDSv1: 'false'
+    EC2KeyName: null
+    IamInstanceProfile: aws-elasticbeanstalk-ec2-role
+    ImageId: ami-0a0b67d951bd46355
+    InstanceType: t2.micro
+    MonitoringInterval: 5 minute
+    RootVolumeIOPS: null
+    RootVolumeSize: null
+    RootVolumeType: null
+    SSHSourceRestriction: tcp,22,22,0.0.0.0/0
+    SecurityGroups: awseb-e-xtpvmwukmk-stack-AWSEBSecurityGroup-1M7XVB2CYPCYW
+  aws:autoscaling:updatepolicy:rollingupdate:
+    MaxBatchSize: null
+    MinInstancesInService: null
+    PauseTime: null
+    RollingUpdateEnabled: 'false'
+    RollingUpdateType: Time
+    Timeout: PT30M
+  aws:ec2:instances:
+    EnableSpot: 'false'
+    InstanceTypes: t2.micro, t2.small
+    SpotFleetOnDemandAboveBasePercentage: '0'
+    SpotFleetOnDemandBase: '0'
+    SpotMaxPrice: null
+  aws:ec2:vpc:
+    AssociatePublicIpAddress: null
+    ELBScheme: public
+    ELBSubnets: null
+    Subnets: null
+    VPCId: null
+  aws:elasticbeanstalk:application:
+    Application Healthcheck URL: ''
+  aws:elasticbeanstalk:cloudwatch:logs:
+    DeleteOnTerminate: 'false'
+    RetentionInDays: '7'
+    StreamLogs: 'false'
+  aws:elasticbeanstalk:cloudwatch:logs:health:
+    DeleteOnTerminate: 'false'
+    HealthStreamingEnabled: 'false'
+    RetentionInDays: '7'
+  aws:elasticbeanstalk:command:
+    BatchSize: '100'
+    BatchSizeType: Percentage
+    DeploymentPolicy: AllAtOnce
+    IgnoreHealthCheck: 'false'
+    Timeout: '600'
+  aws:elasticbeanstalk:container:python:
+    NumProcesses: '1'
+    NumThreads: '15'
+    WSGIPath: SAMPL.wsgi:application
+  aws:elasticbeanstalk:control:
+    DefaultSSHPort: '22'
+    LaunchTimeout: '0'
+    LaunchType: Migration
+    RollbackLaunchOnFailure: 'false'
+  aws:elasticbeanstalk:environment:
+    EnvironmentType: SingleInstance
+    ExternalExtensionsS3Bucket: null
+    ExternalExtensionsS3Key: null
+    ServiceRole: arn:aws:iam::103125031445:role/aws-elasticbeanstalk-service-role
+  aws:elasticbeanstalk:environment:proxy:
+    ProxyServer: nginx
+  aws:elasticbeanstalk:healthreporting:system:
+    ConfigDocument: '{"Version":1,"CloudWatchMetrics":{"Instance":{"RootFilesystemUtil":null,"CPUIrq":null,"LoadAverage5min":null,"ApplicationRequests5xx":null,"ApplicationRequests4xx":null,"CPUUser":null,"LoadAverage1min":null,"ApplicationLatencyP50":null,"CPUIdle":null,"InstanceHealth":null,"ApplicationLatencyP95":null,"ApplicationLatencyP85":null,"ApplicationLatencyP90":null,"CPUSystem":null,"ApplicationLatencyP75":null,"CPUSoftirq":null,"ApplicationLatencyP10":null,"ApplicationLatencyP99":null,"ApplicationRequestsTotal":null,"ApplicationLatencyP99.9":null,"ApplicationRequests3xx":null,"ApplicationRequests2xx":null,"CPUIowait":null,"CPUNice":null},"Environment":{"InstancesSevere":null,"InstancesDegraded":null,"ApplicationRequests5xx":null,"ApplicationRequests4xx":null,"ApplicationLatencyP50":null,"ApplicationLatencyP95":null,"ApplicationLatencyP85":null,"InstancesUnknown":null,"ApplicationLatencyP90":null,"InstancesInfo":null,"InstancesPending":null,"ApplicationLatencyP75":null,"ApplicationLatencyP10":null,"ApplicationLatencyP99":null,"ApplicationRequestsTotal":null,"InstancesNoData":null,"ApplicationLatencyP99.9":null,"ApplicationRequests3xx":null,"ApplicationRequests2xx":null,"InstancesOk":null,"InstancesWarning":null}},"Rules":{"Environment":{"ELB":{"ELBRequests4xx":{"Enabled":true}},"Application":{"ApplicationRequests4xx":{"Enabled":true}}}}}'
+    EnhancedHealthAuthEnabled: 'false'
+    HealthCheckSuccessThreshold: Ok
+    SystemType: enhanced
+  aws:elasticbeanstalk:hostmanager:
+    LogPublicationControl: 'false'
+  aws:elasticbeanstalk:managedactions:
+    ManagedActionsEnabled: 'true'
+    PreferredStartTime: Mon:10:00
+  aws:elasticbeanstalk:managedactions:platformupdate:
+    InstanceRefreshEnabled: 'false'
+    UpdateLevel: minor
+  aws:elasticbeanstalk:monitoring:
+    Automatically Terminate Unhealthy Instances: 'true'
+  aws:elasticbeanstalk:sns:topics:
+    Notification Endpoint: null
+    Notification Protocol: email
+    Notification Topic ARN: null
+    Notification Topic Name: null
+  aws:elasticbeanstalk:xray:
+    XRayEnabled: 'false'
+  aws:rds:dbinstance:
+    DBAllocatedStorage: '10'
+    DBDeletionPolicy: Snapshot
+    DBInstanceClass: db.t2.micro
+    DBSnapshotIdentifier: null
+    MultiAZDatabase: 'false'
