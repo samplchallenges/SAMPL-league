@@ -31,7 +31,8 @@ jobs:
         run: |
           sudo apt update 
           sudo apt upgrade
-          sudo apt install python3-setuptools python3-wheel python3-cryptography
-          pip3 install -U awsebcli
+          sudo apt install python3-setuptools python3-wheel
+          python3 -m pip install -U pip
+          python3 -m pip install -U awsebcli
           export PATH="$HOME/.local/bin:$PATH"
           eb --region us-east-2 list
