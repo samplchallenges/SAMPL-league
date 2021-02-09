@@ -30,9 +30,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           sudo apt update 
-          sudo apt upgrade
-          sudo apt install python3-setuptools python3-wheel
-          python3 -m pip install -U pip
-          python3 -m pip install -U awsebcli
-          export PATH="$HOME/.local/bin:$PATH"
+          sudo apt install pipx
+          pipx install awsebcli
           eb --region us-east-2 list
