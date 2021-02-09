@@ -32,5 +32,4 @@ jobs:
           python3 -m pip install --user pipx
           python3 -m pipx ensurepath
           pipx install awsebcli
-          eb init --region us-east-2
-          eb deploy
+          eb init --region us-east-2 sampl-mvp
