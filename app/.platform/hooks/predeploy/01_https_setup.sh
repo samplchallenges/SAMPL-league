@@ -6,7 +6,7 @@ sudo rpm -Uvh dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-*.r
 sudo yum-config-manager --enable epel*
 
 echo "installing certbot"
-sudo yum install -y certbot
+sudo yum install -y certbot certbot-nginx
 
 echo "running certbot"
-sudo certbot certonly --debug --non-interactive --email mhenry5@uci.edu --agree-tos --standalone --domains app.samplchallenges.org --keep-until-expiring --pre-hook \"sudo service nginx stop\" --post-hook \"sudo service nginx start\"
+sudo certbot --nginx --debug --non-interactive --email mhenry5@uci.edu --agree-tos --standalone --domains app.samplchallenges.org --keep-until-expiring --pre-hook \"sudo service nginx stop\" --post-hook \"sudo service nginx start\"
