@@ -4,12 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "3.1.5"
+django = "*"
 psycopg2-binary = "*"
 
 [dev-packages]
 black = "==20.8b1"
 isort = "*"
+pylint = "*"
+pytest = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"  # Locked to 3.7 because AWS EBS doesn't support newer
