@@ -8,9 +8,9 @@ then
 	# migrate
 	python manage.py migrate --noinput;
 	# bootstrap superuser
-	python manage.py mysuperuser
+	python manage.py mysuperuser;
 	# collect static 
-	python manage.py collectstatic --noinput
+	python manage.py collectstatic --noinput;
 	}
 else
   echo "this instance is NOT the leader";
