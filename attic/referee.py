@@ -78,4 +78,5 @@ for mol_path in mols:
 total = dask.delayed(sum)(scores)
 total.visualize()
 print("computing")
-total.compute()
+rmse_sum = total.compute()
+print(f"total RMSE for {image} is {rmse_sum}")
