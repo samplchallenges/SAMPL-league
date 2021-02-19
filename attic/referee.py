@@ -8,6 +8,10 @@ import dask
 # Then we run the submission on the private data (per mol)
 # score container
 
+SUBMISSION_DIR = Path("data-submissions").resolve()
+
+print(SUBMISSION_DIR)
+
 
 def gather_mols(data_dir: str) -> List[str]:
     p = Path(data_dir)
@@ -17,6 +21,15 @@ def gather_mols(data_dir: str) -> List[str]:
         return mols
     else:
         raise OSError("does not exist or not a directory")
+
+
+def prep_out_path(image):
+    run_id = get_container_id(image)
+    run_id = str(run_id)
+    # slice off sha:
+    run_id = run_id.split(":")[-1]
+    SUBMISSION_DIR.joinpath(run_id).mkdir(parents=True, exist_ok=True)
+    return run_id
 
 
 def get_container_id(image):
@@ -29,18 +42,26 @@ def get_container_id(image):
 
 
 @dask.delayed
-def run_submission(image: str, mol_path: str, args: List[str]) -> float:
-    import docker
-    client = docker.from_env()
+def run_submission(image: str, mol_path: str, args: List[str], run_id: str) -> float:
     mol_name = mol_path.name
-    with open(mol_path) as mol_file:
-        mol = mol_file.readline().strip()
+    try:
+        with open(SUBMISSION_DIR.joinpath(run_id, f"score_{mol_name}"), "r") as score_file:
+            score = score_file.readline().strip()
+        print(f"cache hit {mol_name}")
+        return float(score)
+    except(FileNotFoundError):
+        import docker
+        client = docker.from_env()
+        with open(mol_path, "r") as mol_file:
+            mol = mol_file.readline().strip()
 
-    command = [mol] + args
-    print(f"running command: {command} on {mol_name} {mol}")
-    result = client.containers.run(image, command, auto_remove=True)
-    result = float(result.strip())
-    return result
+        command = [mol] + args
+        print(f"running command: {command} on {mol_name} {mol}")
+        result = client.containers.run(image, command, auto_remove=True)
+        result = float(result.strip())
+        with open(SUBMISSION_DIR.joinpath(run_id, f"score_{mol_name}"), "w") as score_file:
+            score_file.write(f"{str(result)}\n")
+        return result
 
 
 image = "mmh42/sampl-test:0.1"
@@ -50,8 +71,9 @@ mols = gather_mols("data-public")
 container_id = get_container_id(image)
 print(container_id)
 scores = []
+run_id = prep_out_path(image)
 for mol_path in mols:
-    result = run_submission(image, mol_path, args)
+    result = run_submission(image, mol_path, args, run_id)
     scores.append(result)
 total = dask.delayed(sum)(scores)
 total.visualize()
