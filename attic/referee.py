@@ -80,3 +80,53 @@ total.visualize()
 print("computing")
 rmse_sum = total.compute()
 print(f"total RMSE for {image} is {rmse_sum}")
+
+
+# Some ideas
+
+class Submission():
+
+    def __init__(self):
+        pass
+
+    def prep(self):
+        self._pull_image()
+        self._prep_outputs()
+        pass
+
+    def _pull_image(self):
+        pass
+
+    def _prep_outputs(self):
+        # make output dirs from image sha
+        pass
+
+    def _run(self, data_dir, cache):
+        # run the container, disable cache if needed
+        # this will also create output data
+        pass
+
+    def test_container(self):
+        # run on public data + score
+        # also return the logs publicly
+        pass
+
+    def run(self):
+        # run on private data + score
+        # use context manager
+        pass
+
+    def _score(self):
+        pass
+
+    def grade(self):
+        # cleanup stuff
+        # update db with values?
+        pass
+
+
+submission = Submission()
+submission.prep()
+submission.test_container()
+submission.run()
+submission.grade()
