@@ -5,15 +5,13 @@ name = "pypi"
 
 [packages]
 docker = "*"
-
-[packages.dask]
-extras = ["complete"]
-version = "*"
+dask = {extras = ["complete"], version = "*"}
 
 [dev-packages]
 black = "==20.8b1"
 isort = "*"
 flake8 = "*"
+graphviz = "*"
 
 [requires]
 python_version = "3.8"
