@@ -103,7 +103,15 @@ class Submission:
         pass
 
     def _pull_image(self):
-        pass
+        # Prime docker to have the image
+        import docker
+
+        client = docker.from_env()
+        # Might need to add a wait OR report progress on this
+        # Could be slow for large images
+        # Could also error out from http errors, need to retry
+        client.images.pull(self.image)
+
 
     def _prep_outputs(self):
         # make output dirs from image sha
