@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List
+
 import dask
 
 # First we want to run the submission on the public data
@@ -34,6 +35,7 @@ def prep_out_path(image):
 
 def get_container_id(image):
     import docker
+
     client = docker.from_env()
     container = client.images.pull("localhost:5000/mmh42/sampl-test", tag="0.1")
     return container.id
@@ -45,12 +47,15 @@ def get_container_id(image):
 def run_submission(image: str, mol_path: str, args: List[str], run_id: str) -> float:
     mol_name = mol_path.name
     try:
-        with open(SUBMISSION_DIR.joinpath(run_id, f"score_{mol_name}"), "r") as score_file:
+        with open(
+            SUBMISSION_DIR.joinpath(run_id, f"score_{mol_name}"), "r"
+        ) as score_file:
             score = score_file.readline().strip()
         print(f"cache hit {mol_name}")
         return float(score)
-    except(FileNotFoundError):
+    except (FileNotFoundError):
         import docker
+
         client = docker.from_env()
         with open(mol_path, "r") as mol_file:
             mol = mol_file.readline().strip()
@@ -59,7 +64,9 @@ def run_submission(image: str, mol_path: str, args: List[str], run_id: str) -> f
         print(f"running command: {command} on {mol_name} {mol}")
         result = client.containers.run(image, command, auto_remove=True)
         result = float(result.strip())
-        with open(SUBMISSION_DIR.joinpath(run_id, f"score_{mol_name}"), "w") as score_file:
+        with open(
+            SUBMISSION_DIR.joinpath(run_id, f"score_{mol_name}"), "w"
+        ) as score_file:
             score_file.write(f"{str(result)}\n")
         return result
 
@@ -84,10 +91,11 @@ print(f"total RMSE for {image} is {rmse_sum}")
 
 # Some ideas
 
-class Submission():
 
-    def __init__(self):
-        pass
+class Submission:
+    def __init__(self, image: str, challenge_id: str):
+        self.image = image
+        self.challenge_id = challenge_id
 
     def prep(self):
         self._pull_image()
@@ -125,7 +133,13 @@ class Submission():
         pass
 
 
-submission = Submission()
+image = "mmh42/sampl-test:0.1"
+challenge_id = 0
+# Mock things that we should pull from DB as dictionary
+CHALLENGE_DB = {
+    0: {"scoreing_image": "mmh42/score-submission:0.1", "challenge_name": "LogP"}
+}
+submission = Submission(image, challenge_id)
 submission.prep()
 submission.test_container()
 submission.run()
