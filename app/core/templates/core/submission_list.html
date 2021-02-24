@@ -1,0 +1,7 @@
+{% extends 'layout.html' %}
+{% block content %}
+{% for object in object_list %}
+<div>Object: {{ object }}</div>
+{% endfor %}
+<div><a href="{% url 'submission-add' %}">New Submission</a></div>
+{% endblock %}

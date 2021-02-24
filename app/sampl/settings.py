@@ -31,7 +31,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-INSTALLED_APPS = [
+INSTALLED_APPS = (
     "core.apps.CoreConfig",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-]
+    "crispy_forms",
+)
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -132,3 +133,5 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = "static"
+
+CRISPY_TEMPLATE_PACK = "bootstrap4"
