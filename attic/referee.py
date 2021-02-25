@@ -38,7 +38,7 @@ def get_container_id(image):
 
     client = docker.from_env()
     container = client.images.pull("localhost:5000/mmh42/sampl-test", tag="0.1")
-    return container.id
+    return container.attrs.get("RepoDigests")[0]
 
     # We will want to make sure we can the pull the container and can fail fast
 
