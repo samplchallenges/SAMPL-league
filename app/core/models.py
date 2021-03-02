@@ -39,9 +39,9 @@ class Container(Timestamped):
     user = models.ForeignKey(auth_models.User, on_delete=models.CASCADE)
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
     registry = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    tag = models.CharField(max_length=255)
-    digest = models.CharField(max_length=255)
+    label = models.CharField(max_length=255)
+    tag = models.CharField(max_length=255, blank=True, null=True)
+    digest = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return str(self.name)

@@ -3,19 +3,23 @@ from django.urls import path
 from .views.submission import (
     SubmissionDetail,
     SubmissionList,
-    SubmissionCreate,
-    SubmissionUpdate,
     SubmissionDelete,
+    edit_submission_view,
 )
+
+from .views.root import IndexView
+from .views.auth import logout_view
 
 
 urlpatterns = [
+    path("", IndexView.as_view(), name="root"),
+    path("logout/", logout_view, name="logout"),
     path("submission/", SubmissionList.as_view(), name="submission-list"),
-    path("submission/add", SubmissionCreate.as_view(), name="submission-add"),
+    path("submission/add", edit_submission_view, name="submission-add"),
     path("submission/<int:pk>/", SubmissionDetail.as_view(), name="submission-detail"),
     path(
         "submission/<int:pk>/edit/",
-        SubmissionUpdate.as_view(),
+        edit_submission_view,
         name="submission-update",
     ),
     path(

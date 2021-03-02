@@ -15,6 +15,7 @@ pylint = "*"
 pytest = "*"
 flake8 = "*"
 pylint-django = "*"
+pytest-django = "*"
 
 [requires]
 python_version = "3.8"
