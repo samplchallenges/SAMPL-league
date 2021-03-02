@@ -18,6 +18,7 @@ class Submission:
         self.private_data = self.challenge_data["PRIVATE_DATA"]
         self.public_data = self.challenge_data["PUBLIC_DATA"]
         self.submission_dir = self.challenge_data["SUBMISSION_DIR"]
+        self.dask_url = self.challenge_data["DASK_URL"]
 
     def prep(self):
         self._pull_image()
@@ -82,8 +83,15 @@ class Submission:
 
     def test_container(self):
         mol_list = self._get_mol_list(self.public_data)
+        #dask_client = self._setup_dask()
+        submissions = []
         for mol in mol_list:
-            self._run(mol, self.output_dir_public, use_cache=True)
+            future = dask_client.submit(self._run, mol, self.output_dir_public, use_cache=True)
+            submissions.append(future)
+        results = self.dask_client.gather(submissions)
+        total = sum(results)
+        print(f"total RMSE for {self.image} is {total}")
+
         # run on public data + score
         # also return the logs publicly
         pass
@@ -102,7 +110,12 @@ class Submission:
         pass
 
 
-Client
+def _setup_dask():
+    dask_client = Client("127.0.0.1:8786")
+    return dask_client
+
+
+dask_client = _setup_dask()
 
 PUBLIC_DATA = Path("data-public").resolve()
 PRIVATE_DATA = Path("data-private").resolve()
@@ -114,6 +127,7 @@ CHALLENGE_DB = {
         "PUBLIC_DATA": PUBLIC_DATA,
         "PRIVATE_DATA": PRIVATE_DATA,
         "SUBMISSION_DIR": SUBMISSION_DIR,
+        "DASK_URL": "127.0.0.1:8786",
         "image": "localhost:5000/mmh42/sampl-test:0.1",
         "scoreing_image": "mmh42/score-submission:0.1",
         "challenge_name": "LogP",

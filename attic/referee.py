@@ -70,6 +70,7 @@ def run_submission(image: str, mol_path: str, args: List[str], run_id: str) -> f
         return result
 
 
+'''
 client = Client('127.0.0.1:8786')
 
 image = "mmh42/sampl-test:0.1"
@@ -88,39 +89,76 @@ for mol_path in mols:
 results = client.gather(submissions)
 total = sum(results)
 print(f"total RMSE for {image} is {total}")
+'''
+Client
 
-exit()
-# Some ideas
+PUBLIC_DATA = Path("data-public").resolve()
+PRIVATE_DATA = Path("data-private").resolve()
+SUBMISSION_DIR = Path("data-submissions").resolve()
 
 
 class Submission:
-    def __init__(self, image: str, challenge_id: str):
-        self.image = image
+    def __init__(self, challenge_id: int):
         self.challenge_id = challenge_id
+        self.challenge_data = CHALLENGE_DB[self.challenge_id]
+        self.args = self.challenge_data["args"]
+        self.image = self.challenge_data["image"]
+        self.scoring_image = self.challenge_data["scoreing_image"]
 
     def prep(self):
         self._pull_image()
         self._prep_outputs()
-        pass
 
     def _pull_image(self):
         # Prime docker to have the image
         import docker
 
-        client = docker.from_env()
+        self.client = docker.from_env()
         # Might need to add a wait OR report progress on this
         # Could be slow for large images
         # Could also error out from http errors, need to retry
-        client.images.pull(self.image)
+        container = self.client.images.pull(self.image)
+        self.image_hash = container.attrs.get("RepoDigests")[0]
+
+    def _get_mol_list(self, mol_path):
+        if mol_path.exists() and mol_path.is_dir():
+            mol_path = mol_path.resolve()
+            mols = list(mol_path.glob("mol_*"))
+            self.mols = mols
+        else:
+            raise OSError("does not exist or not a directory")
 
     def _prep_outputs(self):
-        # make output dirs from image sha
-        pass
+        run_id = str(self.image_hash)
+        # slice off sha:
+        run_id = run_id.split(":")[-1]
+        self.output_dir_public = SUBMISSION_DIR.joinpath(run_id, "public").mkdir(parents=True, exist_ok=True)
+        self.output_dir_public = SUBMISSION_DIR.joinpath(run_id, "private").mkdir(parents=True, exist_ok=True)
 
-    def _run(self, data_dir, cache):
-        # run the container, disable cache if needed
-        # this will also create output data
-        pass
+
+    def _run(self, input_mol, output_dir, cache):
+        mol_name = input_mol.name
+        try:
+            with open(
+                output_dir.joinpath(f"score_{mol_name}"), "r"
+            ) as score_file:
+                score = score_file.readline().strip()
+            print(f"cache hit {mol_name}")
+            return float(score)
+        except (FileNotFoundError):
+            with open(input_mol, "r") as mol_file:
+                mol = mol_file.readline().strip()
+
+            command = [mol] + self.args
+            print(f"running command: {command} on {mol_name} {mol}")
+            result = self.client.containers.run(image, command, auto_remove=True)
+            # Will want to catch an excpetion here and pass the log if done in public
+            result = float(result.strip())
+            with open(
+                output_dir.joinpath(f"score_{mol_name}"), "w"
+            ) as score_file:
+                score_file.write(f"{str(result)}\n")
+            return result
 
     def test_container(self):
         # run on public data + score
@@ -145,10 +183,14 @@ image = "mmh42/sampl-test:0.1"
 challenge_id = 0
 # Mock things that we should pull from DB as dictionary
 CHALLENGE_DB = {
-    0: {"scoreing_image": "mmh42/score-submission:0.1", "challenge_name": "LogP"}
+        0: {"image": image,
+        "scoreing_image": "mmh42/score-submission:0.1",
+        "challenge_name": "LogP",
+        "args": ["--fuzz"],
+        }
 }
-submission = Submission(image, challenge_id)
+submission = Submission(challenge_id)
 submission.prep()
 submission.test_container()
-submission.run()
-submission.grade()
+#submission.run()
+#submission.grade()
