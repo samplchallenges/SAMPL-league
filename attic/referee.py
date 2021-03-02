@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 
-import dask
+from dask.distributed import Client
 
 # First we want to run the submission on the public data
 # + report errors (per mol)
@@ -43,7 +43,6 @@ def get_container_id(image):
     # We will want to make sure we can the pull the container and can fail fast
 
 
-@dask.delayed
 def run_submission(image: str, mol_path: str, args: List[str], run_id: str) -> float:
     mol_name = mol_path.name
     try:
@@ -71,6 +70,8 @@ def run_submission(image: str, mol_path: str, args: List[str], run_id: str) -> f
         return result
 
 
+client = Client('127.0.0.1:8786')
+
 image = "mmh42/sampl-test:0.1"
 args = ["--fuzz"]
 mols = gather_mols("data-public")
@@ -78,17 +79,17 @@ mols = gather_mols("data-public")
 container_id = get_container_id(image)
 print(container_id)
 scores = []
+submissions = []
 run_id = prep_out_path(image)
 for mol_path in mols:
-    result = run_submission(image, mol_path, args, run_id)
-    scores.append(result)
-total = dask.delayed(sum)(scores)
-total.visualize()
-print("computing")
-rmse_sum = total.compute()
-print(f"total RMSE for {image} is {rmse_sum}")
+    print(mol_path)
+    submissions.append(client.submit(run_submission, image, mol_path, args, run_id))
 
+results = client.gather(submissions)
+total = sum(results)
+print(f"total RMSE for {image} is {total}")
 
+exit()
 # Some ideas
 
 
@@ -111,7 +112,6 @@ class Submission:
         # Could be slow for large images
         # Could also error out from http errors, need to retry
         client.images.pull(self.image)
-
 
     def _prep_outputs(self):
         # make output dirs from image sha
