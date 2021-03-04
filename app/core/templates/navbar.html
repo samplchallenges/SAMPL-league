@@ -10,29 +10,35 @@
         <a class="nav-link" href="#">SAMPL8 - Host-Guest Binding<span class="sr-only">(current)</span></a>
       </li>
       <li class="nav-item">
+        <a class="nav-link" href="{% url 'challenge-list'%}">Challenges</a>
+      </li>
+      {% if user.is_authenticated %}
+      <li class="nav-item">
         <a class="nav-link" href="{% url 'submission-list' %}">Submissions</a>
       </li>
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Other Challenges
-        </a>
-        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-          <a class="dropdown-item" href="#">SAMPL6</a>
-          <a class="dropdown-item" href="#">SAMPL7</a>
-        </div>
-      </li>
+      {% endif %}
     </ul>
+    
     <ul class="navbar-nav ml-auto">
+      {% if user.is_authenticated %}
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Signed in
         </a>
         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-          <span class="dropdown-item-text">Signed in as <b>robbason</b></span>
-          <a class="dropdown-item" href="#">Profile</a>
+          <span class="dropdown-item-text">Signed in as <b>{{ user.username }}</b></span>
+          {% if user.is_staff %}
+          <a class="dropdown-item" href="/admin/">Admin</a>
+          {% endif %}
+          <a class="dropdown-item" href="{% url 'profile-view' %}">Profile</a>
           <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
         </div>
       </li>
+      {% else %}
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'login' %}">Log in</a>
+      </li>
+      {% endif %}
     </ul>
   </div>
 </nav>

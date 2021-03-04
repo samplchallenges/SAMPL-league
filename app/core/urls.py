@@ -1,4 +1,6 @@
-from django.urls import path
+from django.urls import path, include
+
+from .views.challenge import ChallengeDetail, ChallengeList
 
 from .views.submission import (
     SubmissionDetail,
@@ -8,12 +10,16 @@ from .views.submission import (
 )
 
 from .views.root import IndexView
-from .views.auth import logout_view
+from .views.profile import ProfileView, register
 
 
 urlpatterns = [
     path("", IndexView.as_view(), name="root"),
-    path("logout/", logout_view, name="logout"),
+    path("accounts/", include("django.contrib.auth.urls")),
+    path("profile/", ProfileView.as_view(), name="profile-view"),
+    path("profile/add", register, name="profile-register"),
+    path("challenge/", ChallengeList.as_view(), name="challenge-list"),
+    path("challenge/<int:pk>/", ChallengeDetail.as_view(), name="challenge-detail"),
     path("submission/", SubmissionList.as_view(), name="submission-list"),
     path("submission/add", edit_submission_view, name="submission-add"),
     path("submission/<int:pk>/", SubmissionDetail.as_view(), name="submission-detail"),

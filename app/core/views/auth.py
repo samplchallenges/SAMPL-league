@@ -1,7 +1,2 @@
-from django.contrib.auth import logout
-from django.shortcuts import redirect
-
-
-def logout_view(request):
-    logout(request)
-    return redirect("root")
+from django.contrib.auth import authenticate, login, logout
+from django.http import HttpResponseBadRequest
