@@ -59,36 +59,23 @@ class Submission:
         self.output_dir_private = self.submission_dir.joinpath(run_id, "private")
         self.output_dir_private.mkdir(parents=True, exist_ok=True)
 
-    def _run(self, input_mol, output_dir, use_cache=True):
-        if use_cache is False:
-            raise NotImplementedError
-        mol_name = input_mol.name
-        try:
-            with open(output_dir.joinpath(f"score_{mol_name}"), "r") as score_file:
-                score = score_file.readline().strip()
-            logging.debug(f"cache hit {mol_name}")
-            return float(score)
-        except (FileNotFoundError):
-            with open(input_mol, "r") as mol_file:
-                mol = mol_file.readline().strip()
-
-            command = [mol] + self.args
-            logging.debug(f"running command: {command} on {mol_name} {mol}")
-            result = self.client.containers.run(self.image, command, auto_remove=True)
-            # Will want to catch an excpetion here and pass the log if done in public
-            result = float(result.strip())
-            with open(output_dir.joinpath(f"score_{mol_name}"), "w") as score_file:
-                score_file.write(f"{str(result)}\n")
-            return result
-
     def test_container(self):
         mol_list = self._get_mol_list(self.public_data)
-        #dask_client = self._setup_dask()
+        dask_client = self._setup_dask()
         submissions = []
         for mol in mol_list:
-            future = dask_client.submit(self._run, mol, self.output_dir_public, use_cache=True)
+            future = dask_client.submit(
+                run_dask,
+                self.image,
+                mol,
+                self.output_dir_public,
+                self.args,
+                use_cache=True,
+                pure=False
+            )
             submissions.append(future)
-        results = self.dask_client.gather(submissions)
+        print(submissions)
+        results = dask_client.gather(submissions)
         total = sum(results)
         print(f"total RMSE for {self.image} is {total}")
 
@@ -109,13 +96,35 @@ class Submission:
         # update db with values?
         pass
 
-
-def _setup_dask():
-    dask_client = Client("127.0.0.1:8786")
-    return dask_client
+    def _setup_dask(self):
+        return Client(self.dask_url)
 
 
-dask_client = _setup_dask()
+def run_dask(image, input_mol, output_dir, args, use_cache=True):
+    if use_cache is False:
+        raise NotImplementedError
+    mol_name = input_mol.name
+    try:
+        with open(output_dir.joinpath(f"score_{mol_name}"), "r") as score_file:
+            score = score_file.readline().strip()
+        logging.debug(f"cache hit {mol_name}")
+        return float(score)
+    except (FileNotFoundError):
+        with open(input_mol, "r") as mol_file:
+            mol = mol_file.readline().strip()
+
+        command = [mol] + args
+        logging.debug(f"running command: {command} on {mol_name} {mol}")
+        import docker
+
+        client = docker.from_env()
+        result = client.containers.run(image, command, auto_remove=True)
+        # Will want to catch an excpetion here and pass the log if done in public
+        result = float(result.strip())
+        with open(output_dir.joinpath(f"score_{mol_name}"), "w") as score_file:
+            score_file.write(f"{str(result)}\n")
+        return result
+
 
 PUBLIC_DATA = Path("data-public").resolve()
 PRIVATE_DATA = Path("data-private").resolve()
