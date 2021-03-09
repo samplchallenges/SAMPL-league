@@ -21,6 +21,31 @@ class OwnerMatchMixin(LoginRequiredMixin, UserPassesTestMixin):
 
 class SubmissionDetail(OwnerMatchMixin, DetailView):
     model = Submission
+    # context_object_name = 'submission'
+    DETAIL_FIELD_NAMES = (
+        "ranked",
+        "category",
+        "url",
+        "compute_time",
+        "computing_and_hardware",
+        "software",
+        "method",
+    )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["container"] = self.object.container
+        context["submission_details"] = [
+            (field_name, getattr(self.object, field_name))
+            for field_name in self.DETAIL_FIELD_NAMES
+            if getattr(self.object, field_name)
+        ]
+        context["missing_fields"] = [
+            field_name
+            for field_name in self.DETAIL_FIELD_NAMES
+            if not getattr(self.object, field_name)
+        ]
+        return context
 
 
 class SubmissionList(LoginRequiredMixin, ListView):
@@ -36,7 +61,7 @@ class SubmissionDelete(OwnerMatchMixin, DeleteView):
 
 
 @login_required
-def edit_submission_view(request):
+def edit_submission_view(request, pk=None):
     if request.method == "POST":
         # TODO: transaction?
         container_form = ContainerForm(request.POST)
@@ -53,18 +78,17 @@ def edit_submission_view(request):
                 submission.save()
                 return redirect("submission-detail", pk=submission.pk)
 
-        # raise Exception(
-        #    "A form was invalid: container  "
-        #    + str(container_form.errors)
-        #    + "\n: submission "
-        #    + str(submission_form.errors)
-        # )
         context = {"container_form": container_form, "submission_form": submission_form}
         return render(request, "core/submission_form.html", context)
 
     elif request.method == "GET":
-        container_form = ContainerForm()
-        submission_form = SubmissionForm()
+        if pk:
+            submission = Submission.objects.get(pk=pk)
+            container_form = ContainerForm(instance=submission.container)
+            submission_form = SubmissionForm(instance=submission)
+        else:
+            container_form = ContainerForm()
+            submission_form = SubmissionForm()
     else:
         return HttpResponseBadRequest()
     context = {"container_form": container_form, "submission_form": submission_form}

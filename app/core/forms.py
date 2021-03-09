@@ -12,22 +12,21 @@ class RegisterForm(UserCreationForm):
 
 
 class ContainerForm(forms.ModelForm):
+    prefix = "container"
+
     class Meta:
         model = Container
-        fields = ["name", "challenge", "registry", "label", "tag", "digest"]
-        widgets = {
-            # "challenge": forms.HiddenInput(),
-        }
+        fields = ["name", "challenge", "registry", "label", "tag"]
 
 
 class SubmissionForm(forms.ModelForm):
+    prefix = "submission"
+
     class Meta:
         model = Submission
         fields = [
             "draft_mode",
             "name",
-            # "challenge",
-            # "container",
             "ranked",
             "category",
             "url",

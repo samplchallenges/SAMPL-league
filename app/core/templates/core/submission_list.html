@@ -1,7 +1,29 @@
 {% extends 'layout.html' %}
 {% block content %}
-{% for object in object_list %}
-<div>Object: {{ object }}</div>
+<h1>Your submissions</h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Name</th>
+      <th scope="col">Container</th>
+    </tr>
+  </thead>
+<tbody>
+  {% for object in object_list %}
+<tr>
+  <td>
+    <a href="{% url 'submission-detail' object.pk %}">{{ object.name }}</a>
+  </td>
+  <td>
+    {{ object.container.name }}
+  </td>
+</tr>
 {% endfor %}
-<div><a href="{% url 'submission-add' %}">New Submission</a></div>
+</tbody>
+</table>
+<div class="row">
+  <div class="col">
+    <a class="btn btn-primary" role="button" href="{% url 'submission-add' %}">New Submission</a>
+  </div>
+</div>
 {% endblock %}
