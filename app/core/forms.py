@@ -38,6 +38,4 @@ class SubmissionForm(forms.ModelForm):
         widgets = {
             "compute_time": forms.Textarea(attrs={"cols": 30, "rows": 4}),
             "software": forms.Textarea(attrs={"cols": 30, "rows": 4}),
-            "challenge": forms.HiddenInput(),
-            "container": forms.HiddenInput(),
         }

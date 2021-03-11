@@ -64,8 +64,10 @@ class SubmissionDelete(OwnerMatchMixin, DeleteView):
 def edit_submission_view(request, pk=None):
     if request.method == "POST":
         # TODO: transaction?
-        container_form = ContainerForm(request.POST)
-        submission_form = SubmissionForm(request.POST)
+        submission = Submission.objects.get(pk=pk) if pk else None
+        container = submission.container if submission else None
+        container_form = ContainerForm(request.POST, instance=container)
+        submission_form = SubmissionForm(request.POST, instance=submission)
         if container_form.is_valid():
             container = container_form.save(commit=False)
             container.user = request.user
@@ -78,8 +80,8 @@ def edit_submission_view(request, pk=None):
                 submission.save()
                 return redirect("submission-detail", pk=submission.pk)
 
-        context = {"container_form": container_form, "submission_form": submission_form}
-        return render(request, "core/submission_form.html", context)
+    # context = {"container_form": container_form, "submission_form": submission_form}
+    #  return render(request, "core/submission_form.html", context)
 
     elif request.method == "GET":
         if pk:

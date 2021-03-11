@@ -17,11 +17,11 @@ urlpatterns = [
     path("", IndexView.as_view(), name="root"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("profile/", ProfileView.as_view(), name="profile-view"),
-    path("profile/add", register, name="profile-register"),
+    path("profile/add/", register, name="profile-register"),
     path("challenge/", ChallengeList.as_view(), name="challenge-list"),
     path("challenge/<int:pk>/", ChallengeDetail.as_view(), name="challenge-detail"),
     path("submission/", SubmissionList.as_view(), name="submission-list"),
-    path("submission/add", edit_submission_view, name="submission-add"),
+    path("submission/add/", edit_submission_view, name="submission-add"),
     path("submission/<int:pk>/", SubmissionDetail.as_view(), name="submission-detail"),
     path(
         "submission/<int:pk>/edit/",

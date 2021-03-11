@@ -89,7 +89,9 @@ class Submission(Timestamped):
         if not self.draft_mode:
             # All fields
             for field in self._meta.get_fields(include_parents=False):
-                if isinstance(field, models.fields.Field):
+                if isinstance(field, models.fields.Field) and not isinstance(
+                    field, models.BooleanField
+                ):
                     if not getattr(self, field.attname):
                         self.draft_mode = True
                         break
