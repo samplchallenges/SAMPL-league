@@ -71,11 +71,14 @@ class Submission:
                 self.output_dir_public,
                 self.args,
                 use_cache=True,
-                pure=False
+                pure=False,
             )
             submissions.append(future)
+        # We really only need to return/keep track of the keys
+        # the code below sums logP calcs -- which means nothing
         print(submissions)
         results = dask_client.gather(submissions)
+        print(results)
         total = sum(results)
         print(f"total RMSE for {self.image} is {total}")
 
