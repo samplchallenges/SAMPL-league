@@ -118,6 +118,7 @@ def run_dask(image, input_mol, output_dir, args, use_cache=True):
 
         command = [mol] + args
         logging.debug(f"running command: {command} on {mol_name} {mol}")
+        # We will want to pull the image from our docker store
         import docker
 
         client = docker.from_env()
