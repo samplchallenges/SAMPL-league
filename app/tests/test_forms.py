@@ -3,9 +3,6 @@ import pytest
 
 from core.forms import SubmissionForm, ContainerForm
 
-# run like so
-# pytest --reuse-db tests/test_forms.py
-
 
 @pytest.mark.django_db
 def test_create(challenge, user):

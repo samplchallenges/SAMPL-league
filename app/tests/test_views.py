@@ -9,7 +9,7 @@ from core.views.submission import edit_submission_view
 
 @pytest.mark.django_db
 def test_load_submission_form(rf, user, draft_submission):
-    request = rf.get(f"/core/submission/add/")
+    request = rf.get("/core/submission/add/")
     request.user = user
     response = edit_submission_view(request)
     assert response.status_code == 200
