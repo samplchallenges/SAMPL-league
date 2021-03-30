@@ -1,4 +1,5 @@
 from dask.distributed import Client
+import sys
 
 
 class MyDaskClient():
@@ -20,3 +21,6 @@ class MyDaskClient():
         for task in reversed(self._client.get_task_stream()):
             if task["key"] == key:
                 return {"status": "done", "dask_status": task["status"]}
+
+client = MyDaskClient('127.0.0.1:8786')
+client.get_status(sys.argv[1])
