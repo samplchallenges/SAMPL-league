@@ -96,6 +96,16 @@ class Submission(Timestamped):
                         self.draft_mode = True
                         break
 
+    def clone(self):
+        """
+        Return a new submission using this as a template.
+        Set draft mode and clear 'Name' field.
+        """
+        self.id = None
+        self.pk = None
+        self._state.adding = True
+        return self
+
 
 class SubmissionEvaluation(Timestamped):
     class _DataPrivacyLevel(models.TextChoices):

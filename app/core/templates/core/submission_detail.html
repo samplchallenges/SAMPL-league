@@ -1,6 +1,7 @@
 {% extends 'layout.html' %}
 {% block content %}
 <h1>{{ submission.name }}</h1>
+<a class="btn btn-secondary" href="{% url 'submission-clone' submission.pk %}">Use as template</a>
 {% if submission.draft_mode %}
 <div class="alert alert-secondary">
   Draft mode <a class="btn btn-primary" href="{% url 'submission-update' submission.pk %}">Update</a>

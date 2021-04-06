@@ -1,13 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.http import HttpResponseForbidden, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django.views.generic.edit import DeleteView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
-from django.views.generic.detail import SingleObjectMixin
 
 from ..forms import SubmissionForm, ContainerForm
 from ..models import Submission
@@ -17,6 +16,9 @@ class OwnerMatchMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         obj = self.get_object()
         return obj.user == self.request.user
+
+
+# pylint: disable=too-many-ancestors
 
 
 class SubmissionDetail(OwnerMatchMixin, DetailView):
@@ -58,6 +60,16 @@ class SubmissionList(LoginRequiredMixin, ListView):
 class SubmissionDelete(OwnerMatchMixin, DeleteView):
     model = Submission
     success_url = reverse_lazy("submission-list")
+
+
+@login_required
+def clone_submission_view(request, pk):
+    if request.method == "GET":
+        submission = Submission.objects.get(pk=pk).clone()
+        submission.save()
+        return redirect("submission-edit", pk=submission.pk)
+
+    return HttpResponseBadRequest()
 
 
 @login_required
