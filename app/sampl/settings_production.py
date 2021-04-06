@@ -1,4 +1,5 @@
-from .settings import *
+import os
+from .settings import *  # lgtm [py/polluting-import]
 
 DEBUG = False
 SECRET_KEY = os.environ["SAMPL_SECRET_KEY"]
