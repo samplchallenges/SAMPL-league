@@ -24,6 +24,11 @@ class ContainerAdmin(TimestampedAdmin):
     date_hierarchy = "created_at"
 
 
+@register(models.ScoreMaker)
+class ScoreMakerAdmin(TimestampedAdmin):
+    list_display = ("challenge", "container")
+
+
 @register(models.Submission)
 class SubmissionAdmin(TimestampedAdmin):
     list_display = ("challenge", "user", "container", "created_at")

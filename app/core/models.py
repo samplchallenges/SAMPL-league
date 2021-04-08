@@ -28,7 +28,6 @@ class Challenge(Timestamped):
     secret_data_url = models.URLField()
     secret_score_reference_url = models.URLField()
     execution_options_json = models.JSONField()
-    # TODO: How to store scoring container reference in challenge?
 
     def __str__(self):
         return str(self.name)
@@ -45,6 +44,20 @@ class Container(Timestamped):
 
     def __str__(self):
         return str(self.name)
+
+
+class ScoreMaker(Timestamped):
+    """
+    Each active challenge has exactly one scoring container.
+    """
+
+    challenge = models.OneToOneField(
+        Challenge, on_delete=models.CASCADE, primary_key=True
+    )
+    container = models.ForeignKey(Container, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.challenge} {self.container}"
 
 
 class Submission(Timestamped):

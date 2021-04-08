@@ -20,7 +20,7 @@ SOFTWARE_DETAILS = """List all major software packages used and their versions.
 Create a new line for each software."""
 
 CATEGORY_OPTIONS = ("Physical (MM)", "Physical (QM)", "Empirical", "Mixed")
-CATEGORY_CHOICES = zip(CATEGORY_OPTIONS, CATEGORY_OPTIONS)
+CATEGORY_CHOICES = list(zip(CATEGORY_OPTIONS, CATEGORY_OPTIONS))
 
 CATEGORY_DETAILS = """State which method category your prediction method is better described as:
 `Physical (MM)`, `Physical (QM)`, `Empirical`, or `Mixed`.
@@ -35,7 +35,6 @@ If you have evaluated additional microstates, please report their SMILES strings
 If you used a microstate other than the challenge provided microstate (`SMXX_micro000`), please list your chosen `Molecule ID` (in the form of `SMXX_extra001`) along with the SMILES string in your methods description.
 
 Use as many lines of text as you need."""
-# TODO: keep or remove?  All text following the 'Method:' keyword will be regarded as part of your free text methods description."""
 
 
 RANKED_DETAILS = """All submissions must either be ranked or non-ranked.
