@@ -49,3 +49,18 @@ class SubmissionEvaluationAdmin(TimestampedAdmin):
 
     def challenge(self, instance):
         return instance.submission.challenge
+
+
+@register(models.InputElement)
+class InputElementAdmin(TimestampedAdmin):
+    pass
+
+
+@register(models.InputType)
+class InputTypeAdmin(TimestampedAdmin):
+    pass
+
+
+@register(models.InputValue)
+class InputValueAdmin(TimestampedAdmin):
+    pass

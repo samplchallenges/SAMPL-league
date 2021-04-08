@@ -19,6 +19,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 ALLOWED_HOSTS = []
 # Application definition
 
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+
 INSTALLED_APPS = (
     "core.apps.CoreConfig",
     "django.contrib.admin",

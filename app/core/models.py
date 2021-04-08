@@ -148,3 +148,40 @@ class SubmissionResult(Timestamped):
     )
     # TBD: allow more than one result file per submission?
     datafile = models.FileField()
+
+
+class InputElement(Timestamped):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    is_public = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ["challenge", "name"]
+
+    def __str__(self):
+        return f"{self.name}, is public? {self.is_public}"
+
+
+class InputType(Timestamped):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    key = models.CharField(max_length=255)
+    description = models.TextField()
+
+    class Meta:
+        unique_together = ["challenge", "key"]
+
+    def __str__(self):
+        return self.key
+
+
+class InputValue(Timestamped):
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+    input_type = models.ForeignKey(InputType, on_delete=models.CASCADE)
+    value = models.TextField()
+    # TODO: use https://docs.djangoproject.com/en/3.2/ref/contrib/contenttypes/
+
+    class Meta:
+        unique_together = ["input_element", "input_type"]
+
+    def __str__(self):
+        return f"{self.input_element}: {self.input_type}: {self.value}"
