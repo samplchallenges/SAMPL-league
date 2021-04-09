@@ -1,5 +1,9 @@
 from django.contrib import admin
 from django.contrib.admin import register
+from django.contrib.admin.templatetags import admin_urls
+from django.urls import reverse
+from django.utils.html import format_html
+
 
 from . import models
 
@@ -63,4 +67,55 @@ class InputTypeAdmin(TimestampedAdmin):
 
 @register(models.InputValue)
 class InputValueAdmin(TimestampedAdmin):
+    pass
+
+
+@register(models.Prediction)
+class PredictionAdmin(TimestampedAdmin):
+    list_display = (
+        "pk",
+        "submission_evaluation",
+        "input_element",
+        "key",
+        "content_type",
+    )
+    readonly_fields = ("value",)
+
+    def value(self, instance):
+        if instance.value_object:
+            url = reverse(
+                admin_urls.admin_urlname(instance.value_object._meta, "change"),
+                args=[instance.object_id],
+            )
+            print(url)
+            return format_html('<a href="{}">{}</a>', url, instance.value_object)
+
+        return "No value"
+
+
+class GenericOutputValueAdmin(admin.ModelAdmin):
+    readonly_fields = ("prediction",)
+
+    def prediction(self, instance):
+        if instance.prediction:
+            url = reverse(
+                "admin:core_prediction_change", args=[instance.prediction.get().pk]
+            )
+            return format_html('<a href="{}">{}</a>', url, "Prediction")
+
+        return "No prediction"
+
+
+@register(models.TextValue)
+class TextValueAdmin(GenericOutputValueAdmin):
+    pass
+
+
+@register(models.FloatValue)
+class FloatValueAdmin(GenericOutputValueAdmin):
+    pass
+
+
+@register(models.BlobValue)
+class BlobValueAdmin(GenericOutputValueAdmin):
     pass
