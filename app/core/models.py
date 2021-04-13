@@ -1,7 +1,11 @@
-from django.utils.translation import gettext_lazy as _
-from django.db import models
 import django.contrib.auth.models as auth_models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 
 from . import configurator
@@ -148,3 +152,113 @@ class SubmissionResult(Timestamped):
     )
     # TBD: allow more than one result file per submission?
     datafile = models.FileField()
+
+
+class InputElement(Timestamped):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    is_public = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ["challenge", "name"]
+
+    def __str__(self):
+        return f"{self.name}, is public? {self.is_public}"
+
+
+class InputType(Timestamped):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    key = models.CharField(max_length=255)
+    description = models.TextField()
+
+    class Meta:
+        unique_together = ["challenge", "key"]
+
+    def __str__(self):
+        return self.key
+
+
+class InputValue(Timestamped):
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+    input_type = models.ForeignKey(InputType, on_delete=models.CASCADE)
+    value = models.TextField()
+    # TODO: use https://docs.djangoproject.com/en/3.2/ref/contrib/contenttypes/
+
+    class Meta:
+        unique_together = ["input_element", "input_type"]
+
+    def __str__(self):
+        return f"{self.input_element}: {self.input_type}: {self.__str_value()}"
+
+    def __str_value(self):
+        # pylint: disable=no-member
+        if isinstance(self.value, str) and len(self.value) > 100:
+            return f"{self.value:.100}..."
+        return str(self.value)
+
+
+class Prediction(Timestamped):
+    submission_evaluation = models.ForeignKey(
+        SubmissionEvaluation, on_delete=models.CASCADE
+    )
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+    key = models.CharField(max_length=255)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    value_object = GenericForeignKey("content_type", "object_id")
+
+    _value_models = ()
+
+    class Meta:
+        unique_together = ["submission_evaluation", "input_element", "key"]
+
+    def __str__(self):
+        return f"{self.submission_evaluation}::{self.key}::{self.content_type}"
+
+    @classmethod
+    def register_value_model(cls, ValueModel):
+        """
+        Prediction's value_object can only point to a
+        value model registered with this decorator
+        """
+        if not hasattr(ValueModel, "value"):
+            raise ValidationError(_(f"{ValueModel} must have a value attribute"))
+        if not issubclass(ValueModel, GenericOutputValue):
+            raise ValidationError(_(f"{ValueModel} must extend GenericOutputValue"))
+
+        cls._value_models = (*cls._value_models, ValueModel)
+        return ValueModel
+
+    def clean(self):
+        if self.content_type.model_class() not in self._value_models:
+            raise ValidationError(
+                _(f"Invalid model for prediction: {self.content_type.model_class()}")
+            )
+
+
+class GenericOutputValue(models.Model):
+    prediction = GenericRelation(Prediction)
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        # pylint: disable=no-member
+        if isinstance(self.value, str) and len(self.value) > 100:
+            return f"{self.value:.100}..."
+        return str(self.value)
+
+
+@Prediction.register_value_model
+class TextValue(GenericOutputValue):
+    value = models.TextField(blank=True)
+
+
+@Prediction.register_value_model
+class FloatValue(GenericOutputValue):
+    value = models.FloatField()
+
+
+@Prediction.register_value_model
+class BlobValue(GenericOutputValue):
+    value = models.BinaryField()
