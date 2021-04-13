@@ -169,3 +169,6 @@ tags
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+# license
+oe_license.txt
