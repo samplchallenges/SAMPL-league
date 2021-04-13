@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<p>{{ form.errors }}
+<form method="post" class="form">
+  {% csrf_token %}
+  {{ form|crispy }}
+  <input type="submit" value="submit">
+</form>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends 'layout.html' %}
+{% block content %}
+{% for object in object_list %}
+<div>Challenge: <a href="{% url 'challenge-detail' pk=object.pk %}">{{ object }}</a></div>
+{% endfor %}
+{% endblock %}

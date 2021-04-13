@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+{% block content %}
+<br><a href="{% url 'challenge-list' %}">View Challenges</a>
+{% if user.is_authenticated %}
+<br><a href="{% url 'submission-list' %}">List Submissions</a>
+<br><a href="{% url 'submission-add' %}">New Submission</a>
+{% else %}
+<br><a href="{% url 'login' %}">Log in to make a submission</a>
+{% endif %}
+{% endblock %}

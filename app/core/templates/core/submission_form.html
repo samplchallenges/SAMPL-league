@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="errors">
+  {{ container_form|as_crispy_errors }}
+  {{ submission_form|as_crispy_errors }}
+</div>
+<form method="post" class="form">
+  {% csrf_token %}
+  <div class="border container">
+    <h2>Container</h2>
+    {{ container_form|crispy }}
+  </div>
+  <div class="border container">
+    <h2>Submission Details</h2>
+    {{ submission_form|crispy }}
+  </div>
+  
+  <button type="submit" class="btn btn-primary">Save Submission</button>
+</form>
+{% endblock %}

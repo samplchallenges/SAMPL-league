@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>{{ submission.name }}</h1>
+<a class="btn btn-secondary" href="{% url 'submission-clone' submission.pk %}">Use as template</a>
+{% if submission.draft_mode %}
+<div class="alert alert-secondary">
+  Draft mode <a class="btn btn-primary" href="{% url 'submission-update' submission.pk %}">Update</a>
+</div>
+{% endif %}
+
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Container: {{ container.name }}</h5>
+    <p class="card-text">Registry: {{ container.registry }}</p>
+    <p class="card-text">Label: {{ container.label }}
+      {% if object.container.tag %}
+      tag: <span class="badge badge-primary"> {{ container.tag }}</span>
+      {% endif %}
+    </p>
+    <p class="card-text">Version as of {{ container.updated_at }}
+      {% if object.container.digest %}
+      <span class="badge badge-info"> {{ container.digest }}</span>
+      {% else %}
+      <span class="badge badge-warning">Local copy not yet cached</span>
+      {% endif %}
+    </p>
+  </div>
+</div>
+<h2>Submission details</h2>
+{% for field_name, field_value in submission_details %} 
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">{{ field_name }}</h5>
+    <p class="card-text">{{ field_value }}</p>
+  </div>
+</div>
+{% endfor %}
+{% if missing_fields %}
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Missing values</h5>
+
+    <div class="alert alert-warning">must be completed before finalizing submission</div>
+    <p class="card-text"><ul>
+    {% for field_name in missing_fields %}
+    <li>{{ field_name }}</li>
+    {% endfor %}
+    </ul></p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

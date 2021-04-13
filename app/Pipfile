@@ -6,10 +6,16 @@ name = "pypi"
 [packages]
 django = "3.2"
 psycopg2-binary = "*"
+django-crispy-forms = "*"
 
 [dev-packages]
 black = "==20.8b1"
 isort = "*"
+pylint = "*"
+pytest = "*"
+flake8 = "*"
+pylint-django = "*"
+pytest-django = "*"
 
 [requires]
 python_version = "3.7"
