@@ -16,6 +16,7 @@ pytest = "*"
 flake8 = "*"
 pylint-django = "*"
 pytest-django = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.7"
