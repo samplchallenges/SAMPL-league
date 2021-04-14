@@ -1,7 +1,6 @@
 import pytest
 
-
-from core.forms import SubmissionForm, ContainerForm
+from core.forms import ContainerForm, SubmissionForm
 
 
 @pytest.mark.django_db

@@ -1,18 +1,15 @@
-from django.urls import path, include
+from django.urls import include, path
 
 from .views.challenge import ChallengeDetail, ChallengeList
-
+from .views.profile import ProfileView, register
+from .views.root import IndexView
 from .views.submission import (
+    SubmissionDelete,
     SubmissionDetail,
     SubmissionList,
-    SubmissionDelete,
-    edit_submission_view,
     clone_submission_view,
+    edit_submission_view,
 )
-
-from .views.root import IndexView
-from .views.profile import ProfileView, register
-
 
 urlpatterns = [
     path("", IndexView.as_view(), name="root"),

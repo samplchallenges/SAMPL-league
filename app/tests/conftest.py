@@ -1,7 +1,6 @@
-from datetime import datetime
-from datetime import timezone
-import pytest
+from datetime import datetime, timezone
 
+import pytest
 from django.contrib.auth import get_user_model
 
 from core.models import Challenge, Container, Submission
