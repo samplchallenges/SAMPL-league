@@ -9,7 +9,8 @@ disable = "C0330, C0326"
 max-line-length = "88"
 
 [tool.isort]
-profile = 'black'
+profile = "black"
+skip = "core/migrations/"
 
 [tool.black]
 exclude = "core/migrations/"
