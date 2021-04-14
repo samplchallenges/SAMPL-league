@@ -1,3 +1,15 @@
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "sampl.settings_dev"
 addopts = "-vv"
+
+[tool.pylint.messages_control]
+disable = "C0330, C0326"
+
+[tool.pylint.format]
+max-line-length = "88"
+
+[tool.isort]
+profile = 'black'
+
+[tool.black]
+exclude = "core/migrations/"
