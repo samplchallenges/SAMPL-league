@@ -78,6 +78,7 @@ jobs:
           pipenv run pylint tests/ core/ sampl/
         env:
           DJANGO_SETTINGS_MODULE: sampl.settings_dev
-      - name: Run formatting check
+      - name: Run formatting checks
         run: |
           pipenv run black --check --diff .
+          isort --check --diff core/ sampl/ tests/
