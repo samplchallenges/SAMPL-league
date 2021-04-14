@@ -65,13 +65,18 @@ jobs:
           pipenv install --dev
       - name: Run test suite
         run: |
-          pipenv run pytest
+          pipenv run pytest --cov=./
         env:
           RDS_HOSTNAME: localhost
           RDS_DB_NAME: postgres
           RDS_PASSWORD: postgres
           RDS_PORT: 5432
           RDS_USERNAME: postgres
+
+      - name: Upload test coverage
+        uses: codecov/codecov-action@v1
+        with:
+          fail_ci_if_error: true
 
       - name: Run linter
         run: |
