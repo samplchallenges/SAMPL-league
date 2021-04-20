@@ -7,6 +7,12 @@ name = "pypi"
 docker = "*"
 
 [dev-packages]
+dask = {extras = ["complete"], version = "*"}
+jupyter-server-proxy = "*"
+black = "==20.8b1"
+isort = "*"
+flake8 = "*"
+graphviz = "*"
 
 [requires]
 python_version = "3.8"

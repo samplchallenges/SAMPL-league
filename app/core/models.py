@@ -188,7 +188,13 @@ class InputValue(Timestamped):
         unique_together = ["input_element", "input_type"]
 
     def __str__(self):
-        return f"{self.input_element}: {self.input_type}: {self.value}"
+        return f"{self.input_element}: {self.input_type}: {self.__str_value()}"
+
+    def __str_value(self):
+        # pylint: disable=no-member
+        if isinstance(self.value, str) and len(self.value) > 100:
+            return f"{self.value:.100}..."
+        return str(self.value)
 
 
 class Prediction(Timestamped):

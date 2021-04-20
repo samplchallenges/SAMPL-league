@@ -1,4 +1,4 @@
-# SAMPL-container-workflow-mvp
+# SAMPL-league
 
 [![Documentation Status](https://readthedocs.org/projects/sampl-container-infra/badge/?version=latest)](http://docs.samplchallenges.org/en/latest/?badge=latest)
 
