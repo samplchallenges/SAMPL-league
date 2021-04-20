@@ -1,12 +1,9 @@
 from dask.distributed import Client
-import sys
+
 
 def fire_off_tasks(submission_id, elements):
     dask_url = "127.0.0.1:8786"
     client = Client(dask_url)
-    #client.upload_file("code.zip")
-    #client.upload_file("referee/tasks.py")
-    client.upload_file("tasks.py")
     submissions = []
     for element in elements:
         future = client.submit(
@@ -14,7 +11,6 @@ def fire_off_tasks(submission_id, elements):
         )
         submissions.append(future)
     print("gathering")
-    print(sys.path)
     results = client.gather(submissions)
     print(results)
     print("done")
@@ -23,7 +19,7 @@ def fire_off_tasks(submission_id, elements):
 def run_submission_element(submission_id, element):
     print("fired")
     from core.models import Submission
-    import ever_given
+    import ever_given.wrapper
 
     print("running")
     submission = Submission.objects.get(pk=submission_id)
@@ -32,5 +28,5 @@ def run_submission_element(submission_id, element):
     command = submission.challenge.execution_options_json["command"]
     print(command)
     print(container_uri)
-    result = ever_given.run_submission_container(container_uri, command)
+    result = ever_given.wrapper.run_submission_container(container_uri, command)
     return result
