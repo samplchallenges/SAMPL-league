@@ -6,6 +6,7 @@ def fire_off_tasks(submission_id, elements):
     client = Client(dask_url)
     #client.upload_file("code.zip")
     #client.upload_file("referee/tasks.py")
+    client.upload_file("tasks.py")
     submissions = []
     for element in elements:
         future = client.submit(
