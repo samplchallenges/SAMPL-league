@@ -23,7 +23,7 @@ def fire_off_tasks(submission_id, elements):
 def run_submission_element(submission_id, element):
     print("fired")
     from core.models import Submission
-    #import ever_given
+    import ever_given
 
     print("running")
     submission = Submission.objects.get(pk=submission_id)
