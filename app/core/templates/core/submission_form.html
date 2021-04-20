@@ -5,7 +5,7 @@
   {{ container_form|as_crispy_errors }}
   {{ submission_form|as_crispy_errors }}
 </div>
-<form method="post" class="form">
+<form method="post" class="form" action="{{ form_action }}">
   {% csrf_token %}
   <div class="border container">
     <h2>Container</h2>
