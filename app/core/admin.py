@@ -4,7 +4,6 @@ from django.contrib.admin.templatetags import admin_urls
 from django.urls import reverse
 from django.utils.html import format_html
 
-
 from . import models
 
 
