@@ -123,10 +123,14 @@ class Submission(Timestamped):
         return self
 
 
-class SubmissionEvaluation(Timestamped):
+class SubmissionRun(Timestamped):
     class _DataPrivacyLevel(models.TextChoices):
         PUBLIC = "PUBLIC"
         PRIVATE = "PRIVATE"
+
+    class _Status(models.TextChoices):
+        FAILURE = "FAILURE"
+        SUCCESS = "SUCCESS"
 
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
@@ -135,22 +139,10 @@ class SubmissionEvaluation(Timestamped):
         choices=_DataPrivacyLevel.choices,
         default=_DataPrivacyLevel.PRIVATE,
     )
-    started_at = models.DateTimeField()
-    ended_at = models.DateTimeField()
-    exit_status = models.IntegerField()
-    log_stdout = models.TextField(blank=True)
-    log_stderr = models.TextField(blank=True)
+    status = models.CharField(max_length=25, choices=_Status.choices)
 
     def __str__(self):
-        return f"{self.submission}:{self.digest}, exited {self.exit_status}"
-
-
-class SubmissionResult(Timestamped):
-    submission_evaluation = models.ForeignKey(
-        SubmissionEvaluation, on_delete=models.CASCADE
-    )
-    # TBD: allow more than one result file per submission?
-    datafile = models.FileField()
+        return f"{self.submission}:{self.digest}, status {self.status}"
 
 
 class InputElement(Timestamped):
@@ -196,11 +188,22 @@ class InputValue(Timestamped):
         return str(self.value)
 
 
-class Prediction(Timestamped):
-    submission_evaluation = models.ForeignKey(
-        SubmissionEvaluation, on_delete=models.CASCADE
-    )
+class Evaluation(Timestamped):
+    submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+    exit_status = models.IntegerField()
+    log_stdout = models.TextField(blank=True)
+    log_stderr = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ["submission_run", "input_element"]
+
+    def __str__(self):
+        return f"{self.submission_run}:, exited {self.exit_status}"
+
+
+class Prediction(Timestamped):
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
     key = models.CharField(max_length=255)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -209,10 +212,10 @@ class Prediction(Timestamped):
     _value_models = ()
 
     class Meta:
-        unique_together = ["submission_evaluation", "input_element", "key"]
+        unique_together = ["evaluation", "key"]
 
     def __str__(self):
-        return f"{self.submission_evaluation}::{self.key}::{self.content_type}"
+        return f"{self.evaluation}::{self.key}::{self.content_type}"
 
     @classmethod
     def register_value_model(cls, ValueModel):
