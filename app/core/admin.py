@@ -37,15 +37,14 @@ class SubmissionAdmin(TimestampedAdmin):
     list_display = ("challenge", "user", "container", "created_at")
 
 
-@register(models.SubmissionEvaluation)
-class SubmissionEvaluationAdmin(TimestampedAdmin):
+@register(models.SubmissionRun)
+class SubmissionRunAdmin(TimestampedAdmin):
     list_display = (
         "submission",
         "user",
         "challenge",
-        "exit_status",
+        "status",
     )
-    date_hierarchy = "started_at"
 
     def user(self, instance):
         return instance.submission.user
@@ -69,12 +68,16 @@ class InputValueAdmin(TimestampedAdmin):
     pass
 
 
+@register(models.Evaluation)
+class EvaluationAdmin(TimestampedAdmin):
+    list_display = ("pk", "submission_run")
+
+
 @register(models.Prediction)
 class PredictionAdmin(TimestampedAdmin):
     list_display = (
         "pk",
-        "submission_evaluation",
-        "input_element",
+        "evaluation",
         "key",
         "content_type",
     )
