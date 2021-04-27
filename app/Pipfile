@@ -9,6 +9,7 @@ psycopg2-binary = "*"
 django-crispy-forms = "*"
 dask = "*"
 distributed = "*"
+ever-given = {editable = true, path = "./../ever_given"}
 
 [dev-packages]
 black = "==20.8b1"
