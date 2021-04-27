@@ -19,3 +19,4 @@ def test_sample_data():
     assert models.InputElement.objects.all().count() == 6
     assert models.InputType.objects.all().count() == 1
     assert models.InputValue.objects.all().count() == 6
+    assert models.FloatValue.objects.all().count() == 6

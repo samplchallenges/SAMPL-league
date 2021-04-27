@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -18,10 +19,17 @@ def _create_challenge_inputs(challenge):
         challenge=challenge, key="SMILES", description="SMILES"
     )
 
-    smiles = "c1cccc1"
+    smiles = "c1ccccc1"
     for elem in elems.values():
         models.InputValue.objects.create(
             input_element=elem, input_type=smiles_type, value=smiles
+        )
+        float_value = models.FloatValue.objects.create(value=72.0)
+        models.AnswerKey.objects.create(
+            challenge=challenge,
+            input_element=elem,
+            key="molWeight",
+            value_object=float_value,
         )
 
 
@@ -75,7 +83,7 @@ class Command(BaseCommand):
         first_run = models.SubmissionRun.objects.create(
             submission=submission,
             digest="cafecafef00d",
-            data_privacy_level=models.SubmissionRun._DataPrivacyLevel.PUBLIC,
+            is_public=True,
             status=models.SubmissionRun._Status.SUCCESS,
         )
 
