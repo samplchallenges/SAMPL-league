@@ -236,12 +236,23 @@ class Prediction(Solution):
     def __str__(self):
         return f"{self.evaluation}::{self.key}::{self.content_type}"
 
+    def clean(self):
+        super().clean()
+        self.challenge = self.evaluation.submission_run.submission.challenge
+
 
 class AnswerKey(Solution):
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ["input_element", "key"]
+
+    def __str__(self):
+        return f"{self.input_element}::{self.key}::{self.content_type}"
+
+    def clean(self):
+        super().clean()
+        self.challenge = self.input_element.challenge
 
 
 class GenericOutputValue(models.Model):
@@ -257,16 +268,16 @@ class GenericOutputValue(models.Model):
         return str(self.value)
 
 
-@Prediction.register_value_model
+@Solution.register_value_model
 class TextValue(GenericOutputValue):
     value = models.TextField(blank=True)
 
 
-@Prediction.register_value_model
+@Solution.register_value_model
 class FloatValue(GenericOutputValue):
     value = models.FloatField()
 
 
-@Prediction.register_value_model
+@Solution.register_value_model
 class BlobValue(GenericOutputValue):
     value = models.BinaryField()
