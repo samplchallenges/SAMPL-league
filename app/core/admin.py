@@ -77,11 +77,38 @@ class EvaluationAdmin(TimestampedAdmin):
 class PredictionAdmin(TimestampedAdmin):
     list_display = (
         "pk",
+        "challenge",
         "evaluation",
         "key",
         "content_type",
     )
-    readonly_fields = ("value",)
+    readonly_fields = ("challenge", "value")
+
+    def value(self, instance):
+        if instance.value_object:
+            url = reverse(
+                admin_urls.admin_urlname(instance.value_object._meta, "change"),
+                args=[instance.object_id],
+            )
+            print(url)
+            return format_html('<a href="{}">{}</a>', url, instance.value_object)
+
+        return "No value"
+
+
+@register(models.AnswerKey)
+class AnswerKeyAdmin(TimestampedAdmin):
+    list_display = (
+        "pk",
+        "challenge",
+        "input_element",
+        "key",
+        "content_type",
+    )
+    readonly_fields = (
+        "challenge",
+        "value",
+    )
 
     def value(self, instance):
         if instance.value_object:

@@ -124,21 +124,13 @@ class Submission(Timestamped):
 
 
 class SubmissionRun(Timestamped):
-    class _DataPrivacyLevel(models.TextChoices):
-        PUBLIC = "PUBLIC"
-        PRIVATE = "PRIVATE"
-
     class _Status(models.TextChoices):
         FAILURE = "FAILURE"
         SUCCESS = "SUCCESS"
 
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
-    data_privacy_level = models.CharField(
-        max_length=25,
-        choices=_DataPrivacyLevel.choices,
-        default=_DataPrivacyLevel.PRIVATE,
-    )
+    is_public = models.BooleanField(default=False)
     status = models.CharField(max_length=25, choices=_Status.choices)
 
     def __str__(self):
@@ -202,8 +194,8 @@ class Evaluation(Timestamped):
         return f"{self.submission_run}:, exited {self.exit_status}"
 
 
-class Prediction(Timestamped):
-    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
+class Solution(Timestamped):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
     key = models.CharField(max_length=255)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -212,15 +204,12 @@ class Prediction(Timestamped):
     _value_models = ()
 
     class Meta:
-        unique_together = ["evaluation", "key"]
-
-    def __str__(self):
-        return f"{self.evaluation}::{self.key}::{self.content_type}"
+        abstract = True
 
     @classmethod
     def register_value_model(cls, ValueModel):
         """
-        Prediction's value_object can only point to a
+        Solution's value_object can only point to a
         value model registered with this decorator
         """
         if not hasattr(ValueModel, "value"):
@@ -234,8 +223,36 @@ class Prediction(Timestamped):
     def clean(self):
         if self.content_type.model_class() not in self._value_models:
             raise ValidationError(
-                _(f"Invalid model for prediction: {self.content_type.model_class()}")
+                _(f"Invalid model for solution: {self.content_type.model_class()}")
             )
+
+
+class Prediction(Solution):
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ["evaluation", "key"]
+
+    def __str__(self):
+        return f"{self.evaluation}::{self.key}::{self.content_type}"
+
+    def clean(self):
+        super().clean()
+        self.challenge = self.evaluation.submission_run.submission.challenge
+
+
+class AnswerKey(Solution):
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ["input_element", "key"]
+
+    def __str__(self):
+        return f"{self.input_element}::{self.key}::{self.content_type}"
+
+    def clean(self):
+        super().clean()
+        self.challenge = self.input_element.challenge
 
 
 class GenericOutputValue(models.Model):
@@ -251,16 +268,16 @@ class GenericOutputValue(models.Model):
         return str(self.value)
 
 
-@Prediction.register_value_model
+@Solution.register_value_model
 class TextValue(GenericOutputValue):
     value = models.TextField(blank=True)
 
 
-@Prediction.register_value_model
+@Solution.register_value_model
 class FloatValue(GenericOutputValue):
     value = models.FloatField()
 
 
-@Prediction.register_value_model
+@Solution.register_value_model
 class BlobValue(GenericOutputValue):
     value = models.BinaryField()
