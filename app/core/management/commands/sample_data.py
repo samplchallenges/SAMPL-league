@@ -57,8 +57,9 @@ class Command(BaseCommand):
             name="crate",
             user=user,
             challenge=challenge,
-            registry=foo_url,
-            label="milo_crate",
+            registry="docker.io",
+            label="mmh42/calc-molwt",
+            tag="0.1"
         )
 
         scoring_container = models.Container.objects.create(
