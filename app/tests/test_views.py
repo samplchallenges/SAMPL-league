@@ -1,5 +1,4 @@
 import pytest
-
 from django.forms.fields import CharField
 from django.urls import reverse
 

@@ -1,14 +1,13 @@
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic.edit import DeleteView
 from django.views.generic.detail import DetailView
+from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
 
-from ..forms import SubmissionForm, ContainerForm
+from ..forms import ContainerForm, SubmissionForm
 from ..models import Submission
 
 
@@ -81,7 +80,8 @@ def clone_submission_view(request, pk):
 
 
 @login_required
-def edit_submission_view(request, pk=None):
+def edit_submission_view(request, pk=None, clone=False):
+    form_action = ""
     if request.method == "POST":
         # TODO: transaction?
         submission = Submission.objects.get(pk=pk) if pk else None
@@ -102,6 +102,10 @@ def edit_submission_view(request, pk=None):
     elif request.method == "GET":
         if pk:
             submission = Submission.objects.get(pk=pk)
+            if clone:
+                submission.pk = None
+                submission.container.pk = None
+                form_action = reverse_lazy("submission-add")
             container_form = ContainerForm(instance=submission.container)
             submission_form = SubmissionForm(instance=submission)
         else:
@@ -109,5 +113,9 @@ def edit_submission_view(request, pk=None):
             submission_form = SubmissionForm()
     else:
         return HttpResponseBadRequest()
-    context = {"container_form": container_form, "submission_form": submission_form}
+    context = {
+        "container_form": container_form,
+        "submission_form": submission_form,
+        "form_action": form_action,
+    }
     return render(request, "core/submission_form.html", context)

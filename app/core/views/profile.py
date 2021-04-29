@@ -1,8 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponseForbidden, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import redirect, render, reverse
 from django.views.generic import TemplateView
-
 
 from ..forms import RegisterForm
 

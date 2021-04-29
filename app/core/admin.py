@@ -4,7 +4,6 @@ from django.contrib.admin.templatetags import admin_urls
 from django.urls import reverse
 from django.utils.html import format_html
 
-
 from . import models
 
 
@@ -38,15 +37,14 @@ class SubmissionAdmin(TimestampedAdmin):
     list_display = ("challenge", "user", "container", "created_at")
 
 
-@register(models.SubmissionEvaluation)
-class SubmissionEvaluationAdmin(TimestampedAdmin):
+@register(models.SubmissionRun)
+class SubmissionRunAdmin(TimestampedAdmin):
     list_display = (
         "submission",
         "user",
         "challenge",
-        "exit_status",
+        "status",
     )
-    date_hierarchy = "started_at"
 
     def user(self, instance):
         return instance.submission.user
@@ -70,16 +68,47 @@ class InputValueAdmin(TimestampedAdmin):
     pass
 
 
+@register(models.Evaluation)
+class EvaluationAdmin(TimestampedAdmin):
+    list_display = ("pk", "submission_run")
+
+
 @register(models.Prediction)
 class PredictionAdmin(TimestampedAdmin):
     list_display = (
         "pk",
-        "submission_evaluation",
+        "challenge",
+        "evaluation",
+        "key",
+        "content_type",
+    )
+    readonly_fields = ("challenge", "value")
+
+    def value(self, instance):
+        if instance.value_object:
+            url = reverse(
+                admin_urls.admin_urlname(instance.value_object._meta, "change"),
+                args=[instance.object_id],
+            )
+            print(url)
+            return format_html('<a href="{}">{}</a>', url, instance.value_object)
+
+        return "No value"
+
+
+@register(models.AnswerKey)
+class AnswerKeyAdmin(TimestampedAdmin):
+    list_display = (
+        "pk",
+        "challenge",
         "input_element",
         "key",
         "content_type",
     )
-    readonly_fields = ("value",)
+    readonly_fields = (
+        "challenge",
+        "value",
+    )
 
     def value(self, instance):
         if instance.value_object:

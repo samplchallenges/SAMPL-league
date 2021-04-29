@@ -1,18 +1,15 @@
-from django.urls import path, include
+from django.urls import include, path
 
 from .views.challenge import ChallengeDetail, ChallengeList
-
+from .views.profile import ProfileView, register
+from .views.root import IndexView
 from .views.submission import (
+    SubmissionDelete,
     SubmissionDetail,
     SubmissionList,
-    SubmissionDelete,
-    edit_submission_view,
     clone_submission_view,
+    edit_submission_view,
 )
-
-from .views.root import IndexView
-from .views.profile import ProfileView, register
-
 
 urlpatterns = [
     path("", IndexView.as_view(), name="root"),
@@ -22,9 +19,14 @@ urlpatterns = [
     path("challenge/", ChallengeList.as_view(), name="challenge-list"),
     path("challenge/<int:pk>/", ChallengeDetail.as_view(), name="challenge-detail"),
     path("submission/", SubmissionList.as_view(), name="submission-list"),
-    path("submission/add/", edit_submission_view, name="submission-add"),
-    path("submission/<int:pk>/clone/", clone_submission_view, name="submission-clone"),
     path("submission/<int:pk>/", SubmissionDetail.as_view(), name="submission-detail"),
+    path("submission/add/", edit_submission_view, name="submission-add"),
+    path(
+        "submission/<int:pk>/clone/",
+        edit_submission_view,
+        name="submission-clone",
+        kwargs={"clone": True},
+    ),
     path(
         "submission/<int:pk>/edit/",
         edit_submission_view,

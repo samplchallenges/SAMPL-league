@@ -1,12 +1,11 @@
 import django.contrib.auth.models as auth_models
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.urls import reverse
 
 from . import configurator
 
@@ -124,34 +123,18 @@ class Submission(Timestamped):
         return self
 
 
-class SubmissionEvaluation(Timestamped):
-    class _DataPrivacyLevel(models.TextChoices):
-        PUBLIC = "PUBLIC"
-        PRIVATE = "PRIVATE"
+class SubmissionRun(Timestamped):
+    class _Status(models.TextChoices):
+        FAILURE = "FAILURE"
+        SUCCESS = "SUCCESS"
 
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
-    data_privacy_level = models.CharField(
-        max_length=25,
-        choices=_DataPrivacyLevel.choices,
-        default=_DataPrivacyLevel.PRIVATE,
-    )
-    started_at = models.DateTimeField()
-    ended_at = models.DateTimeField()
-    exit_status = models.IntegerField()
-    log_stdout = models.TextField(blank=True)
-    log_stderr = models.TextField(blank=True)
+    is_public = models.BooleanField(default=False)
+    status = models.CharField(max_length=25, choices=_Status.choices)
 
     def __str__(self):
-        return f"{self.submission}:{self.digest}, exited {self.exit_status}"
-
-
-class SubmissionResult(Timestamped):
-    submission_evaluation = models.ForeignKey(
-        SubmissionEvaluation, on_delete=models.CASCADE
-    )
-    # TBD: allow more than one result file per submission?
-    datafile = models.FileField()
+        return f"{self.submission}:{self.digest}, status {self.status}"
 
 
 class InputElement(Timestamped):
@@ -197,11 +180,22 @@ class InputValue(Timestamped):
         return str(self.value)
 
 
-class Prediction(Timestamped):
-    submission_evaluation = models.ForeignKey(
-        SubmissionEvaluation, on_delete=models.CASCADE
-    )
+class Evaluation(Timestamped):
+    submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+    exit_status = models.IntegerField()
+    log_stdout = models.TextField(blank=True)
+    log_stderr = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ["submission_run", "input_element"]
+
+    def __str__(self):
+        return f"{self.submission_run}:, exited {self.exit_status}"
+
+
+class Solution(Timestamped):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
     key = models.CharField(max_length=255)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -210,15 +204,12 @@ class Prediction(Timestamped):
     _value_models = ()
 
     class Meta:
-        unique_together = ["submission_evaluation", "input_element", "key"]
-
-    def __str__(self):
-        return f"{self.submission_evaluation}::{self.key}::{self.content_type}"
+        abstract = True
 
     @classmethod
     def register_value_model(cls, ValueModel):
         """
-        Prediction's value_object can only point to a
+        Solution's value_object can only point to a
         value model registered with this decorator
         """
         if not hasattr(ValueModel, "value"):
@@ -232,8 +223,36 @@ class Prediction(Timestamped):
     def clean(self):
         if self.content_type.model_class() not in self._value_models:
             raise ValidationError(
-                _(f"Invalid model for prediction: {self.content_type.model_class()}")
+                _(f"Invalid model for solution: {self.content_type.model_class()}")
             )
+
+
+class Prediction(Solution):
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ["evaluation", "key"]
+
+    def __str__(self):
+        return f"{self.evaluation}::{self.key}::{self.content_type}"
+
+    def clean(self):
+        super().clean()
+        self.challenge = self.evaluation.submission_run.submission.challenge
+
+
+class AnswerKey(Solution):
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ["input_element", "key"]
+
+    def __str__(self):
+        return f"{self.input_element}::{self.key}::{self.content_type}"
+
+    def clean(self):
+        super().clean()
+        self.challenge = self.input_element.challenge
 
 
 class GenericOutputValue(models.Model):
@@ -249,16 +268,16 @@ class GenericOutputValue(models.Model):
         return str(self.value)
 
 
-@Prediction.register_value_model
+@Solution.register_value_model
 class TextValue(GenericOutputValue):
     value = models.TextField(blank=True)
 
 
-@Prediction.register_value_model
+@Solution.register_value_model
 class FloatValue(GenericOutputValue):
     value = models.FloatField()
 
 
-@Prediction.register_value_model
+@Solution.register_value_model
 class BlobValue(GenericOutputValue):
     value = models.BinaryField()

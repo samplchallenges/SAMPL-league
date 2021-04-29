@@ -21,6 +21,7 @@ pylint-django = "*"
 pytest-django = "*"
 docker = "*"
 bokeh = ">=0.13.0"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.7"

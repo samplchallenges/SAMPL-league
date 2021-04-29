@@ -1,14 +1,14 @@
-from datetime import datetime
-from datetime import timezone
-import pytest
+from datetime import datetime, timezone
 
-from django.contrib.auth.models import User
+import pytest
+from django.contrib.auth import get_user_model
 
 from core.models import Challenge, Container, Submission
 
 
 @pytest.fixture
 def user(db):
+    User = get_user_model()
     user = User(username="hello")
     user.save()
     return user
