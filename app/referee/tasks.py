@@ -1,7 +1,44 @@
 import django
 from dask.distributed import Client
 
+# should this happen on the module level or in the function/method?
 django.setup()
+
+
+def score_submission(submission_id):
+    from core.models import (
+        AnswerKey,
+        Evaluation,
+        InputElement,
+        InputValue,
+        Prediction,
+        Submission,
+        SubmissionRun,
+    )
+
+    submission = Submission.objects.get(pk=submission_id)
+    challenge = submission.challenge
+
+    # get most recent submission run
+    submission_run = SubmissionRun.objects.filter(submission=submission).latest(
+        "updated_at"
+    )
+    evaluations = Evaluation.objects.filter(submission_run=submission_run)
+    # floats
+    predictions = Prediction.objects.filter(evaluation__in=evaluations)
+    # smiles
+    input_objects = InputElement.objects.filter(evaluation__in=evaluations)
+    input_values = InputValue.objects.filter(input_element__in=input_objects)
+
+    # I really don't think there is a way to know this order is correct
+    for floats, smiles in zip(predictions, input_values):
+        print(floats.value_object.value, smiles.value)
+
+    answer_key = AnswerKey.objects.filter(challenge=challenge)
+    for key in answer_key:
+        smiles = InputValue.objects.get(input_element=key.input_element).value
+        molwt = key.value_object.value
+        print(smiles, molwt)
 
 
 def run_submission(submission_id, is_public=True):
