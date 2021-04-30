@@ -133,7 +133,7 @@ class SubmissionRun(Timestamped):
     digest = models.CharField(max_length=255)
     is_public = models.BooleanField(default=False)
     status = models.CharField(max_length=25, choices=_Status.choices)
-    #score = models.FloatField()
+    # score = models.FloatField()
 
     def __str__(self):
         return f"{self.submission}:{self.digest}, status {self.status}"
@@ -263,6 +263,7 @@ class AnswerKey(Solution):
 
 class GenericOutputValue(models.Model):
     prediction = GenericRelation(Prediction)
+    answer_key = GenericRelation(AnswerKey)
 
     class Meta:
         abstract = True
