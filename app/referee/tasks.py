@@ -19,27 +19,25 @@ def score_submission(submission_id):
     submission = Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
 
+    smiles_type = challenge.inputtype_set.get(key="SMILES")
     # get most recent submission run
-    submission_run = SubmissionRun.objects.filter(submission=submission).latest(
-        "updated_at"
-    )
-    evaluations = Evaluation.objects.filter(submission_run=submission_run)
-    # floats
-    predictions = Prediction.objects.filter(evaluation__in=evaluations)
-    # smiles
-    input_objects = InputElement.objects.filter(evaluation__in=evaluations)
-    input_values = InputValue.objects.filter(input_element__in=input_objects)
+    submission_run = submission.submissionrun_set.latest("updated_at")
+    evaluations = submission_run.evaluation_set.all()
+    for evaluation in evaluations:
+        prediction = evaluation.prediction_set.get(key="molWeight")
+        input_element = evaluation.input_element
+        input_value = input_element.inputvalue_set.get(input_type=smiles_type)
 
-    # I really don't think there is a way to know this order is correct
-    # might be better to loop over just evaluations and grab things that way
-    for floats, smiles in zip(predictions, input_values):
-        print(floats.value_object.value, smiles.value)
-
-    answer_key = AnswerKey.objects.filter(challenge=challenge)
-    for key in answer_key:
-        smiles = InputValue.objects.get(input_element=key.input_element).value
-        molwt = key.value_object.value
-        print(smiles, molwt)
+        answer_key = challenge.answerkey_set.get(
+            input_element=input_element, key="molWeight"
+        )
+        print(
+            "Prediction:",
+            prediction.value,
+            input_value.value,
+            "answer:",
+            answer_key.value,
+        )
 
 
 def run_submission(submission_id, is_public=True):
@@ -63,35 +61,45 @@ def run_submission(submission_id, is_public=True):
     submission_run = SubmissionRun.objects.create(
         submission=submission,
         digest=container.digest,
-        is_public=True,
+        is_public=is_public,
         status=SubmissionRun._Status.PENDING,
     )
 
-    input_data = InputElement.objects.filter(challenge=challenge, is_public=is_public)
-    values = [
-        InputValue.objects.get(input_element=input_element).value
-        for input_element in input_data
-    ]
-    submissions = []
-    for element in input_data:
+    input_elements = challenge.inputelement_set.filter(is_public=is_public)
+    futures = []
+    for element in input_elements:
         future = client.submit(
-            run_element, submission, element, submission_run, pure=False
+            run_element, submission.id, element.id, submission_run.id, pure=False
         )
-        submissions.append(future)
+        futures.append(future)
     # when do we "know" it was a success?
-    runs = client.gather(submissions)
+    runs = client.gather(futures)
     print(runs)
     submission_run._Status.SUCCESS
     submission_run.save()
 
 
-def run_element(submission, element, submission_run):
+def run_element(submission_id, element_id, submission_run_id):
     import ever_given.wrapper
 
-    from core.models import Evaluation, FloatValue, InputValue, Prediction
+    from core.models import (
+        Evaluation,
+        FloatValue,
+        InputValue,
+        Prediction,
+        Submission,
+        InputElement,
+    )
+
+    submission = Submission.objects.get(pk=submission_id)
+    challenge = submission.challenge
+    submission_run = submission.submissionrun_set.get(pk=submission_run_id)
+    element = challenge.inputelement_set.get(
+        pk=element_id, is_public=submission_run.is_public
+    )
 
     container = submission.container
-    challenge = submission.challenge
+
     evaluation = Evaluation.objects.create(
         input_element=element, submission_run=submission_run, exit_status=1
     )
