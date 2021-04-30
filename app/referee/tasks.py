@@ -1,4 +1,7 @@
+import django
 from dask.distributed import Client
+
+django.setup()
 
 
 def run_submission(submission_id, is_public=True):
@@ -50,6 +53,7 @@ def run_element(submission, element, submission_run):
         FloatValue,
         Prediction,
         Evaluation,
+        InputValue,
     )
 
     container = submission.container
@@ -58,13 +62,16 @@ def run_element(submission, element, submission_run):
         input_element=element, submission_run=submission_run, exit_status=1
     )
     container_uri = f"{container.registry}/{container.label}:{container.tag}"
+    smiles_string = InputValue.objects.get(input_element=element).value
     try:
         command = submission.challenge.execution_options_json["command"]
-        command += element
+        command += smiles_string
     except KeyError:  # if no execution options nothing to prepend
-        command = element
+        command = smiles_string
+    print(command)
     result = ever_given.wrapper.run_submission_container(container_uri, command)
     result = float(result.strip())
+    print(result)
     result_obj = FloatValue.objects.create(value=result)
     prediction = Prediction.objects.create(
         challenge=challenge,
