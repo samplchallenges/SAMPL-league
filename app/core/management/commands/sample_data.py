@@ -59,7 +59,7 @@ class Command(BaseCommand):
             challenge=challenge,
             registry="docker.io",
             label="mmh42/calc-molwt",
-            tag="0.1"
+            tag="0.1",
         )
 
         scoring_container = models.Container.objects.create(

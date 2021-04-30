@@ -6,12 +6,13 @@ django.setup()
 
 def run_submission(submission_id, is_public=True):
     from core.models import (
-        Submission,
         Evaluation,
         InputElement,
         InputValue,
+        Submission,
         SubmissionRun,
     )
+
     dask_url = "127.0.0.1:8786"
     client = Client(dask_url)
 
@@ -37,7 +38,7 @@ def run_submission(submission_id, is_public=True):
     for element in input_data:
         future = client.submit(
             run_element, submission, element, submission_run, pure=False
-            )
+        )
         submissions.append(future)
     # when do we "know" it was a success?
     runs = client.gather(submissions)
@@ -49,12 +50,7 @@ def run_submission(submission_id, is_public=True):
 def run_element(submission, element, submission_run):
     import ever_given.wrapper
 
-    from core.models import (
-        FloatValue,
-        Prediction,
-        Evaluation,
-        InputValue,
-    )
+    from core.models import Evaluation, FloatValue, InputValue, Prediction
 
     container = submission.container
     challenge = submission.challenge
