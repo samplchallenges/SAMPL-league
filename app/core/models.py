@@ -127,6 +127,7 @@ class SubmissionRun(Timestamped):
     class _Status(models.TextChoices):
         FAILURE = "FAILURE"
         SUCCESS = "SUCCESS"
+        PENDING = "PENDING"
 
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
