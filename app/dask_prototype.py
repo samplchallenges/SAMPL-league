@@ -1,4 +1,9 @@
+import django
+
+django.setup()
+
 from referee.tasks import run_submission, score_submission
+
 
 run_submission(19, is_public=True)
 run_submission(19, is_public=False)

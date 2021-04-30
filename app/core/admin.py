@@ -43,6 +43,7 @@ class SubmissionRunAdmin(TimestampedAdmin):
         "submission",
         "user",
         "challenge",
+        "is_public",
         "status",
     )
 

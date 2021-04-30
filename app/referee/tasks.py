@@ -1,20 +1,24 @@
 import django
 from dask.distributed import Client
 
+import ever_given.wrapper
+
+from core.models import (
+    AnswerKey,
+    Evaluation,
+    FloatValue,
+    InputElement,
+    InputValue,
+    Prediction,
+    Submission,
+    SubmissionRun,
+)
+
 # should this happen on the module level or in the function/method?
-django.setup()
+# django.setup()
 
 
 def score_submission(submission_id):
-    from core.models import (
-        AnswerKey,
-        Evaluation,
-        InputElement,
-        InputValue,
-        Prediction,
-        Submission,
-        SubmissionRun,
-    )
 
     submission = Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
@@ -41,13 +45,6 @@ def score_submission(submission_id):
 
 
 def run_submission(submission_id, is_public=True):
-    from core.models import (
-        Evaluation,
-        InputElement,
-        InputValue,
-        Submission,
-        SubmissionRun,
-    )
 
     dask_url = "127.0.0.1:8786"
     client = Client(dask_url)
@@ -75,21 +72,11 @@ def run_submission(submission_id, is_public=True):
     # when do we "know" it was a success?
     runs = client.gather(futures)
     print(runs)
-    submission_run._Status.SUCCESS
+    submission_run.status = SubmissionRun._Status.SUCCESS
     submission_run.save()
 
 
 def run_element(submission_id, element_id, submission_run_id):
-    import ever_given.wrapper
-
-    from core.models import (
-        Evaluation,
-        FloatValue,
-        InputValue,
-        Prediction,
-        Submission,
-        InputElement,
-    )
 
     submission = Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
