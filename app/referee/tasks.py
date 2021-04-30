@@ -31,6 +31,7 @@ def score_submission(submission_id):
     input_values = InputValue.objects.filter(input_element__in=input_objects)
 
     # I really don't think there is a way to know this order is correct
+    # might be better to loop over just evaluations and grab things that way
     for floats, smiles in zip(predictions, input_values):
         print(floats.value_object.value, smiles.value)
 
