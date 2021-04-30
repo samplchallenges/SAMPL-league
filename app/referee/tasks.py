@@ -18,30 +18,30 @@ from core.models import (
 # django.setup()
 
 
-def score_submission(submission_id):
+def score_submission(submission_id, *run_ids):
 
     submission = Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
-
     smiles_type = challenge.inputtype_set.get(key="SMILES")
-    # get most recent submission run
-    submission_run = submission.submissionrun_set.latest("updated_at")
-    evaluations = submission_run.evaluation_set.all()
-    for evaluation in evaluations:
-        prediction = evaluation.prediction_set.get(key="molWeight")
-        input_element = evaluation.input_element
-        input_value = input_element.inputvalue_set.get(input_type=smiles_type)
+    for run_id in run_ids:
 
-        answer_key = challenge.answerkey_set.get(
-            input_element=input_element, key="molWeight"
-        )
-        print(
-            "Prediction:",
-            prediction.value,
-            input_value.value,
-            "answer:",
-            answer_key.value,
-        )
+        submission_run = submission.submissionrun_set.get(pk=run_id)
+        evaluations = submission_run.evaluation_set.all()
+        for evaluation in evaluations:
+            prediction = evaluation.prediction_set.get(key="molWeight")
+            input_element = evaluation.input_element
+            input_value = input_element.inputvalue_set.get(input_type=smiles_type)
+
+            answer_key = challenge.answerkey_set.get(
+                input_element=input_element, key="molWeight"
+            )
+            print(
+                "Prediction:",
+                prediction.value,
+                input_value.value,
+                "answer:",
+                answer_key.value,
+            )
 
 
 def run_submission(submission_id, is_public=True):
@@ -74,6 +74,7 @@ def run_submission(submission_id, is_public=True):
     print(runs)
     submission_run.status = SubmissionRun._Status.SUCCESS
     submission_run.save()
+    return submission_run
 
 
 def run_element(submission_id, element_id, submission_run_id):

@@ -7,6 +7,7 @@ from .views.submission import (
     SubmissionDelete,
     SubmissionDetail,
     SubmissionList,
+    submit_submission_view,
     clone_submission_view,
     edit_submission_view,
 )
@@ -20,6 +21,9 @@ urlpatterns = [
     path("challenge/<int:pk>/", ChallengeDetail.as_view(), name="challenge-detail"),
     path("submission/", SubmissionList.as_view(), name="submission-list"),
     path("submission/<int:pk>/", SubmissionDetail.as_view(), name="submission-detail"),
+    path(
+        "submission/<int:pk>/submit", submit_submission_view, name="submission-submit"
+    ),
     path("submission/add/", edit_submission_view, name="submission-add"),
     path(
         "submission/<int:pk>/clone/",

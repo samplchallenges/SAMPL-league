@@ -7,7 +7,31 @@
   Draft mode <a class="btn btn-primary" href="{% url 'submission-update' submission.pk %}">Update</a>
 </div>
 {% endif %}
+<form method="post" action="{% url 'submission-submit' submission.pk %}">  
+  {% csrf_token %}
+  <input type="hidden" name="submission_id" value="{{ submission.pk }}">
+  <button type="submit" class="btn btn-primary">Run Submission</button>
+</form>
 
+{% if public_run %}
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Public run</h5>    
+    {% for evaluation in public_run.evaluation_set.all %}
+    <p class="card-text">
+
+      {% for prediction in evaluation.prediction_set.all %}
+      {{evaluation.input_element}}: {{ prediction.key }}: {{ prediction.value }}
+      {% endfor %}
+    </p>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if private_run %}
+Private run status: {{ private_run.status }}
+{% endif %}
 
 <div class="card">
   <div class="card-body">
