@@ -60,6 +60,7 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
             context["public_run"] = self.object.submissionrun_set.filter(
                 is_public=True
             ).latest("updated_at")
+            context["public_status"] = referee.get_status(context["public_run"].key)
             context["private_run"] = self.object.submissionrun_set.filter(
                 is_public=False
             ).latest("updated_at")

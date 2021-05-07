@@ -1,5 +1,7 @@
 import django
-from dask.distributed import Client
+import dask.bag
+from dask.distributed import Client, worker_client
+
 
 import ever_given.wrapper
 
@@ -44,6 +46,12 @@ def score_submission(submission_id, *run_ids):
             )
 
 
+def get_status(key):
+    dask_url = "127.0.0.1:8786"
+    client = Client(dask_url)
+    return client.get_metadata(key)
+
+
 def run_submission(submission_id, is_public=True):
 
     dask_url = "127.0.0.1:8786"
@@ -61,20 +69,50 @@ def run_submission(submission_id, is_public=True):
         is_public=is_public,
         status=SubmissionRun._Status.PENDING,
     )
+    input_elements = challenge.inputelement_set.filter(
+        is_public=submission_run.is_public
+    )
+    args = [
+        (submission.id, input_element.id, submission_run.id)
+        for input_element in input_elements
+    ]
+    elements_bag = dask.bag.from_sequence(args, partition_size=1)
+    dask_graph = elements_bag.map(run_element)
+    dask_graph.visualize(filename="bag_graph.svg")
+    print("submitting task")
+    future = client.compute(dask_graph)
+    # client.submit(
+    # run_all_elements, submission.id, submission_run.id, pure=False
+    # )
 
-    input_elements = challenge.inputelement_set.filter(is_public=is_public)
-    futures = []
-    for element in input_elements:
-        future = client.submit(
-            run_element, submission.id, element.id, submission_run.id, pure=False
-        )
-        futures.append(future)
-    # when do we "know" it was a success?
-    runs = client.gather(futures)
-    print(runs)
-    submission_run.status = SubmissionRun._Status.SUCCESS
+    submission_run.digest = future.key
     submission_run.save()
     return submission_run
+
+
+def run_all_elements(submission_id, submission_run_id):
+
+    submission = Submission.objects.get(pk=submission_id)
+    challenge = submission.challenge
+    submission_run = submission.submissionrun_set.get(pk=submission_run_id)
+    input_elements = challenge.inputelement_set.filter(
+        is_public=submission_run.is_public
+    )
+    args = [
+        (submission.id, input_element.id, submission_run.id)
+        for input_element in input_elements
+    ]
+    print("about to submit!")
+    with worker_client() as client:
+        futures = client.map(run_element, args, pure=False)
+
+        print("futures", futures)
+        print("About to gather")
+        # when do we "know" it was a success?
+        runs = client.gather(futures)
+    submission_run.status = SubmissionRun._Status.SUCCESS
+    submission_run.save()
+    print(runs)
 
 
 def run_element(submission_id, element_id, submission_run_id):
