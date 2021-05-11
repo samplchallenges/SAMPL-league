@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "3.2"
+django = "3.2.2"
 psycopg2-binary = "*"
 django-crispy-forms = "*"
 dask = "*"
