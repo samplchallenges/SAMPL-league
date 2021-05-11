@@ -1,6 +1,6 @@
 import django
-import dask.bag
-from dask.distributed import Client, worker_client
+import dask
+import dask.distributed as dd
 
 
 import ever_given.wrapper
@@ -48,18 +48,63 @@ def score_submission(submission_id, *run_ids):
 
 def get_status(key):
     dask_url = "127.0.0.1:8786"
-    client = Client(dask_url)
+    client = dd.Client(dask_url)
     return client.get_metadata(key)
 
 
-def run_submission(submission_id, is_public=True):
-
+def run_and_score_submission(submission):
+    """
+    Runs public and private, plus scoring
+    """
     dask_url = "127.0.0.1:8786"
-    client = Client(dask_url)
+    client = dd.Client(dask_url)  # , asynchronous=True)
+    challenge = submission.challenge
+    public_element_ids = challenge.inputelement_set.filter(is_public=True).values_list(
+        "id", flat=True
+    )
+    private_element_ids = challenge.inputelement_set.filter(
+        is_public=False
+    ).values_list("id", flat=True)
+
+    public_run_id, public_prediction_ids = run_submission(
+        submission.pk, public_element_ids, True, is_public=True
+    )
+    public_success = check_and_score(public_run_id, public_prediction_ids)
+    private_run_id, private_prediction_ids = run_submission(
+        submission.pk, private_element_ids, public_success, is_public=False
+    )
+
+    private_success = check_and_score(private_run_id, private_prediction_ids)
+    private_success.visualize(filename="delayed_graph.svg")
+    future = client.submit(private_success.compute)
+    print("Future key:", future.key)
+
+    dd.fire_and_forget(future)
+
+
+@dask.delayed(pure=False)
+def check_and_score(submission_run_id, prediction_ids):
+    submission_run = SubmissionRun.objects.get(pk=submission_run_id)
+    submission_run.status = SubmissionRun._Status.SUCCESS
+    submission_run.save()
+    print("Running check_and_score", submission_run_id)
+    return True
+
+
+@dask.delayed(pure=False)
+def chain(upstream_success, delayed_func, *args, **kwargs):
+    # Can ignore upstream_success
+    return delayed_func(*args, **kwargs)
+
+
+@dask.delayed(pure=False)
+def create_submission_run(submission_id, conditional, is_public=True):
+    # conditional will be a dask delayed; if it's false, the run_element will no-op
+    if not conditional:
+        return
 
     submission = Submission.objects.get(pk=submission_id)
     container = submission.container
-    challenge = submission.challenge
     if not container.digest:
         container.digest = "DEADBEEF"
         container.save()
@@ -69,28 +114,34 @@ def run_submission(submission_id, is_public=True):
         is_public=is_public,
         status=SubmissionRun._Status.PENDING,
     )
-    input_elements = challenge.inputelement_set.filter(
-        is_public=submission_run.is_public
-    )
-    args = [
-        (submission.id, input_element.id, submission_run.id)
-        for input_element in input_elements
-    ]
-    elements_bag = dask.bag.from_sequence(args, partition_size=1)
-    dask_graph = elements_bag.map(run_element)
-    dask_graph.visualize(filename="bag_graph.svg")
-    print("submitting task")
-    future = client.compute(dask_graph)
-    # client.submit(
-    # run_all_elements, submission.id, submission_run.id, pure=False
-    # )
-
-    submission_run.digest = future.key
+    # TODO: need to store future key?
+    # submission run pair is place to store?
+    # submission_run.digest = future.key
     submission_run.save()
-    return submission_run
+    return submission_run.id
 
 
-def run_all_elements(submission_id, submission_run_id):
+def run_submission(submission_id, element_ids, conditional, is_public=True):
+
+    submission_run_id = create_submission_run(
+        submission_id, conditional, is_public=is_public
+    )
+    delayeds = dask.delayed(
+        [
+            run_element(
+                submission_id,
+                element_id,
+                submission_run_id,
+                is_public=is_public,
+            )
+            for element_id in element_ids
+        ],
+        nout=len(element_ids),
+    )
+    return (submission_run_id, delayeds)
+
+
+def OBSrun_all_elements(submission_id, submission_run_id):
 
     submission = Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
@@ -103,7 +154,7 @@ def run_all_elements(submission_id, submission_run_id):
         for input_element in input_elements
     ]
     print("about to submit!")
-    with worker_client() as client:
+    with dd.worker_client() as client:
         futures = client.map(run_element, args, pure=False)
 
         print("futures", futures)
@@ -115,14 +166,12 @@ def run_all_elements(submission_id, submission_run_id):
     print(runs)
 
 
-def run_element(submission_id, element_id, submission_run_id):
-
+@dask.delayed(pure=False)
+def run_element(submission_id, element_id, submission_run_id, is_public):
     submission = Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
-    element = challenge.inputelement_set.get(
-        pk=element_id, is_public=submission_run.is_public
-    )
+    element = challenge.inputelement_set.get(pk=element_id, is_public=is_public)
 
     container = submission.container
 
@@ -150,4 +199,4 @@ def run_element(submission_id, element_id, submission_run_id):
     )
     evaluation.exit_status = 0
     evaluation.save()
-    return 0
+    return prediction.pk
