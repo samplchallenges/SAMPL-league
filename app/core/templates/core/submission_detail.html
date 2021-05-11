@@ -16,7 +16,10 @@
 {% if public_run %}
 <div class="card">
   <div class="card-body">
-    <h5 class="card-title">Public run</h5>    
+    <h5 class="card-title">Public run</h5>
+    <br>Key: {{ public_run.digest }}
+    <br>Status: {{ public_run.status }}
+    <br>Status: {{ public_status }}
     {% for evaluation in public_run.evaluation_set.all %}
     <p class="card-text">
 
