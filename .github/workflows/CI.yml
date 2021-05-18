@@ -65,7 +65,8 @@ jobs:
           pipenv install --dev
       - name: Run test suite
         run: |
-          dask-scheduler &
+          pipenv run dask-scheduler &
+          pipenv run DJANGO_SETTINGS_MODULE=sampl.settings_dev dask-worker --preload daskworkerinit.py &
           pipenv run pytest --cov=./ --cov-report=xml
         env:
           RDS_HOSTNAME: localhost
