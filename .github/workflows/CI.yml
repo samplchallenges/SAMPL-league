@@ -65,6 +65,7 @@ jobs:
           pipenv install --dev
       - name: Run test suite
         run: |
+          dask-scheduler &
           pipenv run pytest --cov=./ --cov-report=xml
         env:
           RDS_HOSTNAME: localhost
