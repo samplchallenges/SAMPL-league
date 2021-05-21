@@ -1,4 +1,7 @@
 import pytest
+from unittest.mock import patch, Mock
+
+from django.db import transaction
 from django.forms.fields import CharField
 from django.urls import reverse
 
@@ -80,3 +83,47 @@ def test_update_submission(client, user, draft_submission):
     response = client.get(response.url)
     submission = response.context["submission"]
     assert not submission.draft_mode
+
+
+@pytest.mark.django_db(transaction=True)
+def test_run_submission(client, user, dask_client, draft_submission, input_elements):
+
+    # Because we have dask worker in a separate thread, we need to commit out transaction.
+    # But the transaction test case will wipe out data from django's ContentTypes
+    # So rerun our migrations to re-add our content types
+    from django.core.management import call_command
+
+    call_command("migrate", "core", "0001_initial", interactive=False)
+    call_command("migrate", "core", interactive=False)
+    draft_submission.save()
+    transaction.commit()
+
+    client.force_login(user)
+
+    future = None
+
+    def save_future(l_future):
+        nonlocal future
+        future = l_future
+
+    mock_get_client = Mock(return_value=dask_client)
+    with patch("referee.get_client", mock_get_client):
+        with patch("core.views.submission.ignore_future", save_future):
+            response = client.post(f"/submission/{draft_submission.pk}/submit/", {})
+
+        assert response.status_code == 302
+        assert response.url == reverse(
+            "submission-detail", kwargs={"pk": draft_submission.pk}
+        )
+        detail_url = response.url
+        response = client.get(detail_url)
+
+        # public_run = response.context["public_run"]
+        # if public_run is not None:
+        #   assert public_run.status in ("PENDING", "SUCCESS")
+
+        result = future.result()
+        response = client.get(detail_url)
+        public_run = response.context["public_run"]
+        assert public_run.status == "SUCCESS"
+        assert result

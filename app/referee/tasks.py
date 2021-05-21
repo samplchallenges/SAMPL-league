@@ -46,18 +46,10 @@ def score_submission(submission_id, *run_ids):
             )
 
 
-def get_status(key):
-    dask_url = "127.0.0.1:8786"
-    client = dd.Client(dask_url)
-    return client.get_metadata(key)
-
-
 def run_and_score_submission(client, submission):
     """
     Runs public and private, plus scoring
     """
-    #    dask_url = "127.0.0.1:8786"
-    #    client = dd.Client(dask_url)  # , asynchronous=True)
     challenge = submission.challenge
     public_element_ids = challenge.inputelement_set.filter(is_public=True).values_list(
         "id", flat=True
@@ -108,7 +100,6 @@ def create_submission_run(submission_id, conditional, is_public=True):
     # conditional will be a dask delayed; if it's false, the run_element will no-op
     if not conditional:
         return
-    from django.conf import settings
 
     submission = Submission.objects.get(pk=submission_id)
     container = submission.container

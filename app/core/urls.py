@@ -22,7 +22,7 @@ urlpatterns = [
     path("submission/", SubmissionList.as_view(), name="submission-list"),
     path("submission/<int:pk>/", SubmissionDetail.as_view(), name="submission-detail"),
     path(
-        "submission/<int:pk>/submit", submit_submission_view, name="submission-submit"
+        "submission/<int:pk>/submit/", submit_submission_view, name="submission-submit"
     ),
     path("submission/add/", edit_submission_view, name="submission-add"),
     path(

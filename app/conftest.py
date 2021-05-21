@@ -1,16 +1,23 @@
 from datetime import datetime, timezone
 
 import pytest
+import dask.distributed as dd
 from django.contrib.auth import get_user_model
 
 from core import models
 
 
+@pytest.fixture(scope="session")
+def dask_client():
+    # We need at least 4 workers
+    with dd.LocalCluster(n_workers=1, preload=("daskworkerinit_tst.py",)) as cluster:
+        yield dd.Client(cluster)
+
+
 @pytest.fixture
 def user(db):
     User = get_user_model()
-    user = User(username="hello")
-    user.save()
+    user, _ = User.objects.get_or_create(username="hello")
     return user
 
 
