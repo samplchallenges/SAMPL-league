@@ -88,7 +88,12 @@ def check_and_score(submission_run_id, prediction_ids):
     submission_run = SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = SubmissionRun._Status.SUCCESS
     submission_run.save()
-    print("Running check_and_score", submission_run_id)
+    print(
+        "Running check_and_score",
+        submission_run_id,
+        "public?",
+        submission_run.is_public,
+    )
     return True
 
 
@@ -105,8 +110,6 @@ def create_submission_run(submission_id, conditional, is_public=True):
         return
     from django.conf import settings
 
-    print(settings.DATABASES)
-    print("Total number of submissions:", Submission.objects.count())
     submission = Submission.objects.get(pk=submission_id)
     container = submission.container
     if not container.digest:
