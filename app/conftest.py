@@ -10,7 +10,7 @@ from core import models
 @pytest.fixture(scope="session")
 def dask_client():
     # We need at least 4 workers
-    with dd.LocalCluster(n_workers=1, preload=("daskworkerinit_tst.py",)) as cluster:
+    with dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",)) as cluster:
         yield dd.Client(cluster)
 
 
