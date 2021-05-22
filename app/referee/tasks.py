@@ -46,18 +46,10 @@ def score_submission(submission_id, *run_ids):
             )
 
 
-def get_status(key):
-    dask_url = "127.0.0.1:8786"
-    client = dd.Client(dask_url)
-    return client.get_metadata(key)
-
-
-def run_and_score_submission(submission):
+def run_and_score_submission(client, submission):
     """
     Runs public and private, plus scoring
     """
-    dask_url = "127.0.0.1:8786"
-    client = dd.Client(dask_url)  # , asynchronous=True)
     challenge = submission.challenge
     public_element_ids = challenge.inputelement_set.filter(is_public=True).values_list(
         "id", flat=True
@@ -80,6 +72,7 @@ def run_and_score_submission(submission):
     print("Future key:", future.key)
 
     dd.fire_and_forget(future)
+    return future
 
 
 @dask.delayed(pure=False)
@@ -87,7 +80,12 @@ def check_and_score(submission_run_id, prediction_ids):
     submission_run = SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = SubmissionRun._Status.SUCCESS
     submission_run.save()
-    print("Running check_and_score", submission_run_id)
+    print(
+        "Running check_and_score",
+        submission_run_id,
+        "public?",
+        submission_run.is_public,
+    )
     return True
 
 
