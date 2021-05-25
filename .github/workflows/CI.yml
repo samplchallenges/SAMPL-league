@@ -27,7 +27,7 @@ jobs:
       db_service:
         image: postgres
         env:
-          POSTGRES_USER: postgres
+          POSTGRES_USER: sampl_user
           POSTGRES_DB: sampl
           POSTGRES_PASSWORD: postgres
         # Set health checks to wait until postgres has started
@@ -71,7 +71,7 @@ jobs:
           RDS_DB_NAME: sampl
           RDS_PASSWORD: postgres
           RDS_PORT: 5432
-          RDS_USERNAME: postgres
+          RDS_USERNAME: sampl_user
           DJANGO_SETTINGS_MODULE: sampl.settings_dev
 
       - name: Upload test coverage
