@@ -67,7 +67,7 @@ def run_and_score_submission(client, submission):
     )
 
     private_success = check_and_score(private_run_id, private_prediction_ids)
-    private_success.visualize(filename="delayed_graph.svg")
+    # private_success.visualize(filename="delayed_graph.svg")
     future = client.submit(private_success.compute)
     print("Future key:", future.key)
 
