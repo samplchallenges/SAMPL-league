@@ -7,7 +7,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Custom settings for SAMPL
-DASK_SCHEDULER_URL = "127.0.0.1:8786"
+DASK_SCHEDULER_URL = "localhost:8786"
 # End of custom settings for SAMPL
 
 ALLOWED_HOSTS = []
