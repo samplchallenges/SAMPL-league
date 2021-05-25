@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 import dask.distributed as dd
+from django.contrib.contenttypes.models import ContentType
 import pytest
 from django.contrib.auth import get_user_model
 
@@ -64,14 +65,29 @@ def draft_submission(container, db):
 
 
 @pytest.fixture
-def smiles_input_type(challenge, db):
-    return models.InputType.objects.create(
-        challenge=challenge, key="SMILES", description="SMILES"
+def smiles_type(challenge, db):
+    return models.ValueType.objects.create(
+        challenge=challenge,
+        is_input_flag=True,
+        content_type=ContentType.objects.get_for_model(models.TextValue),
+        key="SMILES",
+        description="SMILES",
     )
 
 
 @pytest.fixture
-def input_elements(challenge, smiles_input_type, db):
+def molw_type(challenge, db):
+    return models.ValueType.objects.create(
+        challenge=challenge,
+        is_input_flag=False,
+        content_type=ContentType.objects.get_for_model(models.FloatValue),
+        key="molWeight",
+        description="Molecular Weight",
+    )
+
+
+@pytest.fixture
+def input_elements(challenge, smiles_type, molw_type, db):
     elems = []
     for idx, (name, smiles) in enumerate(
         [
@@ -84,14 +100,15 @@ def input_elements(challenge, smiles_input_type, db):
         elem = models.InputElement.objects.create(
             name=name, challenge=challenge, is_public=idx % 2
         )
+        smiles_value = models.TextValue.objects.create(value=smiles)
         models.InputValue.objects.create(
-            input_element=elem, input_type=smiles_input_type, value=smiles
+            input_element=elem, value_type=smiles_type, value_object=smiles_value
         )
         float_value = models.FloatValue.objects.create(value=72.0)
         models.AnswerKey.objects.create(
             challenge=challenge,
             input_element=elem,
-            key="molWeight",
+            value_type=molw_type,
             value_object=float_value,
         )
         elems.append(elem)

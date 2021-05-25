@@ -1,11 +1,15 @@
+import json
+
 import dask
 import dask.distributed as dd
 import django
 import ever_given.wrapper
 
 from core.models import (
+    Status,
     AnswerKey,
     Evaluation,
+    ValueType,
     FloatValue,
     InputElement,
     InputValue,
@@ -14,15 +18,12 @@ from core.models import (
     SubmissionRun,
 )
 
-# should this happen on the module level or in the function/method?
-# django.setup()
-
 
 def score_submission(submission_id, *run_ids):
 
     submission = Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
-    smiles_type = challenge.inputtype_set.get(key="SMILES")
+    smiles_type = challenge.valuetype_set.get(key="SMILES")
     for run_id in run_ids:
 
         submission_run = submission.submissionrun_set.get(pk=run_id)
@@ -76,7 +77,7 @@ def run_and_score_submission(client, submission):
 @dask.delayed(pure=False)
 def check_and_score(submission_run_id, prediction_ids):
     submission_run = SubmissionRun.objects.get(pk=submission_run_id)
-    submission_run.status = SubmissionRun._Status.SUCCESS
+    submission_run.status = Status.SUCCESS
     submission_run.save()
     print(
         "Running check_and_score",
@@ -108,7 +109,7 @@ def create_submission_run(submission_id, conditional, is_public=True):
         submission=submission,
         digest=container.digest,
         is_public=is_public,
-        status=SubmissionRun._Status.PENDING,
+        status=Status.PENDING,
     )
     # TODO: need to store future key?
     # submission run pair is place to store?
@@ -144,30 +145,49 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
     element = challenge.inputelement_set.get(pk=element_id, is_public=is_public)
 
+    output_type = ValueType.objects.get(challenge=challenge, is_input_flag=False)
     container = submission.container
 
     evaluation = Evaluation.objects.create(
-        input_element=element, submission_run=submission_run, exit_status=1
+        input_element=element, submission_run=submission_run
     )
     container_uri = f"{container.registry}/{container.label}:{container.tag}"
-    smiles_string = InputValue.objects.get(input_element=element).value
+    input_values_bykey = {
+        input_value.value_type.key: input_value.value
+        for input_value in InputValue.objects.filter(input_element=element)
+    }
+    if len(input_values_bykey) == 1:
+        input_arg = list(input_values_bykey.values())[0]
+    else:
+        input_arg = json.dumps(input_values_bykey)
     try:
         command = submission.challenge.execution_options_json["command"]
-        command += smiles_string
     except KeyError:  # if no execution options nothing to prepend
-        command = smiles_string
+        command = ""
+    command += input_arg
     print(command)
-    result = ever_given.wrapper.run_submission_container(container_uri, command)
-    result = float(result.strip())
-    print(result)
-    result_obj = FloatValue.objects.create(value=result)
-    # maybe we return the prediction so we can score it?
-    prediction = Prediction.objects.create(
-        challenge=challenge,
-        key="molWeight",
-        evaluation=evaluation,
-        value_object=result_obj,
-    )
-    evaluation.exit_status = 0
-    evaluation.save()
-    return prediction.pk
+
+    try:
+        result = ever_given.wrapper.run_submission_container(container_uri, command)
+        output_type_model = output_type.content_type.model_class()
+
+        if output_type_model == FloatValue:
+            result = float(result.strip())
+            result_obj = FloatValue.objects.create(value=result)
+        else:
+            raise Exception("must give back float value right now")
+        print(result)
+        # maybe we return the prediction so we can score it?
+        prediction = Prediction.objects.create(
+            challenge=challenge,
+            value_type=output_type,
+            evaluation=evaluation,
+            value_object=result_obj,
+        )
+        evaluation.status = Status.SUCCESS
+        return prediction.pk
+    except:
+        evaluation.status = Status.FAILURE
+        raise
+    finally:
+        evaluation.save()

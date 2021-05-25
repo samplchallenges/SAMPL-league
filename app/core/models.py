@@ -10,6 +10,12 @@ from django.utils.translation import gettext_lazy as _
 from . import configurator
 
 
+class Status(models.TextChoices):
+    FAILURE = "FAILURE"
+    SUCCESS = "SUCCESS"
+    PENDING = "PENDING"
+
+
 class Timestamped(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -124,15 +130,10 @@ class Submission(Timestamped):
 
 
 class SubmissionRun(Timestamped):
-    class _Status(models.TextChoices):
-        FAILURE = "FAILURE"
-        SUCCESS = "SUCCESS"
-        PENDING = "PENDING"
-
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
     is_public = models.BooleanField(default=False)
-    status = models.CharField(max_length=25, choices=_Status.choices)
+    status = models.CharField(max_length=25, choices=Status.choices)
     # score = models.FloatField()
 
     def __str__(self):
@@ -151,54 +152,22 @@ class InputElement(Timestamped):
         return f"{self.name}, is public? {self.is_public}"
 
 
-class InputType(Timestamped):
+class ValueType(Timestamped):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    is_input_flag = models.BooleanField(choices=((True, "Input"), (False, "Output")))
     key = models.CharField(max_length=255)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     description = models.TextField()
 
     class Meta:
-        unique_together = ["challenge", "key"]
+        unique_together = ["challenge", "is_input_flag", "key"]
 
     def __str__(self):
         return self.key
 
 
-class InputValue(Timestamped):
-    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
-    input_type = models.ForeignKey(InputType, on_delete=models.CASCADE)
-    value = models.TextField()
-    # TODO: use https://docs.djangoproject.com/en/3.2/ref/contrib/contenttypes/
-
-    class Meta:
-        unique_together = ["input_element", "input_type"]
-
-    def __str__(self):
-        return f"{self.input_element}: {self.input_type}: {self.__str_value()}"
-
-    def __str_value(self):
-        # pylint: disable=no-member
-        if isinstance(self.value, str) and len(self.value) > 100:
-            return f"{self.value:.100}..."
-        return str(self.value)
-
-
-class Evaluation(Timestamped):
-    submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
-    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
-    exit_status = models.IntegerField()
-    log_stdout = models.TextField(blank=True)
-    log_stderr = models.TextField(blank=True)
-
-    class Meta:
-        unique_together = ["submission_run", "input_element"]
-
-    def __str__(self):
-        return f"{self.submission_run}:, exited {self.exit_status}"
-
-
-class Solution(Timestamped):
-    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
-    key = models.CharField(max_length=255)
+class ValueParentMixin(Timestamped):
+    value_type = models.ForeignKey(ValueType, on_delete=models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     value_object = GenericForeignKey("content_type", "object_id")
@@ -212,35 +181,67 @@ class Solution(Timestamped):
     def value(self):
         return self.value_object.value
 
-    @classmethod
-    def register_value_model(cls, ValueModel):
-        """
-        Solution's value_object can only point to a
-        value model registered with this decorator
-        """
-        if not hasattr(ValueModel, "value"):
-            raise ValidationError(_(f"{ValueModel} must have a value attribute"))
-        if not issubclass(ValueModel, GenericOutputValue):
-            raise ValidationError(_(f"{ValueModel} must extend GenericOutputValue"))
-
-        cls._value_models = (*cls._value_models, ValueModel)
-        return ValueModel
-
     def clean(self):
+        if self.content_type != self.value_type.content_type:
+            raise ValidationError(
+                _(
+                    f"Value object's content type {self.content_type} doesn't "
+                    "match value type's {self.value_type.content_type}"
+                )
+            )
         if self.content_type.model_class() not in self._value_models:
             raise ValidationError(
                 _(f"Invalid model for solution: {self.content_type.model_class()}")
             )
 
 
+class InputValue(ValueParentMixin):
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ["input_element", "value_type"]
+
+    def __str__(self):
+        return f"{self.input_element}: {self.value_type}: {self.__str_value()}"
+
+    def __str_value(self):
+        # pylint: disable=no-member
+        if isinstance(self.value, str) and len(self.value) > 100:
+            return f"{self.value:.100}..."
+        return str(self.value)
+
+
+class Evaluation(Timestamped):
+    submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=25, choices=Status.choices, default=Status.PENDING
+    )
+    log_stdout = models.TextField(blank=True)
+    log_stderr = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ["submission_run", "input_element"]
+
+    def __str__(self):
+        return f"{self.submission_run}:, status {self.status}"
+
+
+class Solution(ValueParentMixin):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+
+    class Meta:
+        abstract = True
+
+
 class Prediction(Solution):
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ["evaluation", "key"]
+        unique_together = ["evaluation", "value_type"]
 
     def __str__(self):
-        return f"{self.evaluation}::{self.key}::{self.content_type}"
+        return f"{self.evaluation}::{self.value_type.key}::{self.content_type}"
 
     def clean(self):
         super().clean()
@@ -251,19 +252,20 @@ class AnswerKey(Solution):
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ["input_element", "key"]
+        unique_together = ["input_element", "value_type"]
 
     def __str__(self):
-        return f"{self.input_element}::{self.key}::{self.content_type}"
+        return f"{self.input_element}::{self.value_type.key}::{self.content_type}"
 
     def clean(self):
         super().clean()
         self.challenge = self.input_element.challenge
 
 
-class GenericOutputValue(models.Model):
+class GenericValue(models.Model):
     prediction = GenericRelation(Prediction)
     answer_key = GenericRelation(AnswerKey)
+    input_element = GenericRelation(InputValue)
 
     class Meta:
         abstract = True
@@ -275,16 +277,35 @@ class GenericOutputValue(models.Model):
         return str(self.value)
 
 
-@Solution.register_value_model
-class TextValue(GenericOutputValue):
+VALUE_PARENT_CLASSES = (Solution, InputValue)
+
+
+def register_value_model(ValueModel):
+    """
+    Solution's value_object can only point to a
+    value model registered with this decorator
+    """
+    if not hasattr(ValueModel, "value"):
+        raise ValidationError(_(f"{ValueModel} must have a value attribute"))
+    if not issubclass(ValueModel, GenericValue):
+        raise ValidationError(_(f"{ValueModel} must extend GenericOutputValue"))
+    for cls in VALUE_PARENT_CLASSES:
+        if not issubclass(cls, ValueParentMixin):
+            raise ValidationError(_(f"{cls} must extend ValueParentMixin"))
+        cls._value_models = (*cls._value_models, ValueModel)
+    return ValueModel
+
+
+@register_value_model
+class TextValue(GenericValue):
     value = models.TextField(blank=True)
 
 
-@Solution.register_value_model
-class FloatValue(GenericOutputValue):
+@register_value_model
+class FloatValue(GenericValue):
     value = models.FloatField()
 
 
-@Solution.register_value_model
-class BlobValue(GenericOutputValue):
+@register_value_model
+class BlobValue(GenericValue):
     value = models.BinaryField()

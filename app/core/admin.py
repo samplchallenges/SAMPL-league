@@ -97,14 +97,19 @@ class InputElementAdmin(TimestampedAdmin):
     pass
 
 
-@register(models.InputType)
-class InputTypeAdmin(TimestampedAdmin):
+@register(models.ValueType)
+class ValueTypeAdmin(TimestampedAdmin):
     pass
 
 
 @register(models.InputValue)
 class InputValueAdmin(TimestampedAdmin):
-    pass
+    list_display = (
+        "pk",
+        "input_element",
+        "value_type",
+        "content_type",
+    )
 
 
 @register(models.Evaluation)
@@ -129,7 +134,7 @@ class PredictionAdmin(TimestampedAdmin):
         "pk",
         "challenge",
         "evaluation",
-        "key",
+        "value_type",
         "content_type",
     )
     readonly_fields = ("challenge", "value", *TimestampedAdmin.readonly_fields)
@@ -152,7 +157,7 @@ class AnswerKeyAdmin(TimestampedAdmin):
         "pk",
         "challenge",
         "input_element",
-        "key",
+        "value_type",
         "content_type",
     )
     readonly_fields = ("challenge", "value", *TimestampedAdmin.readonly_fields)

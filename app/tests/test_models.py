@@ -2,19 +2,19 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from core.models import GenericOutputValue, Prediction
+from core.models import GenericValue, register_value_model
 
 
-def test_output_value_registration():
+def test_value_registration():
     with pytest.raises(ValidationError):
 
-        @Prediction.register_value_model
-        class InvalidValueModel(GenericOutputValue):
+        @register_value_model
+        class InvalidValueModel(GenericValue):
             class Meta:
                 app_label = "core.apps.CoreConfig"
 
-    @Prediction.register_value_model
-    class CharValueModel(GenericOutputValue):
+    @register_value_model
+    class CharValueModel(GenericValue):
         value = models.CharField(max_length=100)
 
         class Meta:

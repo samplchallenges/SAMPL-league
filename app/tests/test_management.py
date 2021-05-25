@@ -17,6 +17,6 @@ def test_sample_data():
     submission = models.Submission.objects.get()
     assert submission.submissionrun_set.count() == 1
     assert models.InputElement.objects.all().count() == 6
-    assert models.InputType.objects.all().count() == 1
+    assert models.ValueType.objects.all().count() == 2
     assert models.InputValue.objects.all().count() == 6
     assert models.FloatValue.objects.all().count() == 6
