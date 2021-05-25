@@ -137,31 +137,6 @@ def run_submission(submission_id, element_ids, conditional, is_public=True):
     return (submission_run_id, delayeds)
 
 
-def OBSrun_all_elements(submission_id, submission_run_id):
-
-    submission = Submission.objects.get(pk=submission_id)
-    challenge = submission.challenge
-    submission_run = submission.submissionrun_set.get(pk=submission_run_id)
-    input_elements = challenge.inputelement_set.filter(
-        is_public=submission_run.is_public
-    )
-    args = [
-        (submission.id, input_element.id, submission_run.id)
-        for input_element in input_elements
-    ]
-    print("about to submit!")
-    with dd.worker_client() as client:
-        futures = client.map(run_element, args, pure=False)
-
-        print("futures", futures)
-        print("About to gather")
-        # when do we "know" it was a success?
-        runs = client.gather(futures)
-    submission_run.status = SubmissionRun._Status.SUCCESS
-    submission_run.save()
-    print(runs)
-
-
 @dask.delayed(pure=False)
 def run_element(submission_id, element_id, submission_run_id, is_public):
     submission = Submission.objects.get(pk=submission_id)
