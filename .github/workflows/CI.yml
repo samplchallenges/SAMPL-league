@@ -28,7 +28,7 @@ jobs:
         image: postgres
         env:
           POSTGRES_USER: postgres
-          POSTGRES_DB: postgres
+          POSTGRES_DB: sampl
           POSTGRES_PASSWORD: postgres
         # Set health checks to wait until postgres has started
         options: >-
@@ -68,7 +68,7 @@ jobs:
           pipenv run pytest --cov=./ --cov-report=xml
         env:
           RDS_HOSTNAME: localhost
-          RDS_DB_NAME: postgres
+          RDS_DB_NAME: sampl
           RDS_PASSWORD: postgres
           RDS_PORT: 5432
           RDS_USERNAME: postgres
