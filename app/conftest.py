@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-import pytest
 import dask.distributed as dd
+import pytest
 from django.contrib.auth import get_user_model
 
 from core import models

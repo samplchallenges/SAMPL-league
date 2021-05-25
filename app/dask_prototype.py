@@ -2,8 +2,7 @@ import django
 
 django.setup()
 
-from referee.tasks import run_submission, score_submission, get_status
-
+from referee.tasks import get_status, run_submission, score_submission
 
 srun = run_submission(18, is_public=True)
 status = get_status(srun.digest)

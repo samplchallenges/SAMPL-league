@@ -1,6 +1,6 @@
-import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
+import pytest
 from django.db import transaction
 from django.forms.fields import CharField
 from django.urls import reverse

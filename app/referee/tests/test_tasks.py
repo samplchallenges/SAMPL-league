@@ -1,5 +1,4 @@
 import pytest
-
 from django.db import transaction
 
 from referee import tasks
