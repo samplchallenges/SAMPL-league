@@ -22,6 +22,7 @@ pytest-django = "*"
 docker = "*"
 bokeh = ">=0.13.0"
 pytest-cov = "*"
+pytest-xdist = {extras = ["psutil"], version = "*"}
 
 [requires]
 python_version = "3.7"
