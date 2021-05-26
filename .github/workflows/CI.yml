@@ -65,7 +65,7 @@ jobs:
           pipenv install --dev
       - name: Run test suite
         run: |
-          pipenv run pytest --cov=./ --cov-report=xml
+          pipenv run pytest --reuse-db --cov=./ --cov-report=xml
         env:
           RDS_HOSTNAME: localhost
           RDS_DB_NAME: sampl
