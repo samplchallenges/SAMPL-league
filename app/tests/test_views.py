@@ -93,7 +93,7 @@ def test_run_submission(client, user, dask_client, draft_submission, input_eleme
     # So rerun our migrations to re-add our content types
     from django.core.management import call_command
 
-    call_command("migrate", "core", "0001_initial", interactive=False)
+    call_command("migrate", "core", "zero", interactive=False)
     call_command("migrate", "core", interactive=False)
     draft_submission.save()
     transaction.commit()
