@@ -72,6 +72,7 @@ def score_maker(challenge, scoring_container, db):
 
 @pytest.fixture
 def draft_submission(container, db):
+    #import pdb; pdb.set_trace()
     return models.Submission.objects.create(
         name="Draft Submission",
         user=container.user,

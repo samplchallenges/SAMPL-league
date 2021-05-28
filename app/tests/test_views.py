@@ -85,7 +85,7 @@ def test_update_submission(client, user, draft_submission):
     assert not submission.draft_mode
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, reset_sequences=False)
 def test_run_submission(client, user, dask_client, draft_submission, input_elements):
 
     # Because we have dask worker in a separate thread, we need to commit out transaction.
@@ -93,8 +93,9 @@ def test_run_submission(client, user, dask_client, draft_submission, input_eleme
     # So rerun our migrations to re-add our content types
     from django.core.management import call_command
 
-    call_command("migrate", "core", "zero", interactive=False)
-    call_command("migrate", "core", interactive=False)
+    transaction.commit()
+    #call_command("migrate", "core", "zero", interactive=False)
+    #call_command("migrate", "core", interactive=False)
     draft_submission.save()
     transaction.commit()
 
