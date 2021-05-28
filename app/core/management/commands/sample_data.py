@@ -26,7 +26,7 @@ def _create_challenge_inputs(challenge):
     molw_type = models.ValueType.objects.create(
         challenge=challenge,
         is_input_flag=False,
-        content_type=ContentType.objects.get_for_model(models.TextValue),
+        content_type=ContentType.objects.get_for_model(models.FloatValue),
         key="molWeight",
         description="Molecular Weight",
     )
