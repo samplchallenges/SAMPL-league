@@ -2,16 +2,14 @@ import json
 
 import dask
 import dask.distributed as dd
-import django
+
 import ever_given.wrapper
 
 from core.models import (
     Status,
-    AnswerKey,
     Evaluation,
     ValueType,
     FloatValue,
-    InputElement,
     InputValue,
     Prediction,
     Submission,
