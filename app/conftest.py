@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 
 import dask.distributed as dd
-from django.contrib.contenttypes.models import ContentType
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 
 from core import models
 
@@ -53,6 +53,7 @@ def container(challenge, user, db):
         tag="0.1",
     )
 
+
 @pytest.fixture
 def scoring_container(challenge, user, db):
     return models.Container.objects.create(
@@ -64,15 +65,16 @@ def scoring_container(challenge, user, db):
         tag="0.1",
     )
 
+
 @pytest.fixture
 def score_maker(challenge, scoring_container, db):
     return models.ScoreMaker.objects.create(
-            challenge=challenge, container=scoring_container
-        )
+        challenge=challenge, container=scoring_container
+    )
+
 
 @pytest.fixture
 def draft_submission(container, db):
-    #import pdb; pdb.set_trace()
     return models.Submission.objects.create(
         name="Draft Submission",
         user=container.user,

@@ -2,7 +2,7 @@
 
 name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
@@ -22,7 +22,7 @@ jobs:
     defaults:
       run:
         working-directory: ./app
-        
+
     services:
       db_service:
         image: postgres
@@ -88,4 +88,4 @@ jobs:
       - name: Run formatting checks
         run: |
           pipenv run black --check --diff .
-          pipenv run isort --check --diff core/ sampl/ tests/
+          pipenv run isort --check --diff core/ sampl/ tests/ conftest.py

@@ -1,17 +1,15 @@
 from unittest.mock import Mock, patch
 
-import pytest
-
 import dask.distributed as dd
-
+import pytest
 from django.core.management import call_command
 from django.db import transaction
 from django.forms.fields import CharField
 from django.urls import reverse
 
 from core.forms import ContainerForm, SubmissionForm
-from core.views.submission import edit_submission_view
 from core.models import Submission
+from core.views.submission import edit_submission_view
 
 
 @pytest.mark.django_db
