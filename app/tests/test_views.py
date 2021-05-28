@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from core.forms import ContainerForm, SubmissionForm
 from core.views.submission import edit_submission_view
+from core.models import Submission
 
 
 @pytest.mark.django_db
@@ -85,8 +86,18 @@ def test_update_submission(client, user, draft_submission):
     assert not submission.draft_mode
 
 
-@pytest.mark.django_db(transaction=True, reset_sequences=False)
-def test_run_submission(client, user, dask_client, draft_submission, input_elements):
+from django.test import TransactionTestCase
+
+#class TestRunSubmission(TransactionTestCase):
+#    serialized_rollback = True
+#    def test_workers(self):
+#        from django.core.management import call_command
+#        call_command('sample_data')
+#        transaction.commit()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_run_submission(client, dask_client, input_elements):
 
     # Because we have dask worker in a separate thread, we need to commit out transaction.
     # But the transaction test case will wipe out data from django's ContentTypes
@@ -94,12 +105,13 @@ def test_run_submission(client, user, dask_client, draft_submission, input_eleme
     from django.core.management import call_command
 
     transaction.commit()
-    #call_command("migrate", "core", "zero", interactive=False)
-    #call_command("migrate", "core", interactive=False)
-    draft_submission.save()
-    transaction.commit()
+    call_command("migrate", "core", "zero", interactive=False)
+    call_command("migrate", "core", interactive=False)
+    call_command("sample_data")
 
-    client.force_login(user)
+    transaction.commit()
+    submission = Submission.objects.first()
+    client.force_login(submission.user)
 
     future = None
 
@@ -110,11 +122,11 @@ def test_run_submission(client, user, dask_client, draft_submission, input_eleme
     mock_get_client = Mock(return_value=dask_client)
     with patch("referee.get_client", mock_get_client):
         with patch("core.views.submission.ignore_future", save_future):
-            response = client.post(f"/submission/{draft_submission.pk}/submit/", {})
+            response = client.post(f"/submission/{submission.pk}/submit/", {})
 
         assert response.status_code == 302
         assert response.url == reverse(
-            "submission-detail", kwargs={"pk": draft_submission.pk}
+            "submission-detail", kwargs={"pk": submission.pk}
         )
         detail_url = response.url
         response = client.get(detail_url)
