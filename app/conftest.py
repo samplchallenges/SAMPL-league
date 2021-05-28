@@ -65,6 +65,12 @@ def scoring_container(challenge, user, db):
     )
 
 @pytest.fixture
+def score_maker(challenge, scoring_container, db):
+    return models.ScoreMaker.objects.create(
+            challenge=challenge, container=scoring_container
+        )
+
+@pytest.fixture
 def draft_submission(container, db):
     return models.Submission.objects.create(
         name="Draft Submission",

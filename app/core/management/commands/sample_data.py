@@ -79,8 +79,8 @@ class Command(BaseCommand):
             name="scorer",
             user=user,
             challenge=challenge,
-            registry=foo_url,
-            label="milo_scorer",
+            registry="docker.io",
+            label="mmh42/calc-subtract",
         )
 
         scoremaker = models.ScoreMaker.objects.create(
