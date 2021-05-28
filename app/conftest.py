@@ -53,6 +53,16 @@ def container(challenge, user, db):
         tag="0.1",
     )
 
+@pytest.fixture
+def scoring_container(challenge, user, db):
+    return models.Container.objects.create(
+        name="subtraction container",
+        user=user,
+        challenge=challenge,
+        registry="docker.io",
+        label="mmh42/calc-subtract",
+        tag="0.1",
+    )
 
 @pytest.fixture
 def draft_submission(container, db):
