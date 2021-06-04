@@ -79,7 +79,6 @@ def check_and_score(submission_run_id, prediction_ids):
     submission_run.status = Status.SUCCESS
     challenge = submission_run.submission.challenge
     scoring_container = ScoreMaker.objects.get(challenge=challenge)
-    #print(dir(scoring_container))
     submission_run.save()
     print(
         "Running check_and_score",
