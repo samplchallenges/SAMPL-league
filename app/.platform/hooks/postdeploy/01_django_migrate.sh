@@ -1,4 +1,4 @@
-#!/usr/bin/bash -e
+#!/usr/bin/env bash
 
 if [[ $EB_IS_COMMAND_LEADER == "true" ]];
 then
