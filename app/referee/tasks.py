@@ -6,6 +6,7 @@ import dask.distributed as dd
 import ever_given.wrapper
 
 from core.models import (
+    ScoreMaker,
     Status,
     Evaluation,
     ValueType,
@@ -76,6 +77,9 @@ def run_and_score_submission(client, submission):
 def check_and_score(submission_run_id, prediction_ids):
     submission_run = SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = Status.SUCCESS
+    challenge = submission_run.submission.challenge
+    scoring_container = ScoreMaker.objects.get(challenge=challenge)
+    print(dir(scoring_container))
     submission_run.save()
     print(
         "Running check_and_score",
