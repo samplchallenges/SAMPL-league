@@ -10,6 +10,7 @@ django-crispy-forms = "*"
 dask = "*"
 distributed = "*"
 docker = "*"
+six = "*"
 ever-given = {path = "./ever_given"}
 
 [dev-packages]
