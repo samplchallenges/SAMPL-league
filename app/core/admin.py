@@ -118,6 +118,7 @@ class EvaluationAdmin(TimestampedAdmin):
     readonly_fields = (
         "submission_run",
         "predictions",
+        "scores",
         *TimestampedAdmin.readonly_fields,
     )
 
@@ -126,6 +127,13 @@ class EvaluationAdmin(TimestampedAdmin):
 
     def predictions(self, instance):
         return _admin_links(instance.prediction_set.all())
+
+    def scores(self, instance):
+        return format_html_join(
+            mark_safe("<br/>"),
+            "{}: {}",
+            [(score.score_type.key, score.value) for score in instance.score_set.all()],
+        )
 
 
 @register(models.Prediction)

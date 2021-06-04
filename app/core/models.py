@@ -227,6 +227,29 @@ class Evaluation(Timestamped):
         return f"{self.submission_run}:, status {self.status}"
 
 
+class ScoreType(Timestamped):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    key = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = ["challenge", "key"]
+
+    def __str__(self):
+        return self.key
+
+
+class Score(Timestamped):
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
+    score_type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
+    value = models.FloatField()
+
+    class Meta:
+        unique_together = ["evaluation", "score_type"]
+
+    def __str__(self):
+        return f"{self.evaluation}:, {self.score_type}:{self.value}"
+
+
 class Solution(ValueParentMixin):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
 
