@@ -134,7 +134,6 @@ class SubmissionRun(Timestamped):
     digest = models.CharField(max_length=255)
     is_public = models.BooleanField(default=False)
     status = models.CharField(max_length=25, choices=Status.choices)
-    # score = models.FloatField()
 
     def __str__(self):
         return f"{self.submission}:{self.digest}, status {self.status}"
@@ -238,16 +237,36 @@ class ScoreType(Timestamped):
         return self.key
 
 
-class Score(Timestamped):
-    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
+class ScoreBase(Timestamped):
     score_type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
     value = models.FloatField()
+
+    class Meta:
+        abstract = True
+
+
+class EvaluationScore(ScoreBase):
+    evaluation = models.ForeignKey(
+        Evaluation, on_delete=models.CASCADE, related_name="scores"
+    )
 
     class Meta:
         unique_together = ["evaluation", "score_type"]
 
     def __str__(self):
         return f"{self.evaluation}:, {self.score_type}:{self.value}"
+
+
+class SubmissionRunScore(ScoreBase):
+    submission_run = models.ForeignKey(
+        SubmissionRun, on_delete=models.CASCADE, related_name="scores"
+    )
+
+    class Meta:
+        unique_together = ["submission_run", "score_type"]
+
+    def __str__(self):
+        return f"{self.submission_run}:, {self.score_type}:{self.value}"
 
 
 class Solution(ValueParentMixin):

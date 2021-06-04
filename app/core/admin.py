@@ -28,6 +28,14 @@ def _admin_links(objects):
     )
 
 
+def _scores_list(instance):
+    return format_html_join(
+        mark_safe("<br/>"),
+        "{}: {}",
+        [(score.score_type.key, score.value) for score in instance.scores.all()],
+    )
+
+
 class TimestampedAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
@@ -79,6 +87,7 @@ class SubmissionRunAdmin(TimestampedAdmin):
     readonly_fields = (
         "submission",
         "evaluations",
+        "scores",
         *TimestampedAdmin.readonly_fields,
     )
 
@@ -90,6 +99,9 @@ class SubmissionRunAdmin(TimestampedAdmin):
 
     def evaluations(self, instance):
         return _admin_links(instance.evaluation_set.all())
+
+    def scores(self, instance):
+        return _scores_list(instance)
 
 
 @register(models.InputElement)
@@ -129,11 +141,7 @@ class EvaluationAdmin(TimestampedAdmin):
         return _admin_links(instance.prediction_set.all())
 
     def scores(self, instance):
-        return format_html_join(
-            mark_safe("<br/>"),
-            "{}: {}",
-            [(score.score_type.key, score.value) for score in instance.score_set.all()],
-        )
+        return _scores_list(instance)
 
 
 @register(models.Prediction)
