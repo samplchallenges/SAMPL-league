@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c7671858450eb37f5304453d9da0863a3b066d9a0ef35450526bf6cec001a9e9"
+            "sha256": "fb6415e81c1c3c8fef27c1ef164eb3d5615c11eb274704bc9139d74bd2702cdc"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -25,11 +25,11 @@
         },
         "django": {
             "hashes": [
-                "sha256:13ac78dbfd189532cad8f383a27e58e18b3d33f80009ceb476d7fcbfc5dcebd8",
-                "sha256:7e0a1393d18c16b503663752a8b6790880c5084412618990ce8a81cc908b4962"
+                "sha256:66c9d8db8cc6fe938a28b7887c1596e42d522e27618562517cc8929eb7e7f296",
+                "sha256:ea735cbbbb3b2fba6d4da4784a0043d84c67c92f1fdf15ad6db69900e792c10f"
             ],
             "index": "pypi",
-            "version": "==3.2.3"
+            "version": "==3.2.4"
         },
         "django-crispy-forms": {
             "hashes": [
@@ -114,10 +114,10 @@
         },
         "astroid": {
             "hashes": [
-                "sha256:4db03ab5fc3340cf619dbc25e42c2cc3755154ce6009469766d7143d1fc2ee4e",
-                "sha256:8a398dfce302c13f14bab13e2b14fe385d32b73f4e4853b9bdfb64598baa1975"
+                "sha256:3c9a2d84354185d13213ff2640ec03d39168dbcd13648abc84fb13ca3b2e2761",
+                "sha256:d66a600e1602736a0f24f725a511b0e50d12eb18f54b31ec276d2c26a0a62c6a"
             ],
-            "version": "==2.5.6"
+            "version": "==2.5.7"
         },
         "attrs": {
             "hashes": [
@@ -135,10 +135,10 @@
         },
         "click": {
             "hashes": [
-                "sha256:7d8c289ee437bcb0316820ccee14aefcb056e58d31830ecab8e47eda6540e136",
-                "sha256:e90e62ced43dc8105fb9a26d62f0d9340b5c8db053a814e25d95c19873ae87db"
+                "sha256:8c04c11192119b1ef78ea049e0a6f0463e4c48ef00a30160c704337586f3ad7a",
+                "sha256:fba402a4a47334742d782209a7c79bc448911afe1149d07bdabdf480b3e2f4b6"
             ],
-            "version": "==8.0.0"
+            "version": "==8.0.1"
         },
         "coverage": {
             "extras": [
@@ -210,11 +210,11 @@
         },
         "importlib-metadata": {
             "hashes": [
-                "sha256:8c501196e49fb9df5df43833bdb1e4328f64847763ec8a50703148b73784d581",
-                "sha256:d7eb1dea6d6a6086f8be21784cc9e3bcfa55872b52309bc5fad53a8ea444465d"
+                "sha256:833b26fb89d5de469b24a390e9df088d4e52e4ba33b01dc5e0e4f41b81a16c00",
+                "sha256:b142cc1dd1342f31ff04bb7d022492b09920cb64fed867cd3ea6f80fe3ebd139"
             ],
             "markers": "python_version < '3.8'",
-            "version": "==4.0.1"
+            "version": "==4.5.0"
         },
         "iniconfig": {
             "hashes": [
