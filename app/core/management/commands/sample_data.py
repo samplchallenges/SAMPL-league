@@ -15,20 +15,33 @@ def _create_challenge_inputs(challenge):
             name=name, challenge=challenge, is_public=idx % 2
         )
 
-    smiles_type = models.InputType.objects.create(
-        challenge=challenge, key="SMILES", description="SMILES"
+    smiles_type = models.ValueType.objects.create(
+        challenge=challenge,
+        is_input_flag=True,
+        content_type=ContentType.objects.get_for_model(models.TextValue),
+        key="SMILES",
+        description="SMILES",
+    )
+
+    molw_type = models.ValueType.objects.create(
+        challenge=challenge,
+        is_input_flag=False,
+        content_type=ContentType.objects.get_for_model(models.FloatValue),
+        key="molWeight",
+        description="Molecular Weight",
     )
 
     smiles = "c1ccccc1"
     for elem in elems.values():
+        smiles_value = models.TextValue.objects.create(value=smiles)
         models.InputValue.objects.create(
-            input_element=elem, input_type=smiles_type, value=smiles
+            input_element=elem, value_type=smiles_type, value_object=smiles_value
         )
         float_value = models.FloatValue.objects.create(value=72.0)
         models.AnswerKey.objects.create(
             challenge=challenge,
             input_element=elem,
-            key="molWeight",
+            value_type=molw_type,
             value_object=float_value,
         )
 
@@ -57,16 +70,17 @@ class Command(BaseCommand):
             name="crate",
             user=user,
             challenge=challenge,
-            registry=foo_url,
-            label="milo_crate",
+            registry="docker.io",
+            label="mmh42/calc-molwt",
+            tag="0.1",
         )
 
         scoring_container = models.Container.objects.create(
             name="scorer",
             user=user,
             challenge=challenge,
-            registry=foo_url,
-            label="milo_scorer",
+            registry="docker.io",
+            label="mmh42/calc-subtract",
         )
 
         scoremaker = models.ScoreMaker.objects.create(
@@ -84,7 +98,7 @@ class Command(BaseCommand):
             submission=submission,
             digest="cafecafef00d",
             is_public=True,
-            status=models.SubmissionRun._Status.SUCCESS,
+            status=models.Status.SUCCESS,
         )
 
         _create_challenge_inputs(challenge)

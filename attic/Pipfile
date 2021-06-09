@@ -5,10 +5,10 @@ name = "pypi"
 
 [packages]
 docker = "*"
-dask = {extras = ["complete"], version = "*"}
-jupyter-server-proxy = "*"
 
 [dev-packages]
+dask = {extras = ["complete"], version = "*"}
+jupyter-server-proxy = "*"
 black = "==20.8b1"
 isort = "*"
 flake8 = "*"

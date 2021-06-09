@@ -2,7 +2,7 @@
 
 name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
@@ -20,13 +20,13 @@ jobs:
     defaults:
       run:
         working-directory: ./app
-        
+
     services:
       db_service:
         image: postgres
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: postgres
+          POSTGRES_USER: sampl_user
+          POSTGRES_DB: sampl
           POSTGRES_PASSWORD: postgres
         # Set health checks to wait until postgres has started
         options: >-
@@ -63,13 +63,14 @@ jobs:
           pipenv install --dev
       - name: Run test suite
         run: |
-          pipenv run pytest --cov=./ --cov-report=xml
+          pipenv run pytest --cov=./ --cov-report=xml -s
         env:
           RDS_HOSTNAME: localhost
-          RDS_DB_NAME: postgres
+          RDS_DB_NAME: sampl
           RDS_PASSWORD: postgres
           RDS_PORT: 5432
-          RDS_USERNAME: postgres
+          RDS_USERNAME: sampl_user
+          DJANGO_SETTINGS_MODULE: sampl.settings_dev
 
       - name: Upload test coverage
         uses: codecov/codecov-action@v1
@@ -85,4 +86,4 @@ jobs:
       - name: Run formatting checks
         run: |
           pipenv run black --check --diff .
-          pipenv run isort --check --diff core/ sampl/ tests/
+          pipenv run isort --check --diff core/ sampl/ tests/ conftest.py

@@ -7,6 +7,9 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
 
+import referee
+import referee.tasks
+
 from ..forms import ContainerForm, SubmissionForm
 from ..models import Submission
 
@@ -54,6 +57,16 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
             for field_name in self.DETAIL_FIELD_NAMES
             if not getattr(self.object, field_name)
         ]
+        context["public_run"] = (
+            self.object.submissionrun_set.filter(is_public=True)
+            .order_by("-updated_at")
+            .first()
+        )
+        context["private_run"] = (
+            self.object.submissionrun_set.filter(is_public=False)
+            .order_by("-updated_at")
+            .first()
+        )
         return context
 
 
@@ -69,10 +82,27 @@ class SubmissionDelete(OwnerMatchMixin, DeleteView):
     success_url = reverse_lazy("submission-list")
 
 
+def ignore_future(future):
+    """patch this in testing"""
+    return future.key
+
+
+@login_required
+def submit_submission_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+    submission = Submission.objects.get(pk=pk, user=request.user)
+    # verifies that user matches
+    dask_client = referee.get_client()
+    future = referee.tasks.run_and_score_submission(dask_client, submission)
+    ignore_future(future)
+    return redirect("submission-detail", pk=submission.pk)
+
+
 @login_required
 def clone_submission_view(request, pk):
     if request.method == "GET":
-        submission = Submission.objects.get(pk=pk).clone()
+        submission = Submission.objects.get(pk=pk, user=request.user).clone()
         submission.save()
         return redirect("submission-update", pk=submission.pk)
 
@@ -84,7 +114,7 @@ def edit_submission_view(request, pk=None, clone=False):
     form_action = ""
     if request.method == "POST":
         # TODO: transaction?
-        submission = Submission.objects.get(pk=pk) if pk else None
+        submission = Submission.objects.get(pk=pk, user=request.user) if pk else None
         container = submission.container if submission else None
         container_form = ContainerForm(request.POST, instance=container)
         submission_form = SubmissionForm(request.POST, instance=submission)

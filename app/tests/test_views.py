@@ -1,8 +1,14 @@
+from unittest.mock import Mock, patch
+
+import dask.distributed as dd
 import pytest
+from django.core.management import call_command
+from django.db import transaction
 from django.forms.fields import CharField
 from django.urls import reverse
 
 from core.forms import ContainerForm, SubmissionForm
+from core.models import Submission
 from core.views.submission import edit_submission_view
 
 
@@ -80,3 +86,52 @@ def test_update_submission(client, user, draft_submission):
     response = client.get(response.url)
     submission = response.context["submission"]
     assert not submission.draft_mode
+
+
+@pytest.mark.django_db(transaction=True)
+def test_run_submission(client):
+
+    # Because we have dask worker in a separate thread, we need to commit our transaction.
+    # But the transaction test case will wipe out data from django's ContentTypes
+    # So rerun our migrations to re-add our content types
+
+    transaction.commit()
+    call_command("migrate", "core", "zero", interactive=False)
+    call_command("migrate", "core", interactive=False)
+    call_command("sample_data")
+    transaction.commit()
+
+    submission = Submission.objects.first()
+    client.force_login(submission.user)
+
+    future = None
+
+    def save_future(l_future):
+        nonlocal future
+        future = l_future
+
+    cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+    dask_client = dd.Client(cluster)
+
+    mock_get_client = Mock(return_value=dask_client)
+    with patch("referee.get_client", mock_get_client):
+        with patch("core.views.submission.ignore_future", save_future):
+            response = client.post(f"/submission/{submission.pk}/submit/", {})
+
+        assert response.status_code == 302
+        assert response.url == reverse(
+            "submission-detail", kwargs={"pk": submission.pk}
+        )
+        detail_url = response.url
+        response = client.get(detail_url)
+
+        # public_run = response.context["public_run"]
+        # if public_run is not None:
+        #   assert public_run.status in ("PENDING", "SUCCESS")
+        result = future.result()
+        response = client.get(detail_url)
+        public_run = response.context["public_run"]
+        assert public_run.status == "SUCCESS"
+        assert result
+
+    cluster.close()
