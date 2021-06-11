@@ -62,10 +62,6 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
             .order_by("-updated_at")
             .first()
         )
-        client = referee.get_client()
-        #        context["public_status"] = referee.tasks.get_status(
-        #            client, context["public_run"].key
-        #        )
         context["private_run"] = (
             self.object.submissionrun_set.filter(is_public=False)
             .order_by("-updated_at")
