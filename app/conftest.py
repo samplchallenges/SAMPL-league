@@ -75,9 +75,13 @@ def score_maker(challenge, scoring_container, db):
 
 @pytest.fixture
 def score_types(challenge, db):
-    return [models.ScoreType.objects.create(challenge=challenge, key=key, level=level)
-            for key, level in (("diff", models.ScoreType.Level.EVALUATION),
-                       ("rmse", models.ScoreType.Level.SUBMISSION_RUN))]
+    return [
+        models.ScoreType.objects.create(challenge=challenge, key=key, level=level)
+        for key, level in (
+            ("diff", models.ScoreType.Level.EVALUATION),
+            ("rmse", models.ScoreType.Level.SUBMISSION_RUN),
+        )
+    ]
 
 
 @pytest.fixture

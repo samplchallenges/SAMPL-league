@@ -239,7 +239,9 @@ class ScoreType(Timestamped):
         EVALUATION = "evaluation"
         SUBMISSION_RUN = "submission_run"
 
-    level = models.CharField(max_length=255, choices=Level.choices, default=Level.EVALUATION)
+    level = models.CharField(
+        max_length=255, choices=Level.choices, default=Level.EVALUATION
+    )
 
     class Meta:
         unique_together = ["challenge", "key", "level"]
@@ -257,7 +259,11 @@ class ScoreBase(Timestamped):
 
     def clean(self):
         if self.score_type.level != self.REQUIRED_LEVEL:
-            raise ValueError("Score Type {} cannot be set on an {} score".format(self.score_type, self.REQUIRED_LEVEL))
+            raise ValueError(
+                "Score Type {} cannot be set on an {} score".format(
+                    self.score_type, self.REQUIRED_LEVEL
+                )
+            )
 
 
 class EvaluationScore(ScoreBase):
@@ -333,7 +339,7 @@ class GenericValue(models.Model):
 
     @classmethod
     def from_string(cls, raw_value):
-        value_field = cls._meta.get_field('value')
+        value_field = cls._meta.get_field("value")
         value = value_field.to_python(raw_value)
         return cls(value=value)
 

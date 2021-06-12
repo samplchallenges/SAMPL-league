@@ -81,7 +81,7 @@ class Command(BaseCommand):
             challenge=challenge,
             registry="docker.io",
             label="mmh42/calc-subtract",
-            tag="0.1"
+            tag="0.1",
         )
 
         scoremaker = models.ScoreMaker.objects.create(

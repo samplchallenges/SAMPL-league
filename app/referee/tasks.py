@@ -171,7 +171,7 @@ def run_and_score_submission(client, submission):
 
     private_success = check_and_score(private_run_id, private_prediction_ids)
 
-    private_success.visualize(filename="delayed_graph.svg")
+    # private_success.visualize(filename="delayed_graph.svg")
     future = client.submit(private_success.compute)
     print("Future key:", future.key)
 
@@ -275,8 +275,9 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
         output_type = output_types.first()
     else:
         output_handling = MULTI
-        output_types_dict = {output_type.key: output_type
-                             for output_type in output_types.all()}
+        output_types_dict = {
+            output_type.key: output_type for output_type in output_types.all()
+        }
 
     container = submission.container
 

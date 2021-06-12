@@ -1,4 +1,4 @@
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 import dask.distributed as dd
 import pytest
@@ -36,7 +36,8 @@ def submission_run_public(draft_submission, db):
         submission=draft_submission,
         digest="cafef00d",
         is_public=True,
-        status=models.Status.PENDING)
+        status=models.Status.PENDING,
+    )
 
 
 @pytest.fixture
@@ -57,18 +58,25 @@ def evaluations(challenge, submission_run_public, input_elements, molw_type, db)
 def test_save_prediction(challenge, submission_run_public, input_elements, molw_type):
     input_element = input_elements[0]
     evaluation = models.Evaluation.objects.create(
-                input_element=input_element, submission_run=submission_run_public
-            )
+        input_element=input_element, submission_run=submission_run_public
+    )
     value = "95.0"
     tasks._save_prediction(challenge, evaluation, molw_type, value)
 
 
-def test_score_submission(draft_submission, submission_run_public, scoring_container, score_maker, evaluations, score_types):
+def test_score_submission(
+    draft_submission,
+    submission_run_public,
+    scoring_container,
+    score_maker,
+    evaluations,
+    score_types,
+):
 
     fake_run_container = Mock(return_value="3.0")
     mock_ever_given = Mock()
     mock_ever_given.run_container = fake_run_container
-    with patch('ever_given.wrapper', mock_ever_given):
+    with patch("ever_given.wrapper", mock_ever_given):
         tasks.score_submission(draft_submission.pk, submission_run_public.pk)
 
     assert models.SubmissionRunScore.objects.count() == 1
@@ -85,4 +93,6 @@ def test_score_submission(draft_submission, submission_run_public, scoring_conta
 
     assert fake_run_container.call_count == 3
 
-    fake_run_container.assert_called_with('docker.io/mmh42/calc-subtract:0.1', '[{"diff": 3.0}, {"diff": 3.0}]')
+    fake_run_container.assert_called_with(
+        "docker.io/mmh42/calc-subtract:0.1", '[{"diff": 3.0}, {"diff": 3.0}]'
+    )
