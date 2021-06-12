@@ -86,4 +86,4 @@ jobs:
       - name: Run formatting checks
         run: |
           pipenv run black --check --diff .
-          pipenv run isort --check --diff core/ sampl/ tests/ conftest.py
+          pipenv run isort --check --diff core/ referee/ sampl/ tests/ conftest.py

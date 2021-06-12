@@ -19,3 +19,11 @@ def test_value_registration():
 
         class Meta:
             app_label = "core.apps.CoreConfig"
+
+
+def test_container(scoring_container):
+    assert scoring_container.uri == "docker.io/mmh42/calc-subtract:0.1"
+
+    scoring_container.tag = None
+
+    assert scoring_container.uri == "docker.io/mmh42/calc-subtract"

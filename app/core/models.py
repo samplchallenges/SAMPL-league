@@ -54,6 +54,11 @@ class Container(Timestamped):
     def __str__(self):
         return str(self.name)
 
+    @property
+    def uri(self):
+        suffix = f":{self.tag}" if self.tag else ""
+        return f"{self.registry}/{self.label}{suffix}"
+
 
 class ScoreMaker(Timestamped):
     """
@@ -230,8 +235,14 @@ class ScoreType(Timestamped):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
     key = models.CharField(max_length=255)
 
+    class Level(models.TextChoices):
+        EVALUATION = "evaluation"
+        SUBMISSION_RUN = "submission_run"
+
+    level = models.CharField(max_length=255, choices=Level.choices, default=Level.EVALUATION)
+
     class Meta:
-        unique_together = ["challenge", "key"]
+        unique_together = ["challenge", "key", "level"]
 
     def __str__(self):
         return self.key
@@ -244,11 +255,17 @@ class ScoreBase(Timestamped):
     class Meta:
         abstract = True
 
+    def clean(self):
+        if self.score_type.level != self.REQUIRED_LEVEL:
+            raise ValueError("Score Type {} cannot be set on an {} score".format(self.score_type, self.REQUIRED_LEVEL))
+
 
 class EvaluationScore(ScoreBase):
     evaluation = models.ForeignKey(
         Evaluation, on_delete=models.CASCADE, related_name="scores"
     )
+
+    REQUIRED_LEVEL = ScoreType.Level.EVALUATION
 
     class Meta:
         unique_together = ["evaluation", "score_type"]
@@ -261,6 +278,8 @@ class SubmissionRunScore(ScoreBase):
     submission_run = models.ForeignKey(
         SubmissionRun, on_delete=models.CASCADE, related_name="scores"
     )
+
+    REQUIRED_LEVEL = ScoreType.Level.SUBMISSION_RUN
 
     class Meta:
         unique_together = ["submission_run", "score_type"]
@@ -311,6 +330,12 @@ class GenericValue(models.Model):
 
     class Meta:
         abstract = True
+
+    @classmethod
+    def from_string(cls, raw_value):
+        value_field = cls._meta.get_field('value')
+        value = value_field.to_python(raw_value)
+        return cls(value=value)
 
     def __str__(self):
         # pylint: disable=no-member

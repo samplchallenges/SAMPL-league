@@ -81,10 +81,19 @@ class Command(BaseCommand):
             challenge=challenge,
             registry="docker.io",
             label="mmh42/calc-subtract",
+            tag="0.1"
         )
 
         scoremaker = models.ScoreMaker.objects.create(
             challenge=challenge, container=scoring_container
+        )
+
+        models.ScoreType.objects.create(
+            challenge=challenge, key="diff", level=models.ScoreType.Level.EVALUATION
+        )
+
+        models.ScoreType.objects.create(
+            challenge=challenge, key="rmse", level=models.ScoreType.Level.SUBMISSION_RUN
         )
 
         submission = models.Submission.objects.create(
