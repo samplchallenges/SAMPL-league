@@ -56,7 +56,7 @@ def score_evaluation(container, evaluation, evaluation_score_types, output_handl
     if output_handling == SIMPLE:
         assert len(score_raw_args) == 1, "More than one output type for SIMPLE!"
         for ap_pair in score_raw_args.values():
-            command = "{} {} ".format(ap_pair.answer, ap_pair.prediction)
+            command = f"{ap_pair.answer} {ap_pair.prediction} "
     else:
         # TODO: this will generate JSON like
         # {"molwt": [78.4, 72], ..}

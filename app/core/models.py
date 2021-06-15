@@ -260,8 +260,7 @@ class ScoreBase(Timestamped):
     def clean(self):
         if self.score_type.level != self.REQUIRED_LEVEL:
             raise ValueError(
-                "Score Type {} cannot be set on an {} score".format(
-                    self.score_type, self.REQUIRED_LEVEL
+                f"Score Type {self.score_type} cannot be set on an {self.REQUIRED_LEVEL} score"
                 )
             )
 
