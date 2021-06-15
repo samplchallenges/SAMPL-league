@@ -1,0 +1,2 @@
+scheduler: dask-scheduler
+worker: DJANGO_SETTINGS_MODULE=sampl.settings_dev dask-worker --preload daskworkerinit.py  localhost:8786
