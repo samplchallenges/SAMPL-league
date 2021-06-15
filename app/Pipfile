@@ -12,6 +12,7 @@ distributed = "*"
 docker = "*"
 six = "*"
 ever-given = {path = "./ever_given"}
+sampl = {path = "."}
 
 [dev-packages]
 black = "==20.8b1"
