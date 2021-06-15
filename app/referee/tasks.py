@@ -1,6 +1,8 @@
 import json
 import logging
 import math
+import shlex
+
 from collections import namedtuple
 
 import dask
@@ -12,10 +14,31 @@ from core import models
 logger = logging.getLogger(__name__)
 
 
-AnswerPredictionPair = namedtuple("AnswerPredictionPair", ["answer", "prediction"])
-
 SIMPLE = "SIMPLE"
-MULTI = "MULTI_JSON"
+MULTI = "MULTI"
+
+
+class AnswerPredictionPair:
+    def __init__(self, answer, prediction):
+        self.answer = answer
+        self.prediction = prediction
+
+    def __str__(self):
+        return f"{self.answer} {self.prediction}"
+
+
+    @staticmethod
+    def commandline_from_keydict(keydict):
+        args_dict = {}
+        for key, pair in keydict:
+            args_dict[f"{key}_answer"] = pair.answer
+            args_dict[f"{key}_prediction"] = pair.prediction
+        return _prepare_commandline(args_dict)
+
+
+def _prepare_commandline(args_dict):
+    return " ".join([f"--{key} {shlex.quote(value)}"
+                     for key, value in args_dict.items()])
 
 
 def score_evaluation(container, evaluation, evaluation_score_types, output_handling):
@@ -58,12 +81,9 @@ def score_evaluation(container, evaluation, evaluation_score_types, output_handl
         for ap_pair in score_raw_args.values():
             command = f"{ap_pair.answer} {ap_pair.prediction} "
     else:
-        # TODO: this will generate JSON like
-        # {"molwt": [78.4, 72], ..}
-        # where the first list member is the answer key value
-        # and the second is the prediction.
-        # Perhaps a labeled dict structure would be better?
-        command = json.dumps(score_raw_args)
+        # This will generate a command line like
+        # --molwt_answer 78.2 --molwt_prediction 72
+        command = AnswerPredictionPair.commandline_from_keydict(score_raw_args)
 
     print(container.uri, command)
     scores_string = ever_given.wrapper.run_container(container.uri, command)
@@ -289,15 +309,8 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
         input_value.value_type.key: input_value.value
         for input_value in element.inputvalue_set.all()
     }
-    if input_arg_handling == SIMPLE:
-        input_arg = list(input_values_bykey.values())[0]
-    else:
-        input_arg = json.dumps(input_values_bykey)
-    try:
-        command = submission.challenge.execution_options_json["command"]
-    except KeyError:  # if no execution options nothing to prepend
-        command = ""
-    command += input_arg
+
+    command = _prepare_commandline(input_values_bykey)
     print(command)
 
     try:

@@ -262,7 +262,6 @@ class ScoreBase(Timestamped):
             raise ValueError(
                 f"Score Type {self.score_type} cannot be set on an {self.REQUIRED_LEVEL} score"
                 )
-            )
 
 
 class EvaluationScore(ScoreBase):
