@@ -19,7 +19,7 @@ def register(request):
         return render(request, "registration/add.html", {"form": RegisterForm})
 
     if not settings.ENABLE_REGISTRATION:
-        raise HttpResponseForbidden
+        return HttpResponseForbidden()
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
