@@ -120,8 +120,8 @@ def score_submission_run(container, submission_run, score_types):
 
     evaluations = submission_run.evaluation_set.all()
 
-    for evaluation in evaluations:
-        score_evaluation(container, evaluation, evaluation_score_types, output_handling)
+    #for evaluation in evaluations:
+    #    score_evaluation(container, evaluation, evaluation_score_types, output_handling)
 
     run_scores_dicts = [
         {score.score_type.key: score.value for score in evaluation.scores.all()}
@@ -305,25 +305,33 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
         input_element=element, submission_run=submission_run
     )
 
-    input_values_bykey = {
-        input_value.value_type.key: input_value.value
-        for input_value in element.inputvalue_set.all()
-    }
+    with tempfile.TempDirectory() as tmpdir:
+        inputdir = os.mkdir(tmpdir, "input")
+        outputdir = os.mkdir(tmpdir, "output")
+        blob_content_type = models.ContentType.objects.get_for_model(models.BlobValue)
+        input_values_bykey = {
+            input_value.value_type.key: input_value.value
+            for input_value in element.inputvalue_set.exclude(value_type__content_type=blob_content_type)
+        }
 
-    command = _prepare_commandline(input_values_bykey)
-    print(command)
+        for input_value in element.inputvalue_set.filter(value_type__content_type=blob_content_type):
+            filename = input_value.value_type.description # TODO: hacky overlay
+            input_values_bykey[input_value.value_type.key] = filename
+        command = _prepare_commandline(input_values_bykey)
+        print(command)
 
-    try:
-        result = ever_given.wrapper.run_container(container.uri, command)
-        if output_handling == SIMPLE:
-            _save_prediction(challenge, evaluation, output_type, result)
-        else:
-            result_dict = json.loads(result)
-            for key, value in result_dict.items():
-                _save_prediction(challenge, evaluation, output_types[key], value)
-        evaluation.status = models.Status.SUCCESS
-    except:
-        evaluation.status = models.Status.FAILURE
-        raise
-    finally:
-        evaluation.save()
+        try:
+            result = ever_given.wrapper.run_container(container.uri, command)
+            if output_handling == SIMPLE:
+                _save_prediction(challenge, evaluation, output_type, result)
+            else:
+                result_dict = json.loads(result)
+                for key, value in result_dict.items():
+                    _save_prediction(challenge, evaluation, output_types[key], value)
+            score_evaluation(scoring_container, evaluation, evaluation_score_types, output_handling, inputdir, outputdir)
+            evaluation.status = models.Status.SUCCESS
+        except:
+            evaluation.status = models.Status.FAILURE
+            raise
+        finally:
+            evaluation.save()
