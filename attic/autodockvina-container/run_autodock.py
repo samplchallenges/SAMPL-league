@@ -30,8 +30,9 @@ def create_sh_file(config_file, pdbqt_in, pdbqt_out):
 def autodock(config_file, pdbqt_in, pdbqt_out):
 	#create_sh_file(config_file, pdbqt_in, pdbqt_out)
 
-	client = docker.from_env()
-	client.containers.run("taccsciapps/autodock-vina", "/examples/demo.sh")
+	#os.system("docker run -it --rm -v $(pwd):/data taccsciapps/autodock-vina /dock.sh")
+	#client = docker.from_env()
+	#client.containers.run("taccsciapps/autodock-vina", "/examples/demo.sh")
 
 
 	#os.system("/usr/bin/time -p vina")
@@ -42,5 +43,5 @@ def autodock(config_file, pdbqt_in, pdbqt_out):
 
 if __name__ == "__main__":
 	print("starting")
-	autodock()
+	os.system("docker run -it --rm -v $(pwd):/data taccsciapps/autodock-vina /dock.sh")
 
