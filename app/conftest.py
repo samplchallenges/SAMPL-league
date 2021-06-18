@@ -95,6 +95,17 @@ def draft_submission(container, db):
 
 
 @pytest.fixture
+def mol_type(challenge, db):
+    return models.ValueType.objects.create(
+        challenge=challenge,
+        is_input_flag=True,
+        content_type=ContentType.objects.get_for_model(models.BlobValue),
+        key="mol",
+        description="file.mol",
+    )
+
+
+@pytest.fixture
 def smiles_type(challenge, db):
     return models.ValueType.objects.create(
         challenge=challenge,

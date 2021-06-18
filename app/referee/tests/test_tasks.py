@@ -30,6 +30,10 @@ def test_run_and_score_submission():
     assert result
 
 
+def test_run_element_mol(mol_type):
+    assert "TODO" == "NOTDONE"
+
+
 @pytest.fixture
 def submission_run_public(draft_submission, db):
     return models.SubmissionRun.objects.create(

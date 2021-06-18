@@ -1,7 +1,9 @@
 import json
 import logging
 import math
+import os
 import shlex
+import tempfile
 
 from collections import namedtuple
 
@@ -305,9 +307,9 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
         input_element=element, submission_run=submission_run
     )
 
-    with tempfile.TempDirectory() as tmpdir:
-        inputdir = os.mkdir(tmpdir, "input")
-        outputdir = os.mkdir(tmpdir, "output")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inputdir = os.mkdir(os.path.join(tmpdir.name, "input"))
+        outputdir = os.mkdir(os.path.join(tmpdir.name, "output"))
         blob_content_type = models.ContentType.objects.get_for_model(models.BlobValue)
         input_values_bykey = {
             input_value.value_type.key: input_value.value
@@ -316,19 +318,23 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
 
         for input_value in element.inputvalue_set.filter(value_type__content_type=blob_content_type):
             filename = input_value.value_type.description # TODO: hacky overlay
+            if not filename:
+                raise ValueError("description must be set to filename on blob types")
             input_values_bykey[input_value.value_type.key] = filename
+            with open(os.path.join(inputdir, filename), "wb") as fp:
+                fp.write(input_value.value)
         command = _prepare_commandline(input_values_bykey)
         print(command)
 
         try:
-            result = ever_given.wrapper.run_container(container.uri, command)
+            result = ever_given.wrapper.run_container(container.uri, command, inputdir=inputdir, outputdir=outputdir)
             if output_handling == SIMPLE:
                 _save_prediction(challenge, evaluation, output_type, result)
             else:
                 result_dict = json.loads(result)
                 for key, value in result_dict.items():
                     _save_prediction(challenge, evaluation, output_types[key], value)
-            score_evaluation(scoring_container, evaluation, evaluation_score_types, output_handling, inputdir, outputdir)
+            #score_evaluation(scoring_container, evaluation, evaluation_score_types, output_handling, inputdir, outputdir)
             evaluation.status = models.Status.SUCCESS
         except:
             evaluation.status = models.Status.FAILURE
