@@ -261,7 +261,7 @@ class ScoreBase(Timestamped):
         if self.score_type.level != self.REQUIRED_LEVEL:
             raise ValueError(
                 f"Score Type {self.score_type} cannot be set on an {self.REQUIRED_LEVEL} score"
-                )
+            )
 
 
 class EvaluationScore(ScoreBase):
@@ -380,3 +380,8 @@ class FloatValue(GenericValue):
 @register_value_model
 class BlobValue(GenericValue):
     value = models.BinaryField()
+
+
+@register_value_model
+class FileValue(GenericValue):
+    value = models.FileField(upload_to="file_uploads/%Y/%m/%d/")

@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+MEDIA_ROOT = BASE_DIR / "media"
 # Custom settings for SAMPL
 DASK_SCHEDULER_URL = "localhost:8786"
 # End of custom settings for SAMPL

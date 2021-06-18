@@ -1,9 +1,11 @@
+import os
 from datetime import datetime, timezone
 
 import dask.distributed as dd
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.core.files import File
 
 from core import models
 
@@ -48,9 +50,9 @@ def container(challenge, user, db):
         name="Container1",
         user=user,
         challenge=challenge,
-        registry="docker.io",
-        label="mmh42/calc-molwt",
-        tag="0.1",
+        registry="ghcr.io",
+        label="robbason/calc-molwt",
+        tag="latest",
     )
 
 
@@ -95,14 +97,45 @@ def draft_submission(container, db):
 
 
 @pytest.fixture
-def mol_type(challenge, db):
+def molfile_type(challenge, db):
     return models.ValueType.objects.create(
         challenge=challenge,
         is_input_flag=True,
-        content_type=ContentType.objects.get_for_model(models.BlobValue),
-        key="mol",
-        description="file.mol",
+        content_type=ContentType.objects.get_for_model(models.FileValue),
+        key="molfile",
+        description="MOL file",
     )
+
+
+@pytest.fixture
+def testing_data_path():
+    return os.path.join("tests", "data")
+
+
+@pytest.fixture
+def benzene_from_mol(testing_data_path, challenge, molfile_type, molw_type, db):
+    elem = models.InputElement.objects.create(
+        name="benzene", challenge=challenge, is_public=True
+    )
+    molfile_name = os.path.join(testing_data_path, "ChEBI_16716.mdl")
+    with open(molfile_name, "rb") as mol_fp:
+        molfile_value = models.FileValue()
+        molfile_value.value.save(molfile_name, File(mol_fp))
+        molfile_value.save()
+
+        # molfile_contents = mol_fp.read()
+    # molfile_value = models.BlobValue.objects.create(value=molfile_contents)
+    models.InputValue.objects.create(
+        input_element=elem, value_type=molfile_type, value_object=molfile_value
+    )
+    float_value = models.FloatValue.objects.create(value=72.0)
+    models.AnswerKey.objects.create(
+        challenge=challenge,
+        input_element=elem,
+        value_type=molw_type,
+        value_object=float_value,
+    )
+    return elem
 
 
 @pytest.fixture

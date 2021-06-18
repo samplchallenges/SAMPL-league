@@ -30,8 +30,19 @@ def test_run_and_score_submission():
     assert result
 
 
-def test_run_element_mol(mol_type):
-    assert "TODO" == "NOTDONE"
+def test_run_element_mol(submission_run_public, benzene_from_mol):
+    delayed = tasks.run_element(
+        submission_run_public.submission.id,
+        benzene_from_mol.id,
+        submission_run_public.id,
+        True,
+    )
+    delayed.compute(scheduler="synchronous")
+    assert submission_run_public.evaluation_set.count() == 1
+    evaluation = submission_run_public.evaluation_set.get()
+    assert evaluation.status == models.Status.SUCCESS
+    prediction = evaluation.prediction_set.get()
+    assert pytest.approx(prediction.value, 78.046950192)
 
 
 @pytest.fixture
@@ -59,6 +70,21 @@ def evaluations(challenge, submission_run_public, input_elements, molw_type, db)
     return evaluations_list
 
 
+@pytest.fixture
+def evaluation_scores(challenge, evaluations, score_types):
+    score_value = 3.0
+    evaluation_score_type = challenge.scoretype_set.filter(
+        level=models.ScoreType.Level.EVALUATION
+    ).get()
+
+    return [
+        models.EvaluationScore.objects.create(
+            evaluation=evaluation, score_type=evaluation_score_type, value=score_value
+        )
+        for evaluation in evaluations
+    ]
+
+
 def test_save_prediction(challenge, submission_run_public, input_elements, molw_type):
     input_element = input_elements[0]
     evaluation = models.Evaluation.objects.create(
@@ -74,6 +100,7 @@ def test_score_submission(
     scoring_container,
     score_maker,
     evaluations,
+    evaluation_scores,
     score_types,
 ):
 
@@ -95,7 +122,7 @@ def test_score_submission(
     score = evaluation.scores.first()
     assert score.value == pytest.approx(3.0)
 
-    assert fake_run_container.call_count == 3
+    assert fake_run_container.call_count == 1
 
     fake_run_container.assert_called_with(
         "docker.io/mmh42/calc-subtract:0.1", '[{"diff": 3.0}, {"diff": 3.0}]'

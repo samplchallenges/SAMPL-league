@@ -3,8 +3,8 @@ import logging
 import math
 import os
 import shlex
+import shutil
 import tempfile
-
 from collections import namedtuple
 
 import dask
@@ -28,7 +28,6 @@ class AnswerPredictionPair:
     def __str__(self):
         return f"{self.answer} {self.prediction}"
 
-
     @staticmethod
     def commandline_from_keydict(keydict):
         args_dict = {}
@@ -39,8 +38,9 @@ class AnswerPredictionPair:
 
 
 def _prepare_commandline(args_dict):
-    return " ".join([f"--{key} {shlex.quote(value)}"
-                     for key, value in args_dict.items()])
+    return " ".join(
+        [f"--{key} {shlex.quote(value)}" for key, value in args_dict.items()]
+    )
 
 
 def score_evaluation(container, evaluation, evaluation_score_types, output_handling):
@@ -122,7 +122,7 @@ def score_submission_run(container, submission_run, score_types):
 
     evaluations = submission_run.evaluation_set.all()
 
-    #for evaluation in evaluations:
+    # for evaluation in evaluations:
     #    score_evaluation(container, evaluation, evaluation_score_types, output_handling)
 
     run_scores_dicts = [
@@ -308,33 +308,53 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     )
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        inputdir = os.mkdir(os.path.join(tmpdir.name, "input"))
-        outputdir = os.mkdir(os.path.join(tmpdir.name, "output"))
+        inputdir = os.path.join(str(tmpdir), "input")
+        os.mkdir(inputdir)
+        outputdir = os.path.join(str(tmpdir), "output")
+        os.mkdir(outputdir)
         blob_content_type = models.ContentType.objects.get_for_model(models.BlobValue)
+        file_content_type = models.ContentType.objects.get_for_model(models.FileValue)
         input_values_bykey = {
             input_value.value_type.key: input_value.value
-            for input_value in element.inputvalue_set.exclude(value_type__content_type=blob_content_type)
+            for input_value in element.inputvalue_set.exclude(
+                value_type__content_type__in=(blob_content_type, file_content_type)
+            )
         }
 
-        for input_value in element.inputvalue_set.filter(value_type__content_type=blob_content_type):
-            filename = input_value.value_type.description # TODO: hacky overlay
+        for input_value in element.inputvalue_set.filter(
+            value_type__content_type=blob_content_type
+        ):
+            filename = input_value.value_type.description  # TODO: hacky overlay
             if not filename:
                 raise ValueError("description must be set to filename on blob types")
-            input_values_bykey[input_value.value_type.key] = filename
+            input_values_bykey[input_value.value_type.key] = os.path.join(
+                "/mnt", "inputs", filename
+            )
             with open(os.path.join(inputdir, filename), "wb") as fp:
                 fp.write(input_value.value)
+        for input_value in element.inputvalue_set.filter(
+            value_type__content_type=file_content_type
+        ):
+            filename = input_value.value.name
+            path = input_value.value.path
+            input_values_bykey[input_value.value_type.key] = os.path.join(
+                "/mnt", "inputs", os.path.basename(filename)
+            )
+            shutil.copy(path, inputdir)
         command = _prepare_commandline(input_values_bykey)
         print(command)
 
         try:
-            result = ever_given.wrapper.run_container(container.uri, command, inputdir=inputdir, outputdir=outputdir)
+            result = ever_given.wrapper.run_container(
+                container.uri, command, inputdir=inputdir, outputdir=outputdir
+            )
             if output_handling == SIMPLE:
                 _save_prediction(challenge, evaluation, output_type, result)
             else:
                 result_dict = json.loads(result)
                 for key, value in result_dict.items():
                     _save_prediction(challenge, evaluation, output_types[key], value)
-            #score_evaluation(scoring_container, evaluation, evaluation_score_types, output_handling, inputdir, outputdir)
+            # score_evaluation(scoring_container, evaluation, evaluation_score_types, output_handling, inputdir, outputdir)
             evaluation.status = models.Status.SUCCESS
         except:
             evaluation.status = models.Status.FAILURE

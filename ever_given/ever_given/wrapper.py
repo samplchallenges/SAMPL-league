@@ -18,7 +18,8 @@ def run_container(container_uri, command, inputdir=None, outputdir=None):
         command,
         network_disabled=True,
         network_mode="none",
-        auto_remove=True,
+        #auto_remove=True, TODO: figure out how to get logging back
+        # while keeping auto_remove
         volumes=volumes
     )
     return result

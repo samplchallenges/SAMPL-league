@@ -19,7 +19,7 @@ def _create_challenge_inputs(challenge):
         challenge=challenge,
         is_input_flag=True,
         content_type=ContentType.objects.get_for_model(models.TextValue),
-        key="SMILES",
+        key="smiles",
         description="SMILES",
     )
 
@@ -70,13 +70,13 @@ class Command(BaseCommand):
             name="crate",
             user=user,
             challenge=challenge,
-            #ghcr.io/robbason/calc-molwt:latest
+            # ghcr.io/robbason/calc-molwt:latest
             registry="ghcr.io",
             label="robbason/calc-molwt",
             tag="latest",
-            #registry="docker.io",
-            #label="mmh42/calc-molwt",
-            #tag="0.1",
+            # registry="docker.io",
+            # label="mmh42/calc-molwt",
+            # tag="0.1",
         )
 
         scoring_container = models.Container.objects.create(
