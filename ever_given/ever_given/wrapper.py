@@ -16,10 +16,9 @@ def run_container(container_uri, command, inputdir=None, outputdir=None):
     result = client.containers.run(
         container_uri,
         command,
+        volumes=volumes,
         network_disabled=True,
         network_mode="none",
-        #auto_remove=True, TODO: figure out how to get logging back
-        # while keeping auto_remove
-        volumes=volumes
+        remove=True,
     )
     return result
