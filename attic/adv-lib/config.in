@@ -1,0 +1,12 @@
+receptor = /examples/1OPK.pdbqt
+center_x = -0.081
+center_y =  2.213
+center_z = -4.090
+
+size_x = 22
+size_y = 22
+size_z = 22
+
+num_modes = 1
+exhaustiveness = 10
+cpu            = 1
