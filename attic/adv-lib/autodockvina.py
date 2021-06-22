@@ -28,15 +28,15 @@ def file_exists(filename, filetype):
 @click.option(
 	"-c", 
 	"--center", 
+	default=(0.0,0.0,0.0),
 	type=click.Tuple([float,float,float]),
-	default=(0.,0.,0.),
 	help="center of the binding site"
 )
 @click.option(
 	"-b", 
 	"--boxsize", 
-	type=click.Tuple([int,int,int]),
 	default=(30,30,30),
+	type=click.Tuple([int,int,int]),
 	help="box size of the binding site area" 
 )
 @click.option(
