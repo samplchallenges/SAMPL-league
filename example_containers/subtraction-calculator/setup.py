@@ -9,6 +9,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        calc-sub=subtract:subtract_floats
+        score=subtract:cli
     ''',
 )

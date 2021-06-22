@@ -43,12 +43,17 @@ def _prepare_commandline(args_dict):
     )
 
 
-def score_evaluation(container, evaluation, evaluation_score_types, output_handling):
-    if len(evaluation_score_types) == 1:
-        evaluation_score_handling = SIMPLE
-        evaluation_score_type = list(evaluation_score_types.values())[0]
-    else:
-        evaluation_score_handling = MULTI
+def _parse_output(raw_text):
+    result = {}
+    for line in raw_text.splitlines():
+        lineparts = line.split(maxsplit=1)
+        if len(lineparts) == 2:
+            key, value = lineparts
+            result[key] = value
+    return result
+
+
+def score_evaluation(container, evaluation, evaluation_score_types, inputdir, outputdir):
 
     predictions = {
         prediction.value_type.key: prediction.value
@@ -61,32 +66,15 @@ def score_evaluation(container, evaluation, evaluation_score_types, output_handl
         for answer_key in input_element.answerkey_set.all()
     }
 
-    # if logger.isDebugEnabled():
-    # smiles_type = challenge.valuetype_set.get(key="SMILES")
-    # input_value = input_element.inputvalue_set.first()
-    # get(input_type=smiles_type)
-    #    logger.debug(
-    #        "Prediction: %s %s answer: %s",
-    #        prediction.value,
-    #        input_value.value,
-    #        answer_key.value,
-    #    )
-
-    command = None
     score_raw_args = {
         key: AnswerPredictionPair(answer_value, predictions[key])
         for key, answer_value in answer_keys.items()
     }
 
-    if output_handling == SIMPLE:
-        assert len(score_raw_args) == 1, "More than one output type for SIMPLE!"
-        for ap_pair in score_raw_args.values():
-            command = f"{ap_pair.answer} {ap_pair.prediction} "
-    else:
-        # This will generate a command line like
-        # --molwt_answer 78.2 --molwt_prediction 72
-        command = AnswerPredictionPair.commandline_from_keydict(score_raw_args)
-
+    # This will generate a command line like
+    # --molwt_answer 78.2 --molwt_prediction 72
+    commandargs = AnswerPredictionPair.commandline_from_keydict(score_raw_args)
+    command = f"score-evaluation {commandargs}"
     print(container.uri, command)
     scores_string = ever_given.wrapper.run_container(container.uri, command)
     if evaluation_score_handling == SIMPLE:
@@ -115,23 +103,16 @@ def score_submission_run(container, submission_run, score_types):
         submission_run_score_handling = MULTI
 
     challenge = submission_run.submission.challenge
-    if challenge.valuetype_set.filter(is_input_flag=False).count() == 1:
-        output_handling = SIMPLE
-    else:
-        output_handling = MULTI
 
     evaluations = submission_run.evaluation_set.all()
-
-    # for evaluation in evaluations:
-    #    score_evaluation(container, evaluation, evaluation_score_types, output_handling)
 
     run_scores_dicts = [
         {score.score_type.key: score.value for score in evaluation.scores.all()}
         for evaluation in evaluations
     ]
 
-    command = json.dumps(run_scores_dicts)
-
+    commandargs = json.dumps(run_scores_dicts)
+    command = f"score-submissionrun {commandargs}"
     scores_string = ever_given.wrapper.run_container(container.uri, command)
     if submission_run_score_handling == SIMPLE:
         score_value = float(scores_string)
@@ -292,14 +273,9 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
         input_arg_handling = MULTI
 
     output_types = challenge.valuetype_set.filter(is_input_flag=False)
-    if output_types.count() == 1:
-        output_handling = SIMPLE
-        output_type = output_types.first()
-    else:
-        output_handling = MULTI
-        output_types_dict = {
-            output_type.key: output_type for output_type in output_types.all()
-        }
+    output_types_dict = {
+        output_type.key: output_type for output_type in output_types.all()
+    }
 
     container = submission.container
 
@@ -348,13 +324,12 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
             result = ever_given.wrapper.run_container(
                 container.uri, command, inputdir=inputdir, outputdir=outputdir
             )
-            if output_handling == SIMPLE:
-                _save_prediction(challenge, evaluation, output_type, result)
-            else:
-                result_dict = json.loads(result)
-                for key, value in result_dict.items():
-                    _save_prediction(challenge, evaluation, output_types[key], value)
-            # score_evaluation(scoring_container, evaluation, evaluation_score_types, output_handling, inputdir, outputdir)
+            result_dict = _parse_output(result)
+            for key, value in result_dict.items():
+                output_type = output_types_dict.get(key)
+                if output_type:
+                    _save_prediction(challenge, evaluation, output_type, value)
+            score_evaluation(challenge.scoremaker.container, evaluation, evaluation_score_types, inputdir, outputdir)
             evaluation.status = models.Status.SUCCESS
         except:
             evaluation.status = models.Status.FAILURE
