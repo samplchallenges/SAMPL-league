@@ -54,7 +54,7 @@ def score_submission(submission_id, *run_ids):
             #    )
             # command = "{} {}".format(answer_key.value, prediction.value)
             # TODO: actually run the submission container
-            # result = ever_given.wrapper.run_submission_container(container_uri, command)
+            # result = ever_given.wrapper.run_container(container_uri, command)
             score_sq = 0
             for key, answer_value in answer_keys.items():
                 prediction_value = predictions.get(key)
@@ -196,7 +196,7 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     print(command)
 
     try:
-        result = ever_given.wrapper.run_submission_container(container_uri, command)
+        result = ever_given.wrapper.run_container(container_uri, command)
         output_type_model = output_type.content_type.model_class()
 
         if output_type_model == models.FloatValue:

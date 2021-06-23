@@ -9,7 +9,10 @@ psycopg2-binary = "*"
 django-crispy-forms = "*"
 dask = "*"
 distributed = "*"
-ever-given = {editable = true, path = "./../ever_given"}
+docker = "*"
+six = "*"
+ever-given = "*"
+sampl = {path = "."}
 
 [dev-packages]
 black = "==20.8b1"
@@ -19,7 +22,6 @@ pytest = "*"
 flake8 = "*"
 pylint-django = "*"
 pytest-django = "*"
-docker = "*"
 bokeh = ">=0.13.0"
 pytest-cov = "*"
 pytest-xdist = {extras = ["psutil"], version = "*"}
