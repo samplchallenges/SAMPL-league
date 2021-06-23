@@ -3,7 +3,12 @@ from setuptools import setup
 setup(
     name='OE-Docking',
     version='0.1',
-    py_modules=['oedock_process'],
+    py_modules=[
+        "oedock_process", 
+        "charge", 
+        "docking",
+        "convertPDB"
+    ],
     install_requires=[
         'Click',
     ],
