@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import redirect, render, reverse
@@ -17,6 +18,8 @@ def register(request):
     if request.method == "GET":
         return render(request, "registration/add.html", {"form": RegisterForm})
 
+    if not settings.ENABLE_REGISTRATION:
+        return HttpResponseForbidden()
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():

@@ -8,6 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Custom settings for SAMPL
 DASK_SCHEDULER_URL = "localhost:8786"
+ENABLE_REGISTRATION = False  # Disables self-registration
 # End of custom settings for SAMPL
 
 ALLOWED_HOSTS = []
