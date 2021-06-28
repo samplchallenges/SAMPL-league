@@ -45,11 +45,13 @@ def _prepare_commandline(args_dict):
 
 def _parse_output(raw_text):
     result = {}
-    for line in raw_text.splitlines():
+    for line in raw_text.decode("utf-8").splitlines():
         lineparts = line.split(maxsplit=1)
         if len(lineparts) == 2:
             key, value = lineparts
             result[key] = value
+        else:
+            raise ValueError(f"Cannot parse output {line}, needs KEY VALUE format")
     return result
 
 
@@ -65,7 +67,7 @@ def score_evaluation(container, evaluation, evaluation_score_types, inputdir, ou
         answer_key.value_type.key: answer_key.value
         for answer_key in input_element.answerkey_set.all()
     }
-
+    assert len(predictions) == len(answer_keys), "Error: number of predictions doesn't match answer keys, cannot score"
     score_raw_args = {
         key: AnswerPredictionPair(answer_value, predictions[key])
         for key, answer_value in answer_keys.items()
@@ -248,9 +250,9 @@ def run_submission(submission_id, element_ids, conditional, is_public=True):
     return (submission_run_id, delayeds)
 
 
-def _save_prediction(challenge, evaluation, output_type, raw_value):
+def _save_prediction(challenge, evaluation, output_type, raw_value, output_dir):
     output_type_model = output_type.content_type.model_class()
-    value_object = output_type_model.from_string(raw_value.strip())
+    value_object = output_type_model.from_string(raw_value.strip(), output_dir=output_dir)
     value_object.save()
     models.Prediction.objects.create(
         challenge=challenge,
@@ -265,6 +267,8 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     submission = models.Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
+    evaluation_score_types = {score_type.key: score_type for score_type in  challenge.scoretype_set.filter(level=models.ScoreType.Level.EVALUATION)}
+
     element = challenge.inputelement_set.get(pk=element_id, is_public=is_public)
 
     if challenge.valuetype_set.filter(is_input_flag=True).count() == 1:
@@ -272,10 +276,14 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     else:
         input_arg_handling = MULTI
 
+    blob_content_type = models.ContentType.objects.get_for_model(models.BlobValue)
+    file_content_type = models.ContentType.objects.get_for_model(models.FileValue)
+
     output_types = challenge.valuetype_set.filter(is_input_flag=False)
     output_types_dict = {
         output_type.key: output_type for output_type in output_types.all()
     }
+    has_output_files = output_types.filter(content_type__in=(blob_content_type, file_content_type)).exists()
 
     container = submission.container
 
@@ -286,10 +294,11 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     with tempfile.TemporaryDirectory() as tmpdir:
         inputdir = os.path.join(str(tmpdir), "input")
         os.mkdir(inputdir)
-        outputdir = os.path.join(str(tmpdir), "output")
-        os.mkdir(outputdir)
-        blob_content_type = models.ContentType.objects.get_for_model(models.BlobValue)
-        file_content_type = models.ContentType.objects.get_for_model(models.FileValue)
+        if has_output_files:
+            outputdir = os.path.join(str(tmpdir), "output")
+            os.mkdir(outputdir)
+        else:
+            outputdir = None
         input_values_bykey = {
             input_value.value_type.key: input_value.value
             for input_value in element.inputvalue_set.exclude(
@@ -328,7 +337,9 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
             for key, value in result_dict.items():
                 output_type = output_types_dict.get(key)
                 if output_type:
-                    _save_prediction(challenge, evaluation, output_type, value)
+                    _save_prediction(challenge, evaluation, output_type, value, outputdir)
+                else:
+                    print(f"Ignoring key {key} with value {value}")
             score_evaluation(challenge.scoremaker.container, evaluation, evaluation_score_types, inputdir, outputdir)
             evaluation.status = models.Status.SUCCESS
         except:

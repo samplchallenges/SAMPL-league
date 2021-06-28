@@ -25,23 +25,30 @@ def user(db):
 
 
 @pytest.fixture
-def challenge(db):
-    empty_url = "http://github.com"
-    start_at = datetime(2020, 1, 1, hour=1, tzinfo=timezone.utc)
-    end_at = datetime(2020, 9, 1, hour=1, tzinfo=timezone.utc)
-    challenge = models.Challenge(
-        name="SAMPL1",
-        start_at=start_at,
-        end_at=end_at,
-        repo_url=empty_url,
-        sample_data_url=empty_url,
-        sample_score_reference_url=empty_url,
-        secret_data_url=empty_url,
-        secret_score_reference_url=empty_url,
-        execution_options_json={},
-    )
-    challenge.save()
-    return challenge
+def challenge(challenge_factory, db):
+    return challenge_factory("SAMPL1")
+
+
+@pytest.fixture
+def challenge_factory(db):
+    def maker(name):
+        empty_url = "http://github.com"
+        start_at = datetime(2020, 1, 1, hour=1, tzinfo=timezone.utc)
+        end_at = datetime(2020, 9, 1, hour=1, tzinfo=timezone.utc)
+        challenge = models.Challenge(
+            name=name,
+            start_at=start_at,
+            end_at=end_at,
+            repo_url=empty_url,
+            sample_data_url=empty_url,
+            sample_score_reference_url=empty_url,
+            secret_data_url=empty_url,
+            secret_score_reference_url=empty_url,
+            execution_options_json={},
+        )
+        challenge.save()
+        return challenge
+    return maker
 
 
 @pytest.fixture
@@ -109,32 +116,64 @@ def molfile_type(challenge, db):
 
 @pytest.fixture
 def testing_data_path():
-    return os.path.join("tests", "data")
+    return os.path.join(os.path.dirname(__file__), "tests", "data")
 
 
 @pytest.fixture
-def benzene_from_mol(testing_data_path, challenge, molfile_type, molw_type, db):
-    elem = models.InputElement.objects.create(
-        name="benzene", challenge=challenge, is_public=True
-    )
-    molfile_name = os.path.join(testing_data_path, "ChEBI_16716.mdl")
-    with open(molfile_name, "rb") as mol_fp:
-        molfile_value = models.FileValue()
-        molfile_value.value.save(molfile_name, File(mol_fp))
-        molfile_value.save()
+def elem_factory(testing_data_path, db):
+    def elem_maker(challenge, file_type, name, file_name):
+        elem = models.InputElement.objects.create(
+            name=name, challenge=challenge, is_public=True
+        )
+        file_path = os.path.join(testing_data_path, file_name)
+        with open(file_path, "rb") as fp:
+            file_value = models.FileValue()
+            file_value.value.save(file_name, File(fp))
+            file_value.save()
+        models.InputValue.objects.create(
+            input_element=elem, value_type=file_type, value_object=file_value
+        )
+        return elem
+    return elem_maker
 
-        # molfile_contents = mol_fp.read()
-    # molfile_value = models.BlobValue.objects.create(value=molfile_contents)
-    models.InputValue.objects.create(
-        input_element=elem, value_type=molfile_type, value_object=molfile_value
-    )
-    float_value = models.FloatValue.objects.create(value=72.0)
-    models.AnswerKey.objects.create(
-        challenge=challenge,
-        input_element=elem,
-        value_type=molw_type,
-        value_object=float_value,
-    )
+
+@pytest.fixture
+def float_answer_key_factory(db):
+    def fak_maker(challenge, elem, value_type, value):
+        float_value = models.FloatValue.objects.create(value=72.0)
+        answer_key = models.AnswerKey.objects.create(
+            challenge=challenge,
+            input_element=elem,
+            value_type=value_type,
+            value_object=float_value,
+        )
+        return answer_key
+    return fak_maker
+
+
+@pytest.fixture
+def file_answer_key_factory(testing_data_path, db):
+    def fak_maker(challenge, elem, value_type, file_name):
+        file_path = os.path.join(testing_data_path, file_name)
+        with open(file_path, "rb") as fp:
+            file_value = models.FileValue()
+            file_value.value.save(file_name, File(fp))
+            file_value.save()
+        answer_key = models.AnswerKey.objects.create(
+            challenge=challenge,
+            input_element=elem,
+            value_type=value_type,
+            value_object=file_value,
+        )
+        return answer_key
+    return fak_maker
+
+
+@pytest.fixture
+def benzene_from_mol(challenge, molfile_type, molw_type, elem_factory,
+                     float_answer_key_factory, db):
+    elem = elem_factory(challenge, molfile_type, "benzene", "ChEBI_16716.mdl")
+    answer_key = float_answer_key_factory(challenge, elem, molw_type, 72.0)
     return elem
 
 

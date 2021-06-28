@@ -1,7 +1,10 @@
+import os.path
+
 import django.contrib.auth.models as auth_models
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -336,7 +339,7 @@ class GenericValue(models.Model):
         abstract = True
 
     @classmethod
-    def from_string(cls, raw_value):
+    def from_string(cls, raw_value, **_kwargs):
         value_field = cls._meta.get_field("value")
         value = value_field.to_python(raw_value)
         return cls(value=value)
@@ -385,3 +388,10 @@ class BlobValue(GenericValue):
 @register_value_model
 class FileValue(GenericValue):
     value = models.FileField(upload_to="file_uploads/%Y/%m/%d/")
+
+    @classmethod
+    def from_string(cls, raw_value, *, output_dir):
+        instance = cls(value=raw_value)
+        with open(os.path.join(output_dir, raw_value)) as fp:
+            instance.value.save(raw_value, File(fp))
+        return instance

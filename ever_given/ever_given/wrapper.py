@@ -9,9 +9,11 @@ def run_container(container_uri, command, inputdir=None, outputdir=None):
             'bind': '/mnt/inputs',
             'mode': 'ro'}
     if outputdir:
+        outputdir_bind = "/mnt/outputs"
         volumes[outputdir] = {
-            'bind': '/mnt/outputs',
+            'bind': outputdir_bind,
             'mode': 'rw'}
+        command = f" --output-dir {outputdir_bind} {command}"
 
     result = client.containers.run(
         container_uri,
