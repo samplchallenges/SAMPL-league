@@ -9,6 +9,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        score-coords=score:score_coords
+        score-coords=score:cli
     ''',
 )

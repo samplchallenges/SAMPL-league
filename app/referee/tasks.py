@@ -9,6 +9,9 @@ from collections import namedtuple
 
 import dask
 import dask.distributed as dd
+
+from django.db.models.fields.files import FieldFile
+
 import ever_given.wrapper
 
 from core import models
@@ -31,8 +34,8 @@ class AnswerPredictionPair:
     @staticmethod
     def commandline_from_keydict(keydict):
         args_dict = {}
-        for key, pair in keydict:
-            args_dict[f"{key}_answer"] = pair.answer
+        for key, pair in keydict.items():
+            args_dict[f"{key}_answerkey"] = pair.answer
             args_dict[f"{key}_prediction"] = pair.prediction
         return _prepare_commandline(args_dict)
 
@@ -55,18 +58,39 @@ def _parse_output(raw_text):
     return result
 
 
-def score_evaluation(container, evaluation, evaluation_score_types, inputdir, outputdir):
+def _wrap_path(value, label):
+    if isinstance(value, FieldFile):
+        return os.path.join("/mnt", "inputs", label, os.path.basename(value.name))
+    return value
 
-    predictions = {
-        prediction.value_type.key: prediction.value
-        for prediction in evaluation.prediction_set.all()
-    }
+
+def _wrap_prediction_path(value):
+    return _wrap_path(value, "prediction")
+
+
+def _wrap_answer_path(value):
+    return _wrap_path(value, "answer")
+
+
+def score_evaluation(container, evaluation, evaluation_score_types, scoringdir):
+
+    predictions = {}
+    for prediction in evaluation.prediction_set.all():
+        predictions[prediction.value_type.key] = _wrap_prediction_path(prediction.value)
+        if isinstance(prediction.value, FieldFile):
+            shutil.copy(prediction.value.path, os.path.join("predictions", scoringdir))
+    #TODO: make this faster by reusing outputdir for input
+
     input_element = evaluation.input_element
 
-    answer_keys = {
-        answer_key.value_type.key: answer_key.value
-        for answer_key in input_element.answerkey_set.all()
-    }
+
+    answer_keys = {}
+    for answer_key in input_element.answerkey_set.all():
+        answer_keys[answer_key.value_type.key] = _wrap_answer_path(answer_key.value)
+        if isinstance(answer_key.value, FieldFile):
+            # Note: make this faster by only copying answer keys once per submission run
+            shutil.copy(answer_key.value.path, os.path.join("answers", scoringdir))
+
     assert len(predictions) == len(answer_keys), "Error: number of predictions doesn't match answer keys, cannot score"
     score_raw_args = {
         key: AnswerPredictionPair(answer_value, predictions[key])
@@ -78,20 +102,15 @@ def score_evaluation(container, evaluation, evaluation_score_types, inputdir, ou
     commandargs = AnswerPredictionPair.commandline_from_keydict(score_raw_args)
     command = f"score-evaluation {commandargs}"
     print(container.uri, command)
-    scores_string = ever_given.wrapper.run_container(container.uri, command)
-    if evaluation_score_handling == SIMPLE:
-        score_value = float(scores_string)
+    scores_string = ever_given.wrapper.run_container(container.uri, command, scoringdir, None)
+
+    scores_dict = _parse_output(scores_string)
+    for key, score_value in scores_dict.items():
         models.EvaluationScore.objects.create(
-            evaluation=evaluation, score_type=evaluation_score_type, value=score_value
+            evaluation=evaluation,
+            score_type=evaluation_score_types[key],
+            value=float(score_value),
         )
-    else:
-        score_dict = json.loads(scores_string)
-        for key, score_value in score_dict.items():
-            models.EvaluationScore.objects.create(
-                evaluation=evaluation,
-                score_type=evaluation_score_types[key],
-                value=score_value,
-            )
 
 
 def score_submission_run(container, submission_run, score_types):
@@ -297,8 +316,13 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
         if has_output_files:
             outputdir = os.path.join(str(tmpdir), "output")
             os.mkdir(outputdir)
+            scoringdir = os.path.join(str(tmpdir), "scoring")
+            os.mkdir(scoringdir)
+            os.mkdir(os.path.join(scoringdir, "predictions"))
+            os.mkdir(os.path.join(scoringdir, "answers"))
         else:
             outputdir = None
+            scoringdir = None
         input_values_bykey = {
             input_value.value_type.key: input_value.value
             for input_value in element.inputvalue_set.exclude(
@@ -340,7 +364,7 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
                     _save_prediction(challenge, evaluation, output_type, value, outputdir)
                 else:
                     print(f"Ignoring key {key} with value {value}")
-            score_evaluation(challenge.scoremaker.container, evaluation, evaluation_score_types, inputdir, outputdir)
+            score_evaluation(challenge.scoremaker.container, evaluation, evaluation_score_types, scoringdir)
             evaluation.status = models.Status.SUCCESS
         except:
             evaluation.status = models.Status.FAILURE

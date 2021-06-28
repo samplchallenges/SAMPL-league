@@ -111,6 +111,8 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     )
     score_maker = models.ScoreMaker.objects.create(
         challenge=challenge, container=scoring_container)
+    models.ScoreType.objects.create(challenge=challenge, key="RMSE", level=models.ScoreType.Level.EVALUATION)
+    models.ScoreType.objects.create(challenge=challenge, key="Avg RMSE", level=models.ScoreType.Level.SUBMISSION_RUN)
     molfile_type = models.ValueType.objects.create(
         challenge=challenge,
         is_input_flag=True,

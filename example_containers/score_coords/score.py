@@ -17,8 +17,13 @@ def cli():
 @cli.command()
 @click.option("--conformation_prediction")
 @click.option("--conformation_answerkey")
-def score_coords(conformation_prediction, conformation_answerkey):
+def score_evaluation(conformation_prediction, conformation_answerkey):
     # Actually, load the files, calc RMSE, etc
-    print("1.345")
+    print("RMSE 1.345")
 
     #mol = Chem.MolFromMolFile(molfile)
+
+@cli.command()
+@click.option("--RMSE")
+def score_submissionrun(rmse):
+    pass

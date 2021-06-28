@@ -12,8 +12,8 @@ BONDCOUNT_KEY = "numBonds"
 
 
 @click.command()
-@click.option("--output-dir", help="Output Directory")
-@click.option("--molfile", help="MOL File")
+@click.option("--output-dir", help="Output Directory", type=click.Path(exists=True))
+@click.option("--molfile", help="MOL File", type=click.Path(exists=True))
 @click.option("--smiles", help="SMILES string")
 @click.argument("smiles_arg", required=False, default=None)
 def calc_coords(output_dir, molfile, smiles, smiles_arg):
