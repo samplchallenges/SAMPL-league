@@ -140,7 +140,8 @@ def elem_factory(testing_data_path, db):
 @pytest.fixture
 def float_answer_key_factory(db):
     def fak_maker(challenge, elem, value_type, value):
-        float_value = models.FloatValue.objects.create(value=72.0)
+        float_value = models.FloatValue.from_string("72.0", challenge=challenge)
+        float_value.save()
         answer_key = models.AnswerKey.objects.create(
             challenge=challenge,
             input_element=elem,
@@ -213,11 +214,13 @@ def input_elements(challenge, smiles_type, molw_type, db):
         elem = models.InputElement.objects.create(
             name=name, challenge=challenge, is_public=idx % 2
         )
-        smiles_value = models.TextValue.objects.create(value=smiles)
+        smiles_value = models.TextValue.from_string(smiles, challenge=challenge)
+        smiles_value.save()
         models.InputValue.objects.create(
             input_element=elem, value_type=smiles_type, value_object=smiles_value
         )
-        float_value = models.FloatValue.objects.create(value=72.0)
+        float_value = models.FloatValue.from_string("72.0", challenge=challenge)
+        float_value.save()
         models.AnswerKey.objects.create(
             challenge=challenge,
             input_element=elem,

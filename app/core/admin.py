@@ -228,11 +228,6 @@ class FloatValueAdmin(GenericValueAdmin):
     pass
 
 
-@register(models.BlobValue)
-class BlobValueAdmin(GenericValueAdmin):
-    pass
-
-
 @register(models.FileValue)
 class FileValueAdmin(GenericValueAdmin):
     pass

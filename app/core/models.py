@@ -331,18 +331,24 @@ class AnswerKey(Solution):
 
 
 class GenericValue(models.Model):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, null=True)
     prediction = GenericRelation(Prediction)
     answer_key = GenericRelation(AnswerKey)
-    input_element = GenericRelation(InputValue)
+    input_value = GenericRelation(InputValue)
 
     class Meta:
         abstract = True
 
     @classmethod
-    def from_string(cls, raw_value, **_kwargs):
+    def from_string(cls, raw_value, *, challenge, evaluation=None, **_kwargs):
+        cls_kwargs = {
+            "challenge": challenge,
+            "evaluation": evaluation
+        }
         value_field = cls._meta.get_field("value")
         value = value_field.to_python(raw_value)
-        return cls(value=value)
+        return cls(value=value, **cls_kwargs)
 
     def __str__(self):
         # pylint: disable=no-member
@@ -380,18 +386,29 @@ class FloatValue(GenericValue):
     value = models.FloatField()
 
 
-@register_value_model
-class BlobValue(GenericValue):
-    value = models.BinaryField()
+def _upload_location(instance, filename):
+    now = timezone.now()
+    challenge = instance.challenge
+    evaluation = instance.evaluation
+    if evaluation:
+        parent_path = os.path.join("evaluations", f"{evaluation.id}")
+    else:
+        parent_path = os.path.join("challenges", f"{challenge.id}")
+    return os.path.join("file_uploads", parent_path, filename)
 
 
 @register_value_model
 class FileValue(GenericValue):
-    value = models.FileField(upload_to="file_uploads/%Y/%m/%d/")
+    value = models.FileField(upload_to=_upload_location)
 
     @classmethod
-    def from_string(cls, raw_value, *, output_dir):
-        instance = cls(value=raw_value)
+    def from_string(cls, raw_value, *, challenge, evaluation=None, output_dir):
+        cls_kwargs = {
+            "challenge": challenge,
+            "evaluation": evaluation
+        }
+
+        instance = cls(value=raw_value, **cls_kwargs)
         with open(os.path.join(output_dir, raw_value)) as fp:
             instance.value.save(raw_value, File(fp))
         return instance
