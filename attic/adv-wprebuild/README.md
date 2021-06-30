@@ -1,6 +1,6 @@
 ## Setup:
-1. Download Autodock Tools linux x86 .tgz file (`autodock_vina_1_1_2_linux_x86.tgz`) from http://vina.scripps.edu/download.html
-2. `mkdir SAMPL-league/attic/adv-wprebuild/dependencies`
+1. `mkdir SAMPL-league/attic/adv-wprebuild/dependencies`
+2. Download Autodock Tools linux x86 .tgz file (`autodock_vina_1_1_2_linux_x86.tgz`) from http://vina.scripps.edu/download.html
 3. `mv autodock_vina_1_1_2_linux_x86.tgz SAMPL-league/attic/adv-wprebuild/dependencies`
 4. `cd SAMPL-league/attic/adv-wprebuild/dependencies`
 5. `tar -xvf autodock_vina_1_1_2_linux_x86.tgz`
