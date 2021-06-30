@@ -11,7 +11,7 @@
 10. `cd SAMPL-league/attic/adv-wprebuild/dependencies`
 11. `tar -xvf mgltools_x86_64Linux2_1.5.6.tar.gz`
 12. `rm mgltools_x86_64Linux2_1.5.6.tar.gz`
-13. `mv mgltools_x86_64Linux2_1.5.6.tar.gz mgl`
+13. `mv mgltools_x86_64Linux2_1.5.6 mgl`
 14. `vi mgl/install.sh`
 15. Change line 6 `TarDir=` to `TarDir="/opt/app/dependencies/mgl/"`
 16. Change line 7 `export MGL_ROOT=""` to `export MGL_ROOT="/opt/app/dependencies/mgl/"`
