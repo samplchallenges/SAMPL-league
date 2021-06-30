@@ -16,6 +16,7 @@
 15. Change line 6 `TarDir=` to `TarDir="/opt/app/dependencies/mgl/"`
 16. Change line 7 `export MGL_ROOT=""` to `export MGL_ROOT="/opt/app/dependencies/mgl/"`
 17. Save install.sh
+18. `cp oe_license.txt SAMPL-league/attic/adv-wprebuild`
 
 
 ## Build:
