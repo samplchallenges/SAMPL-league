@@ -18,12 +18,12 @@
 17. Save install.sh
 
 
-## To build:
+## Build:
 1. `cd SAMPL-league/attic/adv-base`
 2. `docker build -t adv-base:0.1 .`
 3. `cd SAMPL-league/attic/adv-wprebuild`
 4. `docker build -t adv .`
 
 
-## To run: 
+## Run: 
 1. `docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> adv -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> -b <boxsize_x boxsize_y boxsize_z> -c <center_x center_y center_z> --bind_in <BIND_IN> --bind_out <BIND_OUT>` 
