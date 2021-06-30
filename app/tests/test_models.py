@@ -38,7 +38,11 @@ def test_file_value(input_elements, challenge, molfile_type):
         with open(os.path.join(tmpdir, hellofile), "w") as fp:
             fp.write("Hello world")
             fp.flush()
-        file_value = models.FileValue.from_string(hellofile, output_dir=tmpdir, challenge=challenge)
+        file_value = models.FileValue.from_string(
+            hellofile, output_dir=tmpdir, challenge=challenge
+        )
         file_value.save()
-        assert file_value.value.name == f"file_uploads/challenges/{challenge.id}/hello.txt"
+        assert (
+            file_value.value.name == f"file_uploads/challenges/{challenge.id}/hello.txt"
+        )
         assert file_value.challenge == challenge

@@ -257,6 +257,7 @@ class ScoreBase(Timestamped):
     score_type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
     value = models.FloatField()
 
+    REQUIRED_LEVEL = None
     class Meta:
         abstract = True
 
@@ -301,6 +302,16 @@ class Solution(ValueParentMixin):
     class Meta:
         abstract = True
 
+    def dicts_by_key(cls, instances):
+        by_key = {}
+        files_by_key = {}
+        for instance in instances:
+            if isinstance(instance.value_type, FileValue):
+                files_by_key[instance.value_type.key] = instance.value.path
+            else:
+                by_key[instance.value_type.key] = instance.value
+        return by_key, files_by_key
+
 
 class Prediction(Solution):
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
@@ -342,10 +353,7 @@ class GenericValue(models.Model):
 
     @classmethod
     def from_string(cls, raw_value, *, challenge, evaluation=None, **_kwargs):
-        cls_kwargs = {
-            "challenge": challenge,
-            "evaluation": evaluation
-        }
+        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
         value_field = cls._meta.get_field("value")
         value = value_field.to_python(raw_value)
         return cls(value=value, **cls_kwargs)
@@ -403,10 +411,7 @@ class FileValue(GenericValue):
 
     @classmethod
     def from_string(cls, raw_value, *, challenge, evaluation=None, output_dir):
-        cls_kwargs = {
-            "challenge": challenge,
-            "evaluation": evaluation
-        }
+        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
 
         instance = cls(value=raw_value, **cls_kwargs)
         with open(os.path.join(output_dir, raw_value)) as fp:

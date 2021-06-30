@@ -40,37 +40,39 @@ def _wrap_answer_path(value):
     return _wrap_path(value, "answer")
 
 
-def score_evaluation(container, evaluation, evaluation_score_types, scoringdir):
-
-    predictions = {}
-    for prediction in evaluation.prediction_set.all():
-        predictions[prediction.value_type.key] = _wrap_prediction_path(prediction.value)
-        if isinstance(prediction.value, FieldFile):
-            shutil.copy(prediction.value.path, os.path.join("predictions", scoringdir))
-    #TODO: make this faster by reusing outputdir for input
-
+def _build_kwargs(evaluation):
+    predictions_by_key, file_predictions_by_key = models.Prediction.dicts_by_key(evaluation.prediction_set.all())
     input_element = evaluation.input_element
 
+    answer_keys, file_answer_keys = models.AnswerKey.dicts_by_key(input_element.answerkey_set.all())
 
-    answer_keys = {}
-    for answer_key in input_element.answerkey_set.all():
-        answer_keys[answer_key.value_type.key] = _wrap_answer_path(answer_key.value)
-        if isinstance(answer_key.value, FieldFile):
-            # Note: make this faster by only copying answer keys once per submission run
-            shutil.copy(answer_key.value.path, os.path.join("answers", scoringdir))
+    assert len(predictions_by_key) == len(
+        answer_keys
+    ), "Error: number of predictions doesn't match answer keys, cannot score"
 
-    assert len(predictions) == len(answer_keys), "Error: number of predictions doesn't match answer keys, cannot score"
-    score_raw_args = {
-        key: AnswerPredictionPair(answer_value, predictions[key])
+    assert len(file_predictions_by_key) == len(file_answer_keys), "Error: number of file predictions doesn't match answer keys, cannot score"
+    score_args = {
+        key: AnswerPredictionPair(answer_value, predictions_by_key[key])
         for key, answer_value in answer_keys.items()
     }
+    score_file_args = {
+        key: AnswerPredictionPair(answer_value, file_predictions_by_key[key])
+        for key, answer_value in file_answer_keys.items()
+    }
 
-    # This will generate a command line like
-    # --molwt_answer 78.2 --molwt_prediction 72
-    commandargs = AnswerPredictionPair.commandline_from_keydict(score_raw_args)
-    command = f"score-evaluation {commandargs}"
+    kwargs = AnswerPredictionPair.args_from_keydict(score_args)
+    file_kwargs = AnswerPredictionPair.args_from_keydict(score_file_args)
+    return kwargs, file_kwargs
+
+
+def score_evaluation(container, evaluation, evaluation_score_types):
+    kwargs, file_kwargs = _build_kwargs(evaluation)
+    command = "score-evaluation"
     print(container.uri, command)
-    scores_string = ever_given.wrapper.run_container(container.uri, command, scoringdir, None)
+    scores_string = ever_given.wrapper.run(
+        container.uri, command, has_output_files=False,
+        file_kwargs=file_kwargs, kwargs=kwargs
+    )
 
     scores_dict = utils.parse_output(scores_string)
     for key, score_value in scores_dict.items():

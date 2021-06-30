@@ -48,6 +48,7 @@ def challenge_factory(db):
         )
         challenge.save()
         return challenge
+
     return maker
 
 
@@ -134,6 +135,7 @@ def elem_factory(testing_data_path, db):
             input_element=elem, value_type=file_type, value_object=file_value
         )
         return elem
+
     return elem_maker
 
 
@@ -149,6 +151,7 @@ def float_answer_key_factory(db):
             value_object=float_value,
         )
         return answer_key
+
     return fak_maker
 
 
@@ -167,12 +170,14 @@ def file_answer_key_factory(testing_data_path, db):
             value_object=file_value,
         )
         return answer_key
+
     return fak_maker
 
 
 @pytest.fixture
-def benzene_from_mol(challenge, molfile_type, molw_type, elem_factory,
-                     float_answer_key_factory, db):
+def benzene_from_mol(
+    challenge, molfile_type, molw_type, elem_factory, float_answer_key_factory, db
+):
     elem = elem_factory(challenge, molfile_type, "benzene", "ChEBI_16716.mdl")
     answer_key = float_answer_key_factory(challenge, elem, molw_type, 72.0)
     return elem

@@ -110,9 +110,14 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
         tag="latest",
     )
     score_maker = models.ScoreMaker.objects.create(
-        challenge=challenge, container=scoring_container)
-    models.ScoreType.objects.create(challenge=challenge, key="RMSE", level=models.ScoreType.Level.EVALUATION)
-    models.ScoreType.objects.create(challenge=challenge, key="Avg RMSE", level=models.ScoreType.Level.SUBMISSION_RUN)
+        challenge=challenge, container=scoring_container
+    )
+    models.ScoreType.objects.create(
+        challenge=challenge, key="RMSE", level=models.ScoreType.Level.EVALUATION
+    )
+    models.ScoreType.objects.create(
+        challenge=challenge, key="Avg RMSE", level=models.ScoreType.Level.SUBMISSION_RUN
+    )
     molfile_type = models.ValueType.objects.create(
         challenge=challenge,
         is_input_flag=True,
@@ -138,11 +143,15 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
         submission=submission,
         digest="cafef00d",
         is_public=True,
-        status=models.Status.PENDING
+        status=models.Status.PENDING,
     )
 
-    benzene_from_mol = elem_factory(challenge, molfile_type, "Benzene", "ChEBI_16716.mdl")
-    benzene_answer = file_answer_key_factory(challenge, benzene_from_mol, coordsfile_type, "Conformer3D_CID_241.mdl")
+    benzene_from_mol = elem_factory(
+        challenge, molfile_type, "Benzene", "ChEBI_16716.mdl"
+    )
+    benzene_answer = file_answer_key_factory(
+        challenge, benzene_from_mol, coordsfile_type, "Conformer3D_CID_241.mdl"
+    )
 
     delayed = tasks.run_element(
         submission_run.submission.id,

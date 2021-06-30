@@ -43,6 +43,23 @@ def _copyfile(src, dest):
         else:
             break
 
+def _convert_file_kwargs(file_kwargs):
+    """
+    file_kwargs has key: path, where path is on the host
+    generate a dict of host: guest path mappings that can be used to generate bind commands and return a file_kwargs pointing to the files with corresponding paths that are accessible to the container
+    """
+    dirpaths = {}
+    final_file_kwargs = {}
+    for idx, (key, pathname) in enumerate(file_kwargs.items()):
+        path = Path(pathname).resolve()
+        dirpath = path.parent
+        filename = path.name
+        if dirpath not in dirpaths:
+            dirpaths[dirpath] = Path("/mnt") / f"inputs{idx}"
+
+        final_file_kwargs[key] = dirpaths[dirpath]
+    return dirpaths, final_file_kwargs
+
 
 def run(container_uri, command="", *, has_output_files,
         file_kwargs, kwargs):
@@ -56,45 +73,34 @@ def run(container_uri, command="", *, has_output_files,
     to the container
     command is optional
     """
+    inputdir_map, final_file_kwargs = _convert_file_kwargs(file_kwargs)
     final_kwargs = copy.deepcopy(kwargs)
+    final_kwargs.update(final_file_kwargs)
+
     with tempfile.TemporaryDirectory() as tmpdir:
         dirpath = Path(str(tmpdir))
-        inputdir = dirpath / "inputs"
-        inputdir.mkdir()
         if has_output_files:
             outputdir = dirpath / "output"
             outputdir.mkdir()
-            scoringdir = dirpath / "scoring"
-            scoringdir.mkdir()
-            (scoringdir / "predictions").mkdir()
-            (scoringdir / "answers").mkdir()
         else:
             outputdir = None
-            scoringdir = None
-
-
-        for key, fp in file_kwargs.items():
-            final_kwargs[key] = _guest_input_path(fp.name)
-            #with open(inputdir / fp.name, "wb") as local_fp:
-            #    _copyfile(fp, local_fp)
-            #shutil.copy(fp.path, inputdir)
 
         final_command = _prepare_commandline(command, final_kwargs)
 
         result = run_container(
-            container_uri, final_command, inputdir=inputdir, outputdir=outputdir
+            container_uri, final_command, inputdir_map, outputdir=outputdir
         )
         for item in _parse_output(result).items():
             yield item
 
 
 
-def run_container(container_uri, command, inputdir=None, outputdir=None):
+def run_container(container_uri, command, inputdir_map=None, outputdir=None):
     client = docker.from_env()
     volumes = {}
-    if inputdir:
+    for inputdir, guest_input_dir in inputdir_map.items():
         volumes[inputdir] = {
-            'bind': str(GUEST_INPUT_DIR),
+            'bind': str(guest_input_dir),
             'mode': 'ro'}
     if outputdir:
         volumes[outputdir] = {

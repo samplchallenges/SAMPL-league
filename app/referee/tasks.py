@@ -129,9 +129,8 @@ def _save_prediction(challenge, evaluation, output_type, raw_value, output_dir):
 
     output_type_model = output_type.content_type.model_class()
     value_object = output_type_model.from_string(
-        raw_value.strip(),
-        prediction=prediction,
-        output_dir=output_dir)
+        raw_value.strip(), prediction=prediction, output_dir=output_dir
+    )
     value_object.save()
 
 
@@ -140,7 +139,12 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     submission = models.Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
-    evaluation_score_types = {score_type.key: score_type for score_type in  challenge.scoretype_set.filter(level=models.ScoreType.Level.EVALUATION)}
+    evaluation_score_types = {
+        score_type.key: score_type
+        for score_type in challenge.scoretype_set.filter(
+            level=models.ScoreType.Level.EVALUATION
+        )
+    }
 
     element = challenge.inputelement_set.get(pk=element_id, is_public=is_public)
 
@@ -155,7 +159,9 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     output_types_dict = {
         output_type.key: output_type for output_type in output_types.all()
     }
-    has_output_files = output_types.filter(content_type__in=(blob_content_type, file_content_type)).exists()
+    has_output_files = output_types.filter(
+        content_type__in=(blob_content_type, file_content_type)
+    ).exists()
 
     container = submission.container
 
@@ -203,10 +209,17 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
             for key, value in result_dict.items():
                 output_type = output_types_dict.get(key)
                 if output_type:
-                    _save_prediction(challenge, evaluation, output_type, value, outputdir)
+                    _save_prediction(
+                        challenge, evaluation, output_type, value, outputdir
+                    )
                 else:
                     print(f"Ignoring key {key} with value {value}")
-            score_evaluation(challenge.scoremaker.container, evaluation, evaluation_score_types, scoringdir)
+            score_evaluation(
+                challenge.scoremaker.container,
+                evaluation,
+                evaluation_score_types,
+                scoringdir,
+            )
             evaluation.status = models.Status.SUCCESS
         except:
             evaluation.status = models.Status.FAILURE
