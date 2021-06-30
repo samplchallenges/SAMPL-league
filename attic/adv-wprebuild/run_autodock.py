@@ -14,20 +14,29 @@ import charge
 PYTHON_PATH = "/opt/app/dependencies/mgl/bin/python"
 UTILITIES_PATH = "/opt/app/dependencies/mgl/MGLToolsPckgs/AutoDockTools/Utilities24/"
 VINA_PATH = "/opt/app/dependencies/adv/bin/vina"
-BIND_DIR = "/data"
-
-ID = random.randint(1000000, 9999999)
-INT_DIR = f"{BIND_DIR}/int-{ID}"
-OUT_DIR = f"{BIND_DIR}/out-{ID}"
 
 
-def SMILES_to_smi(smiles_str: str, smiles_path:str):
+def get_out_dir(bind_dir: str):
+	''' creates a unique outfile directory to store the results in
+	'''
+	ID = 0
+	while os.path.exists(f"{bind_dir}/out-{ID}"):
+		ID += 1
+	return f"{bind_dir}/out-{ID}"
+
+
+def smiles_to_smi(smiles_str: str, smiles_path:str):
+	''' transfer SMILES string to a .smi file
+	    used for debugging
+	'''
 	smiles_files = open(smiles_path, "w")
 	smiles_files.write(smiles_str)
 
 
 def make_config_file(receptor, smiles, boxsize, center, exhaustiveness, config_path):
-
+	''' makes the configuration file which is an input to the vina 
+	    command
+	'''
 	configfile = open(config_path, "w")
 	configfile.write(f"receptor = {receptor}\n")
 
@@ -46,9 +55,10 @@ def make_config_file(receptor, smiles, boxsize, center, exhaustiveness, config_p
 
 
 
-
 def smi_to_pdb(smiles_path: str, charge_path: str):
-
+	''' converts a .smi file to a pdb of a charged ligand with 3D coordinates
+	    pairs with smiles_to_smi(smiles, smiles_path) for debugging purposes
+	'''
 	ifs = oechem.oemolistream()
 	if not ifs.open(smiles_path):
 		oechem.OEThrow.Fatal("Unable to open %s for reading" % smiles_file)
@@ -66,6 +76,23 @@ def smi_to_pdb(smiles_path: str, charge_path: str):
 		ofs.close()
 
 
+def smiles_to_chgpdb(smiles: str, charge_path: str):
+	''' convers a smiles string to a pdb of a charged ligand with 3D coordinates
+	'''
+	ligand = oechem.OEMol()
+	oechem.OEParseSmiles(ligand, smiles)
+	ligand = openeye.generate_conformers(ligand)
+	ligand = charge.sanitize_OEMol(ligand)
+	chgd_ligand = charge.assign_ELF10_charges(ligand)
+
+	ofs = oechem.oemolostream()
+	if not ofs.open(charge_path):
+		oechem.OEThrow.Fatal("Unable to open %s for reading" % charge_path)
+	ofs.SetFormat(oechem.OEFormat_SDF)
+	oechem.OEWriteMolecule(ofs, chgd_ligand)
+	ofs.close()	
+
+
 def save_highest_score(dock_path: str, highscore_path: str):
 	''' writes the highest scoring docked pose into its own file
 	'''
@@ -74,6 +101,7 @@ def save_highest_score(dock_path: str, highscore_path: str):
 	outfile = open(highscore_path, 'w')
 	
 	for line in infile.readlines():
+
 		outfile.write(line)
 		if "ENDMDL" in line:
 			break
@@ -83,6 +111,9 @@ def save_highest_score(dock_path: str, highscore_path: str):
 
 
 def get_last_receptor_ind(receptor_path: str):
+	''' gets the last atom index used the receptor pdb to append 
+	    ligand to receptor pdb (no longer necessary)
+	'''
 	with open(receptor_path) as f:
 		for line in f:
 			pass
@@ -94,6 +125,9 @@ def get_last_receptor_ind(receptor_path: str):
 			return int(split[1])
 
 def append_ligand_receptor(complex_path: str, receptor_path: str, ligand_path: str, lastind: int):
+	''' appends the ligand receptor with correct indexes to the end of the receptor pdb
+	    (no longer necessary)
+	'''
 	complexf = open(complex_path, 'w')
 	with open(receptor_path) as receptorf:
 		for line in receptorf:
@@ -115,6 +149,15 @@ def append_ligand_receptor(complex_path: str, receptor_path: str, ligand_path: s
 				ct += 1
 		complexf.write("END")
 	complexf.close()
+
+
+def pdbqt_to_pdb(pdbqt_path, pdb_path):
+	os.system(f"cut -c-66 {pdbqt_path} > {pdb_path}")
+
+
+def clean_tmp():
+	os.system("rm /tmp/*")
+
 @click.command()
 @click.option(
 	"-r",
@@ -143,35 +186,44 @@ def append_ligand_receptor(complex_path: str, receptor_path: str, ligand_path: s
 	"--exhaustiveness",
 	help=""
 )
-def autodock(receptor, smiles, boxsize, center, exhaustiveness):
-	
-	os.mkdir(INT_DIR)
-	os.mkdir(OUT_DIR)
+@click.option(
+	"--bind_out",
+	help="directory the outputs should be bound to"
+)
+def autodock(receptor, smiles, boxsize, center, exhaustiveness, bind_out):
+	''' docks the given smiles string into the receptor within the box specified by
+	    boxsize and center
+	    exhaustiveness does not work at this moment
+	'''
+	# Create output directory	
+	out_dir = get_out_dir(bind_out)
+	os.mkdir(out_dir)
 
-	ligsmi_path = f"{INT_DIR}/smiles.smi"
-	ligchg_sdf_path = f"{INT_DIR}/lig-chg.sdf"
-	ligchg_pdbqt_path = f"{INT_DIR}/lig-chg.pdbqt"
-	ligprep_path = f"{INT_DIR}/lig-prep.pdbqt"
+	# Set file names for intermediate and output files
+	# Output file names should probably become an input option
+	ligchg_sdf_path = "/tmp/lig-chg.sdf"
+	ligchg_pdbqt_path = f"/tmp/lig-chg.pdbqt"
+	ligprep_path = f"/tmp/lig-prep.pdbqt"
 
 	receptor_path = receptor
-	receptorprep_pdbqt_path = f"{INT_DIR}/rec-prep.pdbqt"
-	receptor_pdb_path = f"{OUT_DIR}/rec-dock.pdb"
+	receptorprep_pdbqt_path = f"/tmp/rec-prep.pdbqt"
+	receptor_pdb_path = f"{out_dir}/rec-dock.pdb"
 
-	config_path = f"{INT_DIR}/config.txt"
+	config_path = f"{out_dir}/config.txt"
 
-	ligdock_path = f"{OUT_DIR}/lig_dock.pdbqt"
-	highscore_pdbqt_path = f"{OUT_DIR}/best_dock.pdbqt"
-	highscore_pdb_path = f"{OUT_DIR}/best_dock.pdb"
+	ligdock_path = f"{out_dir}/lig_dock.pdbqt"
+	highscore_pdbqt_path = f"/tmp/best_dock.pdbqt"
+	highscore_pdb_path = f"{out_dir}/best_dock.pdb"
 
-	complex_pdb_path = f"{OUT_DIR}/docked_complex.pdb"
+	complex_pdb_path = f"{out_dir}/docked_complex.pdb"
 
+	# Make the config file
 	make_config_file(receptorprep_pdbqt_path, smiles, boxsize, center, exhaustiveness, config_path)
 
-	# SMILES string -> 3D ligand with partial charges assigned -> prepped by autodock
-	print("LOAD: putting smile string in a file")
-	SMILES_to_smi(smiles, ligsmi_path)
-	print("PREP: adding partial charges and 3d coords")
-	smi_to_pdb(ligsmi_path, ligchg_sdf_path)
+	
+	# SMILES string -> 3D ligand with partial charges assigned -> autodock prepped ligand
+	print("LOAD: loading smiles string and converting to 3D pdb")
+	smiles_to_chgpdb(smiles, ligchg_sdf_path)
 	print("PREP: converting sdf to pdbqt using openbabel")
 	os.system(f"obabel {ligchg_sdf_path} -O {ligchg_pdbqt_path}")
 	print("PREP: preparing ligand")
@@ -188,22 +240,19 @@ def autodock(receptor, smiles, boxsize, center, exhaustiveness):
 	print(f"{VINA_PATH} --config {config_path} --ligand {ligprep_path} --out {ligdock_path}")
 	os.system(f"{VINA_PATH} --config {config_path} --ligand {ligprep_path} --out {ligdock_path}")
 
-	
-	print("SAVE: saving highest scoring pose")
 	# Save the highest scoring pose which should be the first pose in the file
+	# and convert this pose to a pdb
+	print("SAVE: saving highest scoring pose")
 	save_highest_score(ligdock_path, highscore_pdbqt_path)
-	os.system(f"cut -c-66 {highscore_pdbqt_path} > {highscore_pdb_path}")	
+	pdbqt_to_pdb(highscore_pdbqt_path, highscore_pdb_path)	
 
+	# Convert prepped receptor from pdbqt to pdb
 	print("SAVE: saving protein ligand complex")
-	# convert prepped receptor from pdbqt to pdb
-	os.system(f"cut -c-66 {receptorprep_pdbqt_path} > {receptor_pdb_path}")
-
-	#os.system(f"cat {receptor_pdb_path} {highscore_pdb_path} | grep -v '^END   ' | grep -v '^END$' >  {complex_pdb_path}")
-
-	#lastind = get_last_receptor_ind(receptor_pdb_path)
-
-	#append_ligand_receptor(complex_pdb_path, receptor_pdb_path, highscore_pdb_path, lastind)
-
-
+	pdbqt_to_pdb(receptorprep_pdbqt_path, receptor_pdb_path)
+	
+	# Remove intermediate files
+	print("CLEAN: clearing tmp files")
+	clean_tmp()
+	
 if __name__ == "__main__":
 	autodock()
