@@ -27,7 +27,7 @@ def initialize_docking( receptor_file_path: str, dock_method_str: str ) -> tuple
 		# raise an exception if the receptor cannot be initialized
 		raise Exception("Unable to initialize Docking with {0}".format(self.args.receptor))
 
-	return dock, sdtag
+	return dock, sdtag, receptor
 
 def dock_molecule( dock: "OEDock", sdtag: str, mcmol, num_poses: int=10 ) -> (oechem.OEMol, float) :
 	''' Docks the multiconfomer molecule, with the given number of poses

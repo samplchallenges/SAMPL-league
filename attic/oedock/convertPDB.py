@@ -9,7 +9,7 @@ def SMILES_to_ism(smiles: str) -> "filename":
 
 
 def PDB_to_oeb(receptor_pdb: str, boxcoords: (float,float,float,float,float,float)) -> "filename":
-	receptor_oeb = "receptor.oeb"
+	receptor_oeb = "/tmp/receptor.oeb"
 
 	ifs = oechem.oemolistream()
 	ofs = oechem.oemolostream()
