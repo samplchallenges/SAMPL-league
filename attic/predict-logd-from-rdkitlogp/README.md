@@ -3,12 +3,12 @@ Not applicable
 
 # Build
 1. `cd SAMPL-league/attic/predict-logd-from-rdkitlogp`
-2. `docker build -t logD-calc .`
+2. `docker build -t logd-calc .`
 
 # Run
 ### Options
 ```
-docker build -it --rm logD-calc --help
+docker build -it --rm logd-calc --help
 unknown shorthand flag: 'i' in -it
 See 'docker build --help'.
 (base) megosato@Admins-MacBook-Pro predict-logd-from-rdkitlogp % docker run -it --rm rdlogd --help
@@ -27,5 +27,5 @@ Options:
   ```
 
 ### Example Run Commands
-`docker run logD-calc --solute <solute_SMILES>  --solventA <solventA_SMILES> --solventB <solventB_SMILES>`
-* Ex: `docker run logD-calc --solute "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O"  --solventA "O" --solventB "CCCCCCCCO"`
+`docker run logd-calc --solute <solute_SMILES>  --solventA <solventA_SMILES> --solventB <solventB_SMILES>`
+* Ex: `docker run logd-calc --solute "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O"  --solventA "O" --solventB "CCCCCCCCO"`
