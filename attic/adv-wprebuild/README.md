@@ -1,4 +1,4 @@
-## Setup:
+# Setup:
 1. `mkdir SAMPL-league/attic/adv-wprebuild/dependencies`
 2. Download Autodock Tools linux x86 .tgz file (`autodock_vina_1_1_2_linux_x86.tgz`) from http://vina.scripps.edu/download.html
 3. `mv autodock_vina_1_1_2_linux_x86.tgz SAMPL-league/attic/adv-wprebuild/dependencies`
@@ -19,12 +19,46 @@
 18. `cp oe_license.txt SAMPL-league/attic/adv-wprebuild`
 
 
-## Build:
+# Build:
 1. `cd SAMPL-league/attic/adv-base`
 2. `docker build -t adv-base:0.1 .`
 3. `cd SAMPL-league/attic/adv-wprebuild`
 4. `docker build -t adv .`
 
 
-## Run: 
-1. `docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> adv -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> -b <boxsize_x boxsize_y boxsize_z> -c <center_x center_y center_z> --bind_in <BIND_IN> --bind_out <BIND_OUT>` 
+# Run: 
+### Options
+```
+docker run -it --rm adv-pb --help
+Usage: dock [OPTIONS]
+
+  docks the given smiles string into the receptor within the box specified by
+  boxsize and center exhaustiveness does not work at this moment
+
+Options:
+  -r, --receptor TEXT             path of receptor PDB to dock the ligand into
+  -s, --smiles TEXT               SMILES str of ligand to be docked. quote and
+                                  add white space at the end "CCC "
+  --boxsize <INTEGER INTEGER INTEGER>...
+                                  The size of the box to dock into. Must be
+                                  used with --center and without --boxcoords
+  --center <FLOAT FLOAT FLOAT>...
+                                  The center of the box to dock into. Must be
+                                  used with --boxsize and without --boxcoords
+  --boxcoords <FLOAT FLOAT FLOAT FLOAT FLOAT FLOAT>...
+                                  The minimum and maximum corners of the box
+                                  to dock into. Must be used without --boxsize
+                                  and --center
+  -e, --exhaustiveness TEXT       Not working yet
+  --bind_out TEXT                 Directory in the container the outputs are
+                                  bound to
+  --bind_in TEXT                  Directory in the container the inputs are
+                                  bound to
+  --help                          Show this message and exit.
+  ```
+
+### Example run commands
+`docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> adv --bind_in <BIND_IN> --bind_out <BIND_OUT> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> --boxsize <boxsize_x boxsize_y boxsize_z> --center <center_x center_y center_z> ` 
+
+
+`docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> adv --bind_in <BIND_IN> --bind_out <BIND_OUT> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> --boxcoords <xmin ymin zmin xmax ymax zmax>`
