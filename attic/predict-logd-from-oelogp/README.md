@@ -1,23 +1,32 @@
-# How to build
+# Setup
+Not applicable
 
-Copy `oe_license.txt` into this folder (it should look like this when you run the `tree` command)
 
+# Build
+1. `cd SAMPL-league/attic/predict-logd-from-rdkitlogp`
+2. `docker build -t logd-calc .`
+
+
+# Run 
+### Options
 ```
-$ tree
-.
-├── Dockerfile
-├── environment.yml
-├── oe_license.txt
-├── print_logP.py
-├── README.md
-└── setup.py
-```
+docker run -it --rm logd-calc --help
+Usage: print-LogD [OPTIONS]
 
-NOTE: Do not push this container to a public repository or commit the `oe_license.txt` license file (you may push the container to a private repository, we just want to be sure not to leak the file to the public).
+  takes in all inputs required for a LogD calculation (solute, solventA and
+  solventB) but only calculates the LogP using oechem and ignores the
+  solventA  and solventB inputs
 
-Then run `docker build -t calc-logp:0.1 .` to build the container.
+Options:
+  --fuzz           Randomly change logP value by +/- 10% [default: False]
+                   [default: False]
 
-# How to use
-
-Run `docker run --rm -it calc-logp:0.1  "CCC"` to calculate the logP of propane.
-Run `docker run --rm -it calc-logp:0.1  --help` to see options.
+  --solute TEXT    solute SMILES string
+  --solventA TEXT  solventA SMILES string
+  --solventB TEXT  solventB SMILES string
+  --help           Show this message and exit.
+  ```
+  
+### Example Run Commands
+`docker run logd-calc --solute <solute_SMILES> --solventA <solventA_SMILES> --solventB <solventB_SMILES>`
+* Ex: `docker run logd-calc --solute "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O" --solventA "O" --solventB "CCCCCCCCO"`
