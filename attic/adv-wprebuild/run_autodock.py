@@ -1,6 +1,7 @@
 # python built in
 import os
 import random
+import sys
 
 # python packages
 from openmoltools import openeye
@@ -15,6 +16,10 @@ PYTHON_PATH = "/opt/app/dependencies/mgl/bin/python"
 UTILITIES_PATH = "/opt/app/dependencies/mgl/MGLToolsPckgs/AutoDockTools/Utilities24/"
 VINA_PATH = "/opt/app/dependencies/adv/bin/vina"
 
+
+def print_debug(debug: bool, msg:str):
+	print(f"{msg}\n" if debug else "", end="")
+	sys.stdout.flush()
 
 def get_out_dir(bind_dir: str):
 	''' creates a unique outfile directory to store the results in
@@ -101,10 +106,11 @@ def save_highest_score(dock_path: str, highscore_path: str):
 	outfile = open(highscore_path, 'w')
 	
 	for line in infile.readlines():
-
-		outfile.write(line)
+		if "MODEL" in line:
+			continue
 		if "ENDMDL" in line:
 			break
+		outfile.write(line)
 			
 	outfile.close()
 	infile.close()
@@ -152,7 +158,7 @@ def append_ligand_receptor(complex_path: str, receptor_path: str, ligand_path: s
 
 
 def pdbqt_to_pdb(pdbqt_path, pdb_path):
-	os.system(f"cut -c-66 {pdbqt_path} > {pdb_path}")
+	os.system(f"cut -c-66 {pdbqt_path} > {pdb_path} 1>/data/out/outfile")
 
 
 def clean_tmp():
@@ -171,6 +177,12 @@ def get_center_and_boxsize(boxcoords):
 
 	return ((center_x, center_y, center_z), (size_x, size_y, size_z))
 
+def get_score(score_path):
+	with open(score_path) as scoref:
+		for line in scoref:
+			if "Aff" in line:
+				return float(line.split()[1])
+
 
 @click.command()
 @click.option(
@@ -184,35 +196,38 @@ def get_center_and_boxsize(boxcoords):
 	help="SMILES str of ligand to be docked. quote and add white space at the end \"CCC \""
 )
 @click.option(
-	"-b",
 	"--boxsize",
 	type=click.Tuple([int,int,int]),
-	help="The size of the box to dock into"
+	help="The size of the box to dock into. Must be used with --center and without --boxcoords"
 )
 @click.option(
-	"-c",
 	"--center",
 	type=click.Tuple([float,float,float]),
-	help="The center of the box to dock into"
+	help="The center of the box to dock into. Must be used with --boxsize and without --boxcoords"
 )
 @click.option(
 	"--boxcoords",
-	type=click.Tuple([float,float,float,float,float,float])
+	type=click.Tuple([float,float,float,float,float,float]),
+	help="The minimum and maximum corners of the box to dock into. Must be used without --boxsize and --center"
 )
 @click.option(
 	"-e",
 	"--exhaustiveness",
-	help=""
+	help="Not working yet"
 )
 @click.option(
 	"--bind_out",
-	help="directory the outputs should be bound to"
+	help="Directory in the container the outputs are bound to"
 )
 @click.option(
 	"--bind_in",
-	help="directory the inputs should be bound to"
+	help="Directory in the container the inputs are bound to"
 )
-def autodock(receptor, smiles, boxsize, center, boxcoords, exhaustiveness, bind_out, bind_in):
+@click.option(
+	'--debug', 
+	is_flag=True
+)
+def autodock(receptor, smiles, boxsize, center, boxcoords, exhaustiveness, bind_out, bind_in, debug):
 	''' docks the given smiles string into the receptor within the box specified by
 	    boxsize and center
 	    exhaustiveness does not work at this moment
@@ -227,8 +242,9 @@ def autodock(receptor, smiles, boxsize, center, boxcoords, exhaustiveness, bind_
 	if boxcoords != None:
 		center, boxsize = get_center_and_boxsize(boxcoords)
 
-
-
+	if not os.path.exists(f"{bind_in}/{receptor}"):
+		print(f"ERROR: receptor file {receptor} does not exist")
+		return
 	# Create output directory	
 	out_dir = get_out_dir(bind_out)
 	os.mkdir(out_dir)
@@ -251,42 +267,52 @@ def autodock(receptor, smiles, boxsize, center, boxcoords, exhaustiveness, bind_
 
 	complex_pdb_path = f"{out_dir}/docked_complex.pdb"
 
+	score_path = "/tmp/score.txt"
+
 	# Make the config file
 	make_config_file(receptorprep_pdbqt_path, smiles, boxsize, center, exhaustiveness, config_path)
 
 	
 	# SMILES string -> 3D ligand with partial charges assigned -> autodock prepped ligand
-	print("LOAD: loading smiles string and converting to 3D sdf")
+	print("LOAD:   loading smiles string and converting to 3D sdf\n" if debug else "", end="")
 	smiles_to_chgpdb(smiles, ligchg_sdf_path)
-	print("PREP: converting sdf to pdbqt using openbabel")
-	os.system(f"obabel {ligchg_sdf_path} -O {ligchg_pdbqt_path}")
-	print("PREP: preparing ligand")
-	os.system(f"{PYTHON_PATH} {UTILITIES_PATH}prepare_ligand4.py -l {ligchg_pdbqt_path} -o {ligprep_path}")
+	print("PREP:   converting sdf to pdbqt using openbabel\n" if debug else "", end="")
+	os.system(f"obabel {ligchg_sdf_path} -O {ligchg_pdbqt_path} 2>/dev/null 1>/dev/null")
+	
+	print("PREP:   preparing ligand\n" if debug else "", end="")
+	os.system(f"{PYTHON_PATH} {UTILITIES_PATH}prepare_ligand4.py -l {ligchg_pdbqt_path} -o {ligprep_path} > /dev/null")
 	
 
 	# Preparing receptor
-	print("PREP: preparing receptor")
-	os.system(f"{PYTHON_PATH} {UTILITIES_PATH}prepare_receptor4.py -r {receptor_path} -o {receptorprep_pdbqt_path}")
+	print_debug(debug, "PREP:   preparing receptor")
+	os.system(f"{PYTHON_PATH} {UTILITIES_PATH}prepare_receptor4.py -r {receptor_path} -o {receptorprep_pdbqt_path} > /dev/null")
 
 
 	# Running AutoDock Vina
-	print("DOCK: running vina")
-	print(f"{VINA_PATH} --config {config_path} --ligand {ligprep_path} --out {ligdock_path}")
-	os.system(f"{VINA_PATH} --config {config_path} --ligand {ligprep_path} --out {ligdock_path}")
-
+	print_debug(debug, "DOCK:   running vina")
+	#print(f"{VINA_PATH} --config {config_path} --ligand {ligprep_path} --out {ligdock_path}")
+	os.system(f"{VINA_PATH} --config {config_path} --ligand {ligprep_path} --out {ligdock_path} > /dev/null")
+	
 	# Save the highest scoring pose which should be the first pose in the file
 	# and convert this pose to a pdb
-	print("SAVE: saving highest scoring pose")
+	print_debug(debug, "SAVE:   saving highest scoring pose")
 	save_highest_score(ligdock_path, highscore_pdbqt_path)
 	pdbqt_to_pdb(highscore_pdbqt_path, highscore_pdb_path)	
 
+
+	# Get score with more sigfigs for highest scoring pose
+	print_debug(debug, "SCORE:  scoring highest scorint pose")
+	os.system(f"{VINA_PATH} --config {config_path} --ligand {highscore_pdbqt_path} --out /tmp/rescore.pdbqt --score_only | grep 'Affinity:' > {score_path}")
+	score = get_score(score_path)
+
 	# Convert prepped receptor from pdbqt to pdb
-	print("SAVE: saving protein ligand complex")
+	print_debug(debug, "SAVE:   saving protein ligand complex")
 	pdbqt_to_pdb(receptorprep_pdbqt_path, receptor_pdb_path)
 	
 	# Remove intermediate files
-	print("CLEAN: clearing tmp files")
+	print_debug(debug, "CLEAN:  clearing tmp files")
 	clean_tmp()
-	
+
+	print(f"score = {score} kcal/mol")
 if __name__ == "__main__":
 	autodock()
