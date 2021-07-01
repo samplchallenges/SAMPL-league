@@ -158,6 +158,20 @@ def pdbqt_to_pdb(pdbqt_path, pdb_path):
 def clean_tmp():
 	os.system("rm /tmp/*")
 
+def get_center_and_boxsize(boxcoords):
+	xmin, ymin, zmin, xmax, ymax, zmax = boxcoords
+
+	center_x = 0.5 * (xmin + xmax)
+	center_y = 0.5 * (ymin + ymax)
+	center_z = 0.5 * (zmin + zmax)
+
+	size_x = xmax - xmin
+	size_y = ymax - ymin
+	size_z = zmax - zmin
+
+	return ((center_x, center_y, center_z), (size_x, size_y, size_z))
+
+
 @click.command()
 @click.option(
 	"-r",
@@ -182,6 +196,10 @@ def clean_tmp():
 	help="The center of the box to dock into"
 )
 @click.option(
+	"--boxcoords",
+	type=click.Tuple([float,float,float,float,float,float])
+)
+@click.option(
 	"-e",
 	"--exhaustiveness",
 	help=""
@@ -190,11 +208,27 @@ def clean_tmp():
 	"--bind_out",
 	help="directory the outputs should be bound to"
 )
-def autodock(receptor, smiles, boxsize, center, exhaustiveness, bind_out):
+@click.option(
+	"--bind_in",
+	help="directory the inputs should be bound to"
+)
+def autodock(receptor, smiles, boxsize, center, boxcoords, exhaustiveness, bind_out, bind_in):
 	''' docks the given smiles string into the receptor within the box specified by
 	    boxsize and center
 	    exhaustiveness does not work at this moment
 	'''
+
+	if boxcoords != None and center != None or boxcoords != None and boxsize != None:
+		print("ERROR: either --boxcoords alone or the pair --center and --boxsize together can be used")
+		return
+	if center != None and boxsize == None or center == None and boxsize != None:
+		print("ERROR: --center and --boxsize must be used together")
+		return
+	if boxcoords != None:
+		center, boxsize = get_center_and_boxsize(boxcoords)
+
+
+
 	# Create output directory	
 	out_dir = get_out_dir(bind_out)
 	os.mkdir(out_dir)
@@ -202,17 +236,17 @@ def autodock(receptor, smiles, boxsize, center, exhaustiveness, bind_out):
 	# Set file names for intermediate and output files
 	# Output file names should probably become an input option
 	ligchg_sdf_path = "/tmp/lig-chg.sdf"
-	ligchg_pdbqt_path = f"/tmp/lig-chg.pdbqt"
-	ligprep_path = f"/tmp/lig-prep.pdbqt"
+	ligchg_pdbqt_path = "/tmp/lig-chg.pdbqt"
+	ligprep_path = "/tmp/lig-prep.pdbqt"
 
-	receptor_path = receptor
-	receptorprep_pdbqt_path = f"/tmp/rec-prep.pdbqt"
+	receptor_path = f"{bind_in}/{receptor}"
+	receptorprep_pdbqt_path = "/tmp/rec-prep.pdbqt"
 	receptor_pdb_path = f"{out_dir}/rec-dock.pdb"
 
 	config_path = f"{out_dir}/config.txt"
 
 	ligdock_path = f"{out_dir}/lig_dock.pdbqt"
-	highscore_pdbqt_path = f"/tmp/best_dock.pdbqt"
+	highscore_pdbqt_path = "/tmp/best_dock.pdbqt"
 	highscore_pdb_path = f"{out_dir}/best_dock.pdb"
 
 	complex_pdb_path = f"{out_dir}/docked_complex.pdb"
@@ -222,7 +256,7 @@ def autodock(receptor, smiles, boxsize, center, exhaustiveness, bind_out):
 
 	
 	# SMILES string -> 3D ligand with partial charges assigned -> autodock prepped ligand
-	print("LOAD: loading smiles string and converting to 3D pdb")
+	print("LOAD: loading smiles string and converting to 3D sdf")
 	smiles_to_chgpdb(smiles, ligchg_sdf_path)
 	print("PREP: converting sdf to pdbqt using openbabel")
 	os.system(f"obabel {ligchg_sdf_path} -O {ligchg_pdbqt_path}")
