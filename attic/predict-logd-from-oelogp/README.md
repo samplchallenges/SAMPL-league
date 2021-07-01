@@ -1,9 +1,8 @@
 # Setup
-Not applicable
-
+1. `cp oe_license.txt SAMPL-league/attic/predict-logd-from-oelogp
 
 # Build
-1. `cd SAMPL-league/attic/predict-logd-from-rdkitlogp`
+1. `cd SAMPL-league/attic/predict-logd-from-oelogp`
 2. `docker build -t logd-calc .`
 
 
