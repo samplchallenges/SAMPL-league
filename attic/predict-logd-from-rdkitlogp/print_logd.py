@@ -12,19 +12,25 @@ from rdkit.Chem import Crippen
     show_default=True,
     help="Random change logP value by +/- 10%",
 )
-@click.argument(
-	"solute", 
-	default="CCCCCCCCO",
+@click.option(
+    "--solute", 
+    default="CCCCCCCCO",
+    help="solute SMILES string"
 )
-@click.argument(
-	"solventa", 
-	default="O",
+@click.option(
+    "--solventA", 
+    default="O",
+    help="solventA SMILES string"
 )
-@click.argument(
-	"solventb", 
-	default="CCCCCCCCO",
+@click.option(
+    "--solventB", 
+    default="CCCCCCCCO",
+    help="solventB SMILES string"
 )
-def get_logd(solute, solventa, solventb, fuzz):
+def get_logd(solute, solventA, solventB, fuzz):
+    ''' takes in all inputs required for a LogD calculation (solute, solventA and solventB)
+	but only calculates the LogP and ignores the solventA and solventB inputs
+    '''
     rdmol = Chem.MolFromSmiles(smiles)
     logP = Crippen.MolLogP(rdmol)
     if fuzz:
@@ -36,4 +42,4 @@ def get_logd(solute, solventa, solventb, fuzz):
 
 
 if __name__ == "__main__":
-    get_LogD()
+    get_logd()
