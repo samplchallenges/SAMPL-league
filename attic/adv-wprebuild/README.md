@@ -1,14 +1,17 @@
+# Description
+Details how to setup, build and use Autodock Vina docker container. 
+
 # Setup:
-1. `mkdir SAMPL-league/attic/adv-wprebuild/dependencies`
+1. `mkdir SAMPL-league/attic/adv-base/dependencies`
 2. Download Autodock Tools linux x86 .tgz file (`autodock_vina_1_1_2_linux_x86.tgz`) from http://vina.scripps.edu/download.html
-3. `mv autodock_vina_1_1_2_linux_x86.tgz SAMPL-league/attic/adv-wprebuild/dependencies`
-4. `cd SAMPL-league/attic/adv-wprebuild/dependencies`
+3. `mv autodock_vina_1_1_2_linux_x86.tgz SAMPL-league/attic/adv-base/dependencies`
+4. `cd SAMPL-league/attic/adv-base/dependencies`
 5. `tar -xvf autodock_vina_1_1_2_linux_x86.tgz`
 6. `rm autodock_vina_1_1_2_linux_x86.tgz`
 7. `mv autodock_vina_1_1_2_linux_x86 adv`
 8. Download MGL Tools linux x86 .tar.gz (`mgltools_x86_64Linux2_1.5.6.tar.gz`) from http://mgltools.scripps.edu/downloads
-9. `mv mgltools_x86_64Linux2_1.5.6.tar.gz SAMPL-league/attic/adv-wprebuild/dependencies`
-10. `cd SAMPL-league/attic/adv-wprebuild/dependencies`
+9. `mv mgltools_x86_64Linux2_1.5.6.tar.gz SAMPL-league/attic/adv-base/dependencies`
+10. `cd SAMPL-league/attic/adv-base/dependencies`
 11. `tar -xvf mgltools_x86_64Linux2_1.5.6.tar.gz`
 12. `rm mgltools_x86_64Linux2_1.5.6.tar.gz`
 13. `mv mgltools_x86_64Linux2_1.5.6 mgl`
@@ -21,7 +24,7 @@
 
 # Build:
 1. `cd SAMPL-league/attic/adv-base`
-2. `docker build -t adv-base:0.1 .`
+2. `docker build -t adv-base .`
 3. `cd SAMPL-league/attic/adv-wprebuild`
 4. `docker build -t adv .`
 
@@ -54,11 +57,13 @@ Options:
                                   bound to
   --bind_in TEXT                  Directory in the container the inputs are
                                   bound to
+  --debug                         prints debug print statements when --debug
+                                  flag is used
   --help                          Show this message and exit.
   ```
 
 ### Example run commands
 `docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> adv --bind_in <BIND_IN> --bind_out <BIND_OUT> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> --boxsize <boxsize_x boxsize_y boxsize_z> --center <center_x center_y center_z> ` 
-
+* `docker run -it --rm -v $(pwd)/inputs:/data/in -v $(pwd):/data/out adv-pb --bind_in /data/in --bind_out /data/out -r 4w51-cryo.pdb -s "CC(C)Cc1ccccc1 " --boxsize 14 14 14 --center -32.355 7.263 2.207`
 
 `docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> adv --bind_in <BIND_IN> --bind_out <BIND_OUT> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> --boxcoords <xmin ymin zmin xmax ymax zmax>`
