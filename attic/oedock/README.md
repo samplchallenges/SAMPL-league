@@ -17,17 +17,25 @@ Usage: oedock [OPTIONS]
 Options:
   -s, --smiles TEXT               SMILES string  [required]
   -r, --receptor TEXT             receptor PDB  [required]
+  --hint_ligand TEXT              PDB of ligand docked into receptor to
+                                  improve docking. Must be used without
+                                  --boxcoords --boxsize and --center.
   --boxcoords <FLOAT FLOAT FLOAT FLOAT FLOAT FLOAT>...
                                   The minimum and maximum values of the
                                   coordinates of the box representing the
                                   binding site. Enter in the order: xmin ymin
-                                  zmin xmax ymax zmax
+                                  zmin xmax ymax zmax. Must be used without
+                                  --boxsize --center and --hint_ligand
   --boxsize <INTEGER INTEGER INTEGER>...
                                   Size of the box to dock into. Enter in the
-                                  order of: size_x size_y size_z
+                                  order of: size_x size_y size_z. Use with
+                                  --center. Must be used without --boxcoords
+                                  and --hint_ligand
   --center <FLOAT FLOAT FLOAT>...
                                   Center of the box to dock into. Enter in the
-                                  order of: center_x center_y center_z
+                                  order of: center_x center_y center_z. Use
+                                  with --box_size. Must be used without
+                                  --boxcoords and --hint_ligand.
   --bind_out TEXT                 directory in the container the outputs are
                                   bound to  [required]
   --bind_in TEXT                  directory in the container the inputs are
