@@ -38,12 +38,12 @@ Options:
 
 
 ### Example run commands
-`docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> adv --bind_in <BIND_IN> --bind_out <BIND_OUT> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> -boxsize <boxsize_x boxsize_y boxsize_z> -center <center_x center_y center_z>`
-* Ex: `docker run -it --rm -v $(pwd)/receptors:/data/in -v $(pwd):/data/out adv -- bind_in /data/in --bind_out /data/out -s "CCCc1ccccc1" -r 4w51-cryo.pdb --boxsize 14 14 14 --center -32.355 7.263 2.207`
+`docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> oedock --bind_in <BIND_IN> --bind_out <BIND_OUT> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> -boxsize <boxsize_x boxsize_y boxsize_z> -center <center_x center_y center_z>`
+* Ex: `docker run -it --rm -v $(pwd)/receptors:/data/in -v $(pwd):/data/out oedock --bind_in /data/in --bind_out /data/out -s "CCCc1ccccc1" -r 4w51-cryo.pdb --boxsize 14 14 14 --center -32.355 7.263 2.207`
 
 
 
-`docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> adv --bind_in <BIND_IN> --bind_out <BIND_OUT> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> --boxcoords <xmin ymin zmin xmax ymax zmax>`
-* Ex: `docker run -it --rm -v $(pwd)/receptors:/data/in -v $(pwd):/data/out adv -- bind_in /data/in --bind_out /data/out -s "CCCc1ccccc1" -r 4w51-cryo.pdb --boxcoords -39.355 0.2629999999999999 -4.793 -25.354999999999997 14.263 9.207`
+`docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> oedock --bind_in <BIND_IN> --bind_out <BIND_OUT> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> --boxcoords <xmin ymin zmin xmax ymax zmax>`
+* Ex: `docker run -it --rm -v $(pwd)/receptors:/data/in -v $(pwd):/data/out oedock --bind_in /data/in --bind_out /data/out -s "CCCc1ccccc1" -r 4w51-cryo.pdb --boxcoords -39.355 0.2629999999999999 -4.793 -25.354999999999997 14.263 9.207`
 
 
