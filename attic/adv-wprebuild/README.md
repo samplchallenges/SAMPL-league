@@ -52,7 +52,9 @@ Options:
                                   The minimum and maximum corners of the box
                                   to dock into. Must be used without --boxsize
                                   and --center
-  -e, --exhaustiveness TEXT       Not working yet
+  -n, --num_modes INTEGER         Number of modes to dock
+  -e, --exhaustiveness TEXT       exhaustiveness of the global search,
+                                  default=8
   --bind_out TEXT                 Directory in the container the outputs are
                                   bound to
   --bind_in TEXT                  Directory in the container the inputs are
@@ -60,7 +62,7 @@ Options:
   --debug                         prints debug print statements when --debug
                                   flag is used
   --help                          Show this message and exit.
-  ```
+```
 
 ### Example run commands
 `docker run -it --rm -v <INPUT_DIR>:<BIND_IN> -v <OUTPUT_DIR>:<BIND_OUT> adv --bind_in <BIND_IN> --bind_out <BIND_OUT> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> --boxsize <boxsize_x boxsize_y boxsize_z> --center <center_x center_y center_z> ` 
