@@ -53,7 +53,7 @@ Options:
                                   to dock into. Must be used without --boxsize
                                   and --center
   -n, --num_modes INTEGER         Number of modes to dock
-  -e, --exhaustiveness TEXT       exhaustiveness of the global search,
+  -e, --exhaustiveness INTEGER    exhaustiveness of the global search,
                                   default=8
   --bind_out TEXT                 Directory in the container the outputs are
                                   bound to
