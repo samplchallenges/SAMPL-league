@@ -42,6 +42,8 @@ Options:
   -r, --receptor TEXT             path of receptor PDB to dock the ligand into
   -s, --smiles TEXT               SMILES str of ligand to be docked. quote and
                                   add white space at the end "CCC "
+  --flex TEXT                     Not working yet. flexible sidechains if any
+                                  pdb
   --boxsize <INTEGER INTEGER INTEGER>...
                                   The size of the box to dock into. Must be
                                   used with --center and without --boxcoords
