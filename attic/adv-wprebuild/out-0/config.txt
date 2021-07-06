@@ -1,7 +1,0 @@
-receptor = /tmp/rec-prep.pdbqt
-center_x = -32.355
-center_y = 7.263
-center_z = 2.207
-size_x = 14
-size_y = 14
-size_z = 14
