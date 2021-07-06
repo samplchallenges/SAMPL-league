@@ -25,9 +25,10 @@ def calc_coords(output_dir, molfile, smiles, smiles_arg):
         mol2 = Chem.AddHs(mol)
         AllChem.EmbedMolecule(mol2)
         OUTPUT_FILENAME = "output.mol"
-        with open(os.path.join(output_dir, OUTPUT_FILENAME), "w") as fp:
-            print(Chem.MolToMolBlock(mol2),file=fp)
-        print(CONFORMATION_KEY, OUTPUT_FILENAME)
+        output_path = os.path.join(output_dir, OUTPUT_FILENAME)
+        with open(output_path, "w") as fp:
+            print(Chem.MolToMolBlock(mol2), file=fp)
+        print(CONFORMATION_KEY, output_path)
         print(MOLW_KEY, ExactMolWt(mol2))
         print(ATOMCOUNT_KEY, mol2.GetNumAtoms())
         print(BONDCOUNT_KEY, mol2.GetNumBonds())

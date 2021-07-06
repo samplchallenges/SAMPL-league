@@ -40,7 +40,7 @@ def _convert_guest_to_host_path(host_path, filepath):
     filepath = GUEST_OUTPUT_DIR / filepath
     relative_path = filepath.relative_to(GUEST_OUTPUT_DIR)
     # so we don't care whether container outputs relative or absolute paths
-    return Path(host_path) / relative_path
+    return str(Path(host_path) / relative_path)
 
 
 def _convert_file_kwargs(file_kwargs):
@@ -57,7 +57,8 @@ def _convert_file_kwargs(file_kwargs):
         if dirpath not in dirpaths:
             dirpaths[dirpath] = Path("/mnt") / f"inputs{idx}"
 
-        final_file_kwargs[key] = dirpaths[dirpath] / basename
+        key = str(key)
+        final_file_kwargs[key] = str(dirpaths[dirpath] / basename)
     return dirpaths, final_file_kwargs
 
 
@@ -91,11 +92,12 @@ def run_container(container_uri, command, inputdir_map=None, output_dir=None):
     client = docker.from_env()
     volumes = {}
     for inputdir, guest_input_dir in inputdir_map.items():
-        volumes[inputdir] = {
+        volumes[str(inputdir)] = {
             'bind': str(guest_input_dir),
             'mode': 'ro'}
     if output_dir:
-        volumes[output_dir] = {
+        output_dir = Path(output_dir).resolve()
+        volumes[str(output_dir)] = {
             'bind': str(GUEST_OUTPUT_DIR),
             'mode': 'rw'}
         command = f" --output-dir {GUEST_OUTPUT_DIR} {command}"
