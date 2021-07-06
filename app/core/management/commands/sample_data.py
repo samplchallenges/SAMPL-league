@@ -33,11 +33,13 @@ def _create_challenge_inputs(challenge):
 
     smiles = "c1ccccc1"
     for elem in elems.values():
-        smiles_value = models.TextValue.objects.create(value=smiles)
+        smiles_value = models.TextValue.objects.create(
+            challenge=challenge, value=smiles
+        )
         models.InputValue.objects.create(
             input_element=elem, value_type=smiles_type, value_object=smiles_value
         )
-        float_value = models.FloatValue.objects.create(value=72.0)
+        float_value = models.FloatValue.objects.create(challenge=challenge, value=72.0)
         models.AnswerKey.objects.create(
             challenge=challenge,
             input_element=elem,

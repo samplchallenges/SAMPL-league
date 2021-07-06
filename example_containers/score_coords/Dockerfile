@@ -8,4 +8,4 @@ ENV PATH="/root/.local/bin:$PATH"
 
 RUN python3 -m pip install --user .
 
-ENTRYPOINT ["score-coords"]
+ENTRYPOINT ["score"]

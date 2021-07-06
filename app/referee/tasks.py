@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import os
+from pathlib import Path
 import shlex
 import shutil
 import tempfile
@@ -10,11 +11,13 @@ from collections import namedtuple
 import dask
 import dask.distributed as dd
 
+from django.contrib.contenttypes.models import ContentType
+
 import ever_given.wrapper
 
 from core import models
 
-from .scoring import score_evaluation, score_submission_run
+from . import scoring
 
 
 logger = logging.getLogger(__name__)
@@ -29,32 +32,24 @@ def run_and_score_submission(client, submission):
     Runs public and private, plus scoring
     """
     challenge = submission.challenge
-    public_element_ids = challenge.inputelement_set.filter(is_public=True).values_list(
-        "id", flat=True
-    )
-    private_element_ids = challenge.inputelement_set.filter(
-        is_public=False
-    ).values_list("id", flat=True)
+    delayed_conditional = True
+    for is_public in (True, False):
+        element_ids = challenge.inputelement_set.filter(is_public=is_public).values_list(
+            "id", flat=True
+        )
+        run_id, prediction_ids = run_submission(
+            submission.pk, element_ids, delayed_conditional, is_public=is_public
+        )
+        delayed_conditional = check_and_score(run_id, prediction_ids)
 
-    public_run_id, public_prediction_ids = run_submission(
-        submission.pk, public_element_ids, True, is_public=True
-    )
-    public_success = check_and_score(public_run_id, public_prediction_ids)
-    private_run_id, private_prediction_ids = run_submission(
-        submission.pk, private_element_ids, public_success, is_public=False
-    )
-
-    private_success = check_and_score(private_run_id, private_prediction_ids)
-
-    # private_success.visualize(filename="delayed_graph.svg")
-    future = client.submit(private_success.compute)
+    future = client.submit(delayed_conditional.compute)  # pylint:disable=no-member
     print("Future key:", future.key)
 
     dd.fire_and_forget(future)
     return future
 
 
-@dask.delayed(pure=False)
+@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def check_and_score(submission_run_id, prediction_ids):
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = models.Status.SUCCESS
@@ -67,25 +62,19 @@ def check_and_score(submission_run_id, prediction_ids):
         "public?",
         submission_run.is_public,
     )
-    score_submission(submission_run.submission.pk, submission_run_id)
+    scoring.score_submission(submission_run.submission.pk, submission_run_id)
     return True
 
 
-@dask.delayed(pure=False)
-def chain(upstream_success, delayed_func, *args, **kwargs):
-    # Can ignore upstream_success
-    return delayed_func(*args, **kwargs)
-
-
-@dask.delayed(pure=False)
-def create_submission_run(submission_id, conditional, is_public=True):
+@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
+def create_submission_run(submission_id, conditional, *, is_public):
     # conditional will be a dask delayed; if it's false, the run_element will no-op
     if not conditional:
         return
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     if not container.digest:
-        container.digest = "DEADBEEF"
+        container.digest = "nodigest"
         container.save()
     submission_run = models.SubmissionRun.objects.create(
         submission=submission,
@@ -105,7 +94,7 @@ def run_submission(submission_id, element_ids, conditional, is_public=True):
     submission_run_id = create_submission_run(
         submission_id, conditional, is_public=is_public
     )
-    delayeds = dask.delayed(
+    delayed_element_runs = dask.delayed(
         [
             run_element(
                 submission_id,
@@ -117,24 +106,10 @@ def run_submission(submission_id, element_ids, conditional, is_public=True):
         ],
         nout=len(element_ids),
     )
-    return (submission_run_id, delayeds)
+    return (submission_run_id, delayed_element_runs)
 
 
-def _save_prediction(challenge, evaluation, output_type, raw_value, output_dir):
-    prediction = models.Prediction(
-        challenge=challenge,
-        value_type=output_type,
-        evaluation=evaluation,
-    )
-
-    output_type_model = output_type.content_type.model_class()
-    value_object = output_type_model.from_string(
-        raw_value.strip(), prediction=prediction, output_dir=output_dir
-    )
-    value_object.save()
-
-
-@dask.delayed(pure=False)
+@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_element(submission_id, element_id, submission_run_id, is_public):
     submission = models.Submission.objects.get(pk=submission_id)
     challenge = submission.challenge
@@ -153,14 +128,14 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     else:
         input_arg_handling = MULTI
 
-    file_content_type = models.ContentType.objects.get_for_model(models.FileValue)
+    file_content_type = ContentType.objects.get_for_model(models.FileValue)
 
     output_types = challenge.valuetype_set.filter(is_input_flag=False)
     output_types_dict = {
         output_type.key: output_type for output_type in output_types.all()
     }
     has_output_files = output_types.filter(
-        content_type__in=(blob_content_type, file_content_type)
+        content_type=file_content_type
     ).exists()
 
     container = submission.container
@@ -169,60 +144,40 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
         input_element=element, submission_run=submission_run
     )
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        inputdir = os.path.join(str(tmpdir), "input")
-        os.mkdir(inputdir)
-        if has_output_files:
-            outputdir = os.path.join(str(tmpdir), "output")
-            os.mkdir(outputdir)
-            scoringdir = os.path.join(str(tmpdir), "scoring")
-            os.mkdir(scoringdir)
-            os.mkdir(os.path.join(scoringdir, "predictions"))
-            os.mkdir(os.path.join(scoringdir, "answers"))
-        else:
-            outputdir = None
-            scoringdir = None
-        input_values_bykey = {
-            input_value.value_type.key: input_value.value
-            for input_value in element.inputvalue_set.exclude(
-                value_type__content_type=file_content_type
-            )
-        }
+    kwargs, file_kwargs = element.all_values()
 
-        for input_value in element.inputvalue_set.filter(
-            value_type__content_type=file_content_type
-        ):
-            filename = input_value.value.name
-            path = input_value.value.path
-            input_values_bykey[input_value.value_type.key] = os.path.join(
-                "/mnt", "inputs", os.path.basename(filename)
-            )
-            shutil.copy(path, inputdir)
-        command = utils.prepare_commandline(input_values_bykey)
-        print(command)
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dirpath = Path(str(tmpdir))
+            output_dir = None
+            output_file_keys = None
+            if has_output_files:
+                output_dir = dirpath / "output"
+                output_dir.mkdir()
+                output_file_keys = set([key for key, output_type in output_types_dict.items() if output_type.content_type == file_content_type])
 
-        try:
-            result = ever_given.wrapper.run_container(
-                container.uri, command, inputdir=inputdir, outputdir=outputdir
-            )
-            result_dict = utils.parse_output(result)
-            for key, value in result_dict.items():
+            for key, value in ever_given.wrapper.run(
+                    container.uri,
+                    kwargs=kwargs,
+                    file_kwargs=file_kwargs,
+                    output_dir=output_dir,
+                    output_file_keys=output_file_keys
+            ):
                 output_type = output_types_dict.get(key)
                 if output_type:
-                    _save_prediction(
-                        challenge, evaluation, output_type, value, outputdir
-                    )
+                    prediction = models.Prediction.load_output(challenge, evaluation, output_type, value)
+                    print(f"{prediction.__dict__}")
+                    prediction.save()
                 else:
                     print(f"Ignoring key {key} with value {value}")
-            score_evaluation(
-                challenge.scoremaker.container,
-                evaluation,
-                evaluation_score_types,
-                scoringdir,
-            )
-            evaluation.status = models.Status.SUCCESS
-        except:
-            evaluation.status = models.Status.FAILURE
-            raise
-        finally:
-            evaluation.save()
+        scoring.score_evaluation(
+            challenge.scoremaker.container,
+            evaluation,
+            evaluation_score_types,
+        )
+        evaluation.status = models.Status.SUCCESS
+    except:
+        evaluation.status = models.Status.FAILURE
+        raise
+    finally:
+        evaluation.save()

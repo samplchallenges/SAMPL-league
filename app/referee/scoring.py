@@ -1,6 +1,6 @@
 import json
 import os.path
-import shutil
+import tempfile
 
 from django.db.models.fields.files import FieldFile
 
@@ -69,13 +69,9 @@ def score_evaluation(container, evaluation, evaluation_score_types):
     kwargs, file_kwargs = _build_kwargs(evaluation)
     command = "score-evaluation"
     print(container.uri, command)
-    scores_string = ever_given.wrapper.run(
-        container.uri, command, has_output_files=False,
-        file_kwargs=file_kwargs, kwargs=kwargs
-    )
-
-    scores_dict = utils.parse_output(scores_string)
-    for key, score_value in scores_dict.items():
+    for key, score_value in ever_given.wrapper.run(
+            container.uri, command,
+            file_kwargs=file_kwargs, kwargs=kwargs):
         models.EvaluationScore.objects.create(
             evaluation=evaluation,
             score_type=evaluation_score_types[key],
@@ -87,12 +83,6 @@ def score_submission_run(container, submission_run, score_types):
     evaluation_score_types = score_types[models.ScoreType.Level.EVALUATION]
     submission_run_score_types = score_types[models.ScoreType.Level.SUBMISSION_RUN]
 
-    if len(submission_run_score_types) == 1:
-        submission_run_score_handling = SIMPLE
-        submission_run_score_type = list(submission_run_score_types.values())[0]
-    else:
-        submission_run_score_handling = MULTI
-
     challenge = submission_run.submission.challenge
 
     evaluations = submission_run.evaluation_set.all()
@@ -101,24 +91,18 @@ def score_submission_run(container, submission_run, score_types):
         {score.score_type.key: score.value for score in evaluation.scores.all()}
         for evaluation in evaluations
     ]
+    with tempfile.NamedTemporaryFile(suffix=".json") as fp:
+        json.dump(fp, run_scores_dicts)
+        fp.flush()
 
-    commandargs = json.dumps(run_scores_dicts)
-    command = f"score-submissionrun {commandargs}"
-    scores_string = ever_given.wrapper.run_container(container.uri, command)
-    if submission_run_score_handling == SIMPLE:
-        score_value = float(scores_string)
-        models.SubmissionRunScore.objects.create(
-            submission_run=submission_run,
-            score_type=submission_run_score_type,
-            value=score_value,
-        )
-    else:
-        score_dict = json.loads(scores_string)
-        for key, score_value in score_dict.items():
+        command = f"score-submissionrun"
+        for key, value in ever_given.wrapper.run(
+                container.uri, command,
+                file_kwargs={"scores": fp.name}, kwargs={}):
             models.SubmissionRunScore.objects.create(
                 submission_run=submission_run,
                 score_type=submission_run_score_types[key],
-                value=score_value,
+                value=value,
             )
 
 

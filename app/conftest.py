@@ -28,6 +28,10 @@ def user(db):
 def challenge(challenge_factory, db):
     return challenge_factory("SAMPL1")
 
+@pytest.fixture
+def challenge2(challenge_factory, db):
+    return challenge_factory("SAMPL2")
+
 
 @pytest.fixture
 def challenge_factory(db):
@@ -127,10 +131,8 @@ def elem_factory(testing_data_path, db):
             name=name, challenge=challenge, is_public=True
         )
         file_path = os.path.join(testing_data_path, file_name)
-        with open(file_path, "rb") as fp:
-            file_value = models.FileValue()
-            file_value.value.save(file_name, File(fp))
-            file_value.save()
+        file_value = models.FileValue.from_string(file_path, challenge=challenge)
+        file_value.save()
         models.InputValue.objects.create(
             input_element=elem, value_type=file_type, value_object=file_value
         )
@@ -159,10 +161,7 @@ def float_answer_key_factory(db):
 def file_answer_key_factory(testing_data_path, db):
     def fak_maker(challenge, elem, value_type, file_name):
         file_path = os.path.join(testing_data_path, file_name)
-        with open(file_path, "rb") as fp:
-            file_value = models.FileValue()
-            file_value.value.save(file_name, File(fp))
-            file_value.save()
+        file_value = models.FileValue.from_string(file_path, challenge=challenge)
         answer_key = models.AnswerKey.objects.create(
             challenge=challenge,
             input_element=elem,
@@ -176,10 +175,10 @@ def file_answer_key_factory(testing_data_path, db):
 
 @pytest.fixture
 def benzene_from_mol(
-    challenge, molfile_type, molw_type, elem_factory, float_answer_key_factory, db
+    challenge2, molfile_type, molw_type, elem_factory, float_answer_key_factory, db
 ):
-    elem = elem_factory(challenge, molfile_type, "benzene", "ChEBI_16716.mdl")
-    answer_key = float_answer_key_factory(challenge, elem, molw_type, 72.0)
+    elem = elem_factory(challenge2, molfile_type, "benzene", "ChEBI_16716.mdl")
+    answer_key = float_answer_key_factory(challenge2, elem, molw_type, 72.0)
     return elem
 
 
@@ -189,7 +188,7 @@ def smiles_type(challenge, db):
         challenge=challenge,
         is_input_flag=True,
         content_type=ContentType.objects.get_for_model(models.TextValue),
-        key="SMILES",
+        key="smiles",
         description="SMILES",
     )
 

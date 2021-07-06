@@ -155,6 +155,25 @@ class InputElement(Timestamped):
     class Meta:
         unique_together = ["challenge", "name"]
 
+    def all_values(self):
+        """
+        Returns a pair of key: value dicts, where the first dict is regular values
+        and the second is file values
+        """
+        file_values = {}
+        values = {}
+        for input_value in self.inputvalue_set.select_related(
+            "value_type", "value_type__content_type"
+        ).all():
+            value_type = input_value.value_type
+            key = value_type.key
+            content_type = value_type.content_type
+            if content_type.model_class() == FileValue:
+                file_values[key] = input_value.value.path
+            else:
+                values[key] = input_value.value
+        return values, file_values
+
     def __str__(self):
         return f"{self.name}, is public? {self.is_public}"
 
@@ -258,6 +277,7 @@ class ScoreBase(Timestamped):
     value = models.FloatField()
 
     REQUIRED_LEVEL = None
+
     class Meta:
         abstract = True
 
@@ -302,6 +322,7 @@ class Solution(ValueParentMixin):
     class Meta:
         abstract = True
 
+    @classmethod
     def dicts_by_key(cls, instances):
         by_key = {}
         files_by_key = {}
@@ -318,6 +339,29 @@ class Prediction(Solution):
 
     class Meta:
         unique_together = ["evaluation", "value_type"]
+
+    @classmethod
+    def load_output(cls, challenge, evaluation, output_type, value):
+        assert challenge is not None
+        assert evaluation is not None
+        assert output_type is not None
+
+        prediction = cls(
+            challenge=challenge,
+            value_type=output_type,
+            evaluation=evaluation,
+        )
+
+        output_type_model = output_type.content_type.model_class()
+
+        prediction.value_object = output_type_model.from_string(
+            value, challenge=challenge, evaluation=evaluation
+        )
+        prediction.value_object.save()
+        print(f"{prediction.value_object.__dict__}")
+
+        assert prediction.value_object is not None
+        return prediction
 
     def __str__(self):
         return f"{self.evaluation}::{self.value_type.key}::{self.content_type}"
@@ -409,11 +453,15 @@ def _upload_location(instance, filename):
 class FileValue(GenericValue):
     value = models.FileField(upload_to=_upload_location)
 
-    @classmethod
-    def from_string(cls, raw_value, *, challenge, evaluation=None, output_dir):
-        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
+#    def __init__(self, *, value, challenge, **kwargs):
 
-        instance = cls(value=raw_value, **cls_kwargs)
-        with open(os.path.join(output_dir, raw_value)) as fp:
-            instance.value.save(raw_value, File(fp))
+#        super().__init__(value=value, challenge=challenge, **kwargs)
+
+    @classmethod
+    def from_string(cls, filepath, *, challenge, evaluation=None):
+        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
+        filename = os.path.basename(filepath)
+        instance = cls(value=filename, **cls_kwargs)
+        with open(filepath) as fp:
+            instance.value.save(filename, File(fp))
         return instance
