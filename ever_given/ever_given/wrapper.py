@@ -53,10 +53,11 @@ def _convert_file_kwargs(file_kwargs):
     for idx, (key, pathname) in enumerate(file_kwargs.items()):
         path = Path(pathname).resolve()
         dirpath = path.parent
+        basename = path.name
         if dirpath not in dirpaths:
             dirpaths[dirpath] = Path("/mnt") / f"inputs{idx}"
 
-        final_file_kwargs[key] = dirpaths[dirpath]
+        final_file_kwargs[key] = dirpaths[dirpath] / basename
     return dirpaths, final_file_kwargs
 
 

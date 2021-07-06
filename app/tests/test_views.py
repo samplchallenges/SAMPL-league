@@ -88,8 +88,9 @@ def test_update_submission(client, user, draft_submission):
     assert not submission.draft_mode
 
 
+@pytest.mark.parametrize("processes", (False, True))
 @pytest.mark.django_db(transaction=True)
-def test_run_submission(client):
+def test_run_submission(client, processes):
 
     # Because we have dask worker in a separate thread, we need to commit our transaction.
     # But the transaction test case will wipe out data from django's ContentTypes
@@ -110,7 +111,11 @@ def test_run_submission(client):
         nonlocal future
         future = l_future
 
-    cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+    if processes:
+        cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+    else:
+        cluster = dd.LocalCluster(n_workers=1, processes=False, threads_per_worker=4)
+
     dask_client = dd.Client(cluster)
 
     mock_get_client = Mock(return_value=dask_client)
