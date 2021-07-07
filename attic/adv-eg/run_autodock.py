@@ -222,15 +222,13 @@ def autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,
 
 	receptor_path = f"{receptor}"
 	receptorprep_pdbqt_path = "/tmp/rec-prep.pdbqt"
-	receptor_pdb_path = f"{output_dir}/rec-dock.pdb"
+	receptor_pdb_path = f"{output_dir}/rec-dock.pdb" # switch to join()
 
 	config_path = "/tmp/config.txt"
 
 	ligdock_path = "/tmp/lig_dock.pdbqt"
 	highscore_pdbqt_path = "/tmp/best_dock.pdbqt"
-	highscore_pdb_path = f"{output_dir}/best_dock.pdb"
-
-	#complex_pdb_path = f"{output_dir}/docked_complex.pdb"
+	highscore_pdb_path = f"{output_dir}/best_dock.pdb" # switch to join()
 
 	score_path = "/tmp/score.txt"
 
