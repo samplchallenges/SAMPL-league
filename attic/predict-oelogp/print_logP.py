@@ -29,7 +29,9 @@ def get_LogP(smiles, fuzz, output_dir):
         # randomly change logP value by +/- 10%
         fuzzed_logP = logP + random.uniform(-0.1, 0.1) * logP
         logP = fuzzed_logP
+    logP = float(logP)
     print(f"LogP {logP}",end="")
+
 
 
 if __name__ == "__main__":
