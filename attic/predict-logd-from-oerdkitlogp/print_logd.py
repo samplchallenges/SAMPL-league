@@ -20,35 +20,40 @@ from rdkit.Chem import Crippen
     help="solute SMILES string"
 )
 @click.option(
-    "--solventA",
+    "--solventa",
     default="O",
     help="solventA SMILES string"
 )
 @click.option(
-    "--solventB",
+    "--solventb",
     default="CCCCCCCCO",
     help="solventB SMILES string"
 )
-def get_logd(solute, solventA, solventB, fuzz):
+@click.option(
+    "--output-dir", 
+    help="Output Directory", 
+    type=click.Path(exists=True)
+)
+
+def get_logd(solute, solventa, solventb, fuzz, output_dir):
     ''' takes in all inputs required for a LogD calculation (solute, solventA and
         solventB) but only calculates the LogP using the average of oechem and rdkit 
         logP. Ignores the solventA and solventB inputs
     '''
     oemol = OEMol()
-    OEParseSmiles(oemol, smiles)
-    oelogP = OEGetXLogP(oemol)
+    OEParseSmiles(oemol, solute)
+    oelogD = OEGetXLogP(oemol)
 
 
-    rdmol = Chem.MolFromSmiles(smiles)
-    rdlogP = Crippen.MolLogP(rdmol)
+    rdmol = Chem.MolFromSmiles(solute)
+    rdlogD = Crippen.MolLogP(rdmol)
 
-    logP = (oelogP + rdlogP)/2
+    logD = (oelogD + rdlogD)/2
     if fuzz:
         # randomly change logP value by +/- 10%
-        fuzzed_logP = logP + random.uniform(-0.1, 0.1) * logP
-        click.echo(fuzzed_logP)
-    else:
-        click.echo(logP)
+        fuzzed_logD = logD + random.uniform(-0.1, 0.1) * logD
+        logD = fuzzed_logD
+    print(f"LogD {logD})", end="")
 
 
 if __name__ == "__main__":

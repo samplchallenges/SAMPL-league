@@ -19,29 +19,35 @@ from openeye.oemolprop import OEGetXLogP
     help="solute SMILES string"
 )
 @click.option(
-    "--solventA", 
+    "--solventa", 
     default="O",
     help="solventA SMILES string"
 )
 @click.option(
-    "--solventB", 
+    "--solventb", 
     default="CCCCCCCCO",
     help="solventB SMILES string"
 )
-def get_logd(solute, solventA, solventB, fuzz):
+@click.option(
+    "--output-dir", 
+    help="Output Directory", 
+    type=click.Path(exists=True)
+)
+
+def get_logd(solute, solventa, solventb, fuzz, output_dir):
     ''' takes in all inputs required for a LogD calculation (solute, solventA and
         solventB) but only calculates the LogP using oechem and ignores the solventA 
         and solventB inputs
     '''
     mol = OEMol()
     OEParseSmiles(mol, solute)
-    logP = OEGetXLogP(mol)
+    logD = OEGetXLogP(mol)
     if fuzz:
         # randomly change logP value by +/- 10%
-        fuzzed_logP = logP + random.uniform(-0.1, 0.1) * logP
-        click.echo(fuzzed_logP)
-    else:
-        click.echo(logP)
+        fuzzed_logD = logD + random.uniform(-0.1, 0.1) * logD
+        logD = fuzzed_logD
+    
+    print(f"LogD {logD}", end="")
 
 
 if __name__ == "__main__":

@@ -11,11 +11,18 @@ from rdkit.Chem import Crippen
     show_default=True,
     help="Random change logP value by +/- 10%",
 )
-@click.argument("smiles", default="CCCCCCCCO")
-def get_logp(smiles, fuzz):
+@click.option("--smiles", default="CCCCCCCCO")
+@click.option(
+        "--output-dir", 
+        help="Output Directory", 
+        type=click.Path(exists=True)
+)
+
+def get_logp(smiles, fuzz, output_dir):
 	rdmol = Chem.MolFromSmiles(smiles)
 	rdlogP = Crippen.MolLogP(rdmol)
-	print(rdlogP)
+	print("LogP", rdlogP)
+
 
 
 if __name__ == "__main__":

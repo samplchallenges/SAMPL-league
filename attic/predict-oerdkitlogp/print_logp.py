@@ -14,8 +14,16 @@ from rdkit.Chem import Crippen
     show_default=True,
     help="Random change logP value by +/- 10%",
 )
-@click.argument("smiles", default="CCCCCCCCO")
-def get_logp(smiles, fuzz):
+@click.option(
+    "--smiles", 
+    default="CCCCCCCCO"
+)
+@click.option(
+    "--output-dir", 
+    help="Output Directory", 
+    type=click.Path(exists=True)
+)
+def get_logp(smiles, fuzz, output_dir):
     oemol = OEMol()
     OEParseSmiles(oemol, smiles)
     oelogP = OEGetXLogP(oemol)
@@ -26,7 +34,7 @@ def get_logp(smiles, fuzz):
 
     logP = (oelogP + rdlogP)/2
 
-    print(logP)
+    print(f"LogP {logP}", end="")
 
 
 if __name__ == "__main__":
