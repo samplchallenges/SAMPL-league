@@ -72,19 +72,23 @@ def get_boxcoords(boxsize: (int,int,int), center: (float,float,float)):
 	help="receptor PDB"
 )
 @click.option(
+	"--hint_ligand",
+	help="PDB of ligand docked into receptor to improve docking. Must be used without --boxcoords --boxsize and --center."
+)
+@click.option(
         "--boxcoords",
         type=click.Tuple([float,float,float,float,float,float]),
-        help="The minimum and maximum values of the coordinates of the box representing the binding site. Enter in the order: xmin ymin zmin xmax ymax zmax"
+        help="The minimum and maximum values of the coordinates of the box representing the binding site. Enter in the order: xmin ymin zmin xmax ymax zmax. Must be used without --boxsize --center and --hint_ligand"
 )
 @click.option(
 	"--boxsize",
 	type=click.Tuple([int,int,int]),
-	help="Size of the box to dock into. Enter in the order of: size_x size_y size_z"
+	help="Size of the box to dock into. Enter in the order of: size_x size_y size_z. Use with --center. Must be used without --boxcoords and --hint_ligand"
 )
 @click.option(
 	"--center",
 	type=click.Tuple([float,float,float]),
-	help="Center of the box to dock into. Enter in the order of: center_x center_y center_z"
+	help="Center of the box to dock into. Enter in the order of: center_x center_y center_z. Use with --box_size. Must be used without --boxcoords and --hint_ligand."
 )
 @click.option(
 	"--bind_out",
@@ -96,19 +100,21 @@ def get_boxcoords(boxsize: (int,int,int), center: (float,float,float)):
 	required=True,
 	help="directory in the container the inputs are bound to"
 )
-def oedock(smiles: str, receptor: str, boxcoords, boxsize, center, bind_out, bind_in) -> None:
+def oedock(smiles: str, receptor: str, hint_ligand, boxcoords, boxsize, center, bind_out, bind_in) -> None:
 
 	# Use boxsize and center
-	if boxsize != None and center != None and boxcoords == None:
+	if boxsize != None and center != None and boxcoords == None and hint_ligand == None:
 		boxcoords = get_boxcoords(boxsize, center)
 
 	# Use boxcoords
-	elif boxsize == None and center == None and boxcoords != None:
+	elif boxsize == None and center == None and boxcoords != None and hint_ligand == None:
        		pass
-	
+
+	elif boxsize == None and center == None and boxcoords == None and hint_ligand != None:
+		pass
 	# Improper inputs
 	else: 
-		print("ERROR: either --boxcoords alone or the pair of --boxsize and --center together must be provided")
+		print("ERROR: --boxcoords alone or --hint_ligand alone or the pair of --boxsize and --center together must be provided")
 		return
 
 	# Create output directory       
@@ -125,7 +131,8 @@ def oedock(smiles: str, receptor: str, boxcoords, boxsize, center, bind_out, bin
 	chgd_ligand = charge.assign_ELF10_charges(ligand)
 
 	# Turn receptor PDB into oeb
-	receptor_file_path = convertPDB.PDB_to_oeb(f"{bind_in}/{receptor}", boxcoords)
+	receptor_file_path = convertPDB.PDB_to_oeb(f"{bind_in}/{receptor}", f"{bind_in}/{hint_ligand}", boxcoords)
+	
 
 	# Dock and score the ligand
 	dock, sdtag, receptor = docking.initialize_docking(receptor_file_path, "Chemgauss4")

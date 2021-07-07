@@ -4,13 +4,11 @@ import random
 import sys
 
 # python packages
-from openmoltools import openeye
-from openeye import oechem
 import click
-import mdtraj as md
+from rdkit.Chem.Descriptors import ExactMolWt
+from rdkit import Chem
+from rdkit.Chem import AllChem
 
-# my python modules
-import charge
 
 PYTHON_PATH = "/opt/app/dependencies/mgl/bin/python"
 UTILITIES_PATH = "/opt/app/dependencies/mgl/MGLToolsPckgs/AutoDockTools/Utilities24/"
@@ -29,13 +27,6 @@ def get_out_dir(bind_dir: str):
 		ID += 1
 	return f"{bind_dir}/out-{ID}"
 
-
-def smiles_to_smi(smiles_str: str, smiles_path:str):
-	''' transfer SMILES string to a .smi file
-	    used for debugging
-	'''
-	smiles_files = open(smiles_path, "w")
-	smiles_files.write(smiles_str)
 
 
 def make_config_file(receptor, smiles, flex, boxsize, center, exhaustiveness, num_modes, config_path):
@@ -64,43 +55,16 @@ def make_config_file(receptor, smiles, flex, boxsize, center, exhaustiveness, nu
 
 
 
-def smi_to_pdb(smiles_path: str, charge_path: str):
-	''' converts a .smi file to a pdb of a charged ligand with 3D coordinates
-	    pairs with smiles_to_smi(smiles, smiles_path) for debugging purposes
-	'''
-	ifs = oechem.oemolistream()
-	if not ifs.open(smiles_path):
-		oechem.OEThrow.Fatal("Unable to open %s for reading" % smiles_file)
-
-	for ligand in ifs.GetOEMols():
-		ligand = openeye.generate_conformers(ligand)
-		ligand = charge.sanitize_OEMol(ligand)
-		chgd_ligand = charge.assign_ELF10_charges(ligand)
-		
-		ofs = oechem.oemolostream()
-		if not ofs.open(charge_path):
-			oechem.OEThrow.Fatal("Unable to open %s for reading" % charge_path)
-		ofs.SetFormat(oechem.OEFormat_SDF)
-		oechem.OEWriteMolecule(ofs, chgd_ligand)
-		ofs.close()
-
-
 def smiles_to_chgpdb(smiles: str, charge_path: str):
 	''' convers a smiles string to a pdb of a charged ligand with 3D coordinates
 	'''
-	ligand = oechem.OEMol()
-	oechem.OEParseSmiles(ligand, smiles)
-	ligand = openeye.generate_conformers(ligand)
-	ligand = charge.sanitize_OEMol(ligand)
-	chgd_ligand = charge.assign_ELF10_charges(ligand)
 
-	ofs = oechem.oemolostream()
-	if not ofs.open(charge_path):
-		oechem.OEThrow.Fatal("Unable to open %s for reading" % charge_path)
-	ofs.SetFormat(oechem.OEFormat_SDF)
-	oechem.OEWriteMolecule(ofs, chgd_ligand)
-	ofs.close()	
+	mol = Chem.MolFromSmiles(smiles)
+	mol2 = Chem.AddHs(mol)
+	AllChem.EmbedMolecule(mol2)
 
+	ostream = Chem.SDWriter(charge_path)
+	ostream.write(mol2)
 
 def save_highest_score(dock_path: str, highscore_path: str):
 	''' writes the highest scoring docked pose into its own file
@@ -162,7 +126,7 @@ def append_ligand_receptor(complex_path: str, receptor_path: str, ligand_path: s
 
 
 def pdbqt_to_pdb(pdbqt_path, pdb_path):
-	os.system(f"cut -c-66 {pdbqt_path} > {pdb_path} 1>/data/out/outfile")
+	os.system(f"cut -c-66 {pdbqt_path} > {pdb_path}")
 
 
 def clean_tmp():
@@ -267,9 +231,9 @@ def autodock(receptor, smiles, flex, boxsize, center, boxcoords, exhaustiveness,
 
 	# Set file names for intermediate and output files
 	# Output file names should probably become an input option
-	ligchg_sdf_path = "/tmp/lig-chg.sdf"
-	ligchg_pdbqt_path = "/tmp/lig-chg.pdbqt"
-	ligprep_path = "/tmp/lig-prep.pdbqt"
+	ligchg_sdf_path = f"{out_dir}/lig-chg.sdf"
+	ligchg_pdbqt_path = f"{out_dir}/lig-chg.pdbqt"
+	ligprep_path = f"{out_dir}/lig-prep.pdbqt"
 
 	receptor_path = f"{bind_in}/{receptor}"
 	receptorprep_pdbqt_path = "/tmp/rec-prep.pdbqt"
@@ -314,7 +278,6 @@ def autodock(receptor, smiles, flex, boxsize, center, boxcoords, exhaustiveness,
 	print_debug(debug, "SAVE:   saving highest scoring pose")
 	save_highest_score(ligdock_path, highscore_pdbqt_path)
 	pdbqt_to_pdb(highscore_pdbqt_path, highscore_pdb_path)	
-
 
 	# Get score with more sigfigs for highest scoring pose
 	print_debug(debug, "SCORE:  scoring highest scorint pose")

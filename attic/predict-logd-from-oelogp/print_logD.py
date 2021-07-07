@@ -11,21 +11,28 @@ from openeye.oemolprop import OEGetXLogP
     is_flag=True,
     default=False,
     show_default=True,
-    help="Random change logP value by +/- 10%",
+    help="Randomly change logP value by +/- 10% [default: False]",
 )
-@click.argument(
-	"solute", 
-	default="CCCCCCCCO",
+@click.option(
+    "--solute", 
+    default="CCCCCCCCO",
+    help="solute SMILES string"
 )
-@click.argument(
-	"solventa", 
-	default="O",
+@click.option(
+    "--solventA", 
+    default="O",
+    help="solventA SMILES string"
 )
-@click.argument(
-	"solventb", 
-	default="CCCCCCCCO",
+@click.option(
+    "--solventB", 
+    default="CCCCCCCCO",
+    help="solventB SMILES string"
 )
-def get_LogD(solute, solventa, solventb, fuzz):
+def get_logd(solute, solventA, solventB, fuzz):
+    ''' takes in all inputs required for a LogD calculation (solute, solventA and
+        solventB) but only calculates the LogP using oechem and ignores the solventA 
+        and solventB inputs
+    '''
     mol = OEMol()
     OEParseSmiles(mol, solute)
     logP = OEGetXLogP(mol)
@@ -38,4 +45,4 @@ def get_LogD(solute, solventa, solventb, fuzz):
 
 
 if __name__ == "__main__":
-    get_LogD()
+    get_logd()

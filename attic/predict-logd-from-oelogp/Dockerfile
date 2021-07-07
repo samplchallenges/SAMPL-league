@@ -2,7 +2,7 @@ FROM continuumio/miniconda3:4.9.2-alpine
 
 WORKDIR /opt/app
 
-COPY oe_license.txt setup.py print_logD.py environment.yml ./
+COPY oe_license.txt setup.py print_logd.py environment.yml ./
 
 RUN conda env create -f environment.yml && \
     conda clean --all --yes

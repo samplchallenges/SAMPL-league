@@ -1,15 +1,13 @@
 from setuptools import setup
 
 setup(
-    name='Autodock-Vina',
+    name='dock',
     version='0.1',
-    py_modules=['autodockvina'],
+    py_modules=[
+	],
     install_requires=[
-        'Click',
-	'Vina',
     ],
     entry_points='''
         [console_scripts]
-        adv=autodockvina:run_autodock
     ''',
 )

@@ -8,40 +8,57 @@ def SMILES_to_ism(smiles: str) -> "filename":
 	return fname
 
 
-def PDB_to_oeb(receptor_pdb: str, boxcoords: (float,float,float,float,float,float)) -> "filename":
-	receptor_oeb = "/tmp/receptor.oeb"
 
+def get_ifs(filetype: str, filename: str):
 	ifs = oechem.oemolistream()
-	ofs = oechem.oemolostream()
+	if filetype == "PDB":
+		ifs.SetFormat(oechem.OEFormat_PDB)
+	if not ifs.open(filename):
+                oechem.OEThrow.Fatal(f"Unable to open {receptor_pdb} for reading")
+	return ifs
 
-	ifs.SetFormat(oechem.OEFormat_PDB)
-	ofs.SetFormat(oechem.OEFormat_OEB)
+def PDB_to_mol(pdb: str):
+	ifs = get_ifs("PDB", pdb)
+	oemol = oechem.OEGraphMol()
+	oechem.OEReadMolecule(ifs, oemol)
+	ifs.close()
+	return oemol
 
-	if not ifs.open(receptor_pdb):
-		oechem.OEThrow.Fatal(f"Unable to open {receptor_pdb} for reading")
-	if not ofs.open(receptor_oeb):
-		oechem.OEThrow.Fatal(f"Unable to open {receptor_oeb} for reading")
 
 
-	# from: https://github.com/choderalab/kinase-resistance-mutants/blob/master/docking/docking.py
-	protein_oemol = oechem.OEGraphMol()
-	oechem.OEReadMolecule(ifs, protein_oemol)
-	if boxcoords == None:
-		xmin, ymin, zmin, xmax, ymax, zmax = get_xyz_box(receptor_pdb)
-	else:
-		xmin, ymin, zmin, xmax, ymax, zmax = boxcoords
-	print(boxcoords)
-	box = oedocking.OEBox(xmin, ymin, zmin, xmax, ymax, zmax)
+def get_oebox(boxcoords: (float,float,float,float,float,float)):
+        if boxcoords == None:
+                xmin, ymin, zmin, xmax, ymax, zmax = get_xyz_box(receptor_pdb)
+        else:
+                xmin, ymin, zmin, xmax, ymax, zmax = boxcoords
+        
+        return oedocking.OEBox(xmin, ymin, zmin, xmax, ymax, zmax)
 
+
+
+
+def PDB_to_oeb(receptor_pdb: str, ligand_pdb: str, boxcoords: (float,float,float,float,float,float)) -> "filename":
+	receptor_oeb_path = "/data/out/receptor.oeb"
+	
+	protein_oemol = PDB_to_mol(receptor_pdb)
 	receptor = oechem.OEGraphMol()
 
-	oedocking.OEMakeReceptor(receptor, protein_oemol, box)
-
+	if ligand_pdb != None:
+		ligand_oemol = PDB_to_mol(ligand_pdb)
+		oedocking.OEMakeReceptor(receptor, protein_oemol, ligand_oemol)
+	else:
+		box = get_oebox(boxcoords)
+		oedocking.OEMakeReceptor(receptor, protein_oemol, box)
+	
 	receptor.SetData('MakeReceptor::SiteDetectTag', True)
-	oechem.OEWriteMolecule(ofs, receptor)
-	print(receptor.GetData())
 
-	return receptor_oeb
+	ofs = oechem.oemolostream()
+	ofs.SetFormat(oechem.OEFormat_OEB)
+	if not ofs.open(receptor_oeb_path):
+		oechem.OEThrow.Fatal(f"Unable to open {receptor_oeb} for writing")
+	oechem.OEWriteMolecule(ofs, receptor)
+	ofs.close()
+	return receptor_oeb_path
 
 def get_xyz_box(receptor_pdb:str):
 	traj=md.load_pdb(receptor_pdb)

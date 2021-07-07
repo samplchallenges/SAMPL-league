@@ -8,7 +8,7 @@ COPY . ./
 RUN conda env create -f environment.yml && \
     conda clean --all --yes
 
-SHELL ["conda", "run", "-n", "ADVenv", "/bin/ash", "-c"]
+SHELL ["conda", "run", "-n", "ADVRDenv", "/bin/ash", "-c"]
 
 ENV PATH="/root/.local/bin:$PATH"
 
@@ -20,5 +20,5 @@ ENV PATH="/opt/app/dependencies/:/opt/app/dependencies/mgl/:$PATH"
 
 RUN /opt/app/dependencies/adv/bin/vina --help
 
-ENTRYPOINT ["conda", "run", "-n", "ADVenv", "dock"]
+
 
