@@ -353,14 +353,17 @@ class Prediction(Solution):
         )
 
         output_type_model = output_type.content_type.model_class()
-
-        prediction.value_object = output_type_model.from_string(
+        value_object = output_type_model.from_string(
             value, challenge=challenge, evaluation=evaluation
         )
-        prediction.value_object.save()
+
+        value_object.save()
+        prediction.value_object = value_object
+        assert prediction.value_object is not None, "after save"
         print(f"{prediction.value_object.__dict__}")
 
-        assert prediction.value_object is not None
+
+
         return prediction
 
     def __str__(self):

@@ -66,7 +66,9 @@ def evaluations(challenge, submission_run_public, input_elements, molw_type, db)
                 input_element=input_element, submission_run=submission_run_public
             )
             evaluations_list.append(evaluation)
-            tasks._save_prediction(challenge, evaluation, molw_type, value)
+            prediction = models.Prediction.load_output(challenge, evaluation, molw_type, value)
+            # tasks._save_prediction(challenge, evaluation, molw_type, value)
+            prediction.save()
 
     return evaluations_list
 

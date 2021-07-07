@@ -72,11 +72,12 @@ def score_evaluation(container, evaluation, evaluation_score_types):
     for key, score_value in ever_given.wrapper.run(
             container.uri, command,
             file_kwargs=file_kwargs, kwargs=kwargs):
-        models.EvaluationScore.objects.create(
-            evaluation=evaluation,
-            score_type=evaluation_score_types[key],
-            value=float(score_value),
-        )
+        if key in evaluation_score_types:
+            models.EvaluationScore.objects.create(
+                evaluation=evaluation,
+                score_type=evaluation_score_types[key],
+                value=float(score_value),
+            )
 
 
 def score_submission_run(container, submission_run, score_types):
@@ -91,19 +92,20 @@ def score_submission_run(container, submission_run, score_types):
         {score.score_type.key: score.value for score in evaluation.scores.all()}
         for evaluation in evaluations
     ]
-    with tempfile.NamedTemporaryFile(suffix=".json") as fp:
-        json.dump(fp, run_scores_dicts)
+    with tempfile.NamedTemporaryFile(suffix=".json", mode="w") as fp:
+        json.dump(run_scores_dicts, fp)
         fp.flush()
 
         command = f"score-submissionrun"
         for key, value in ever_given.wrapper.run(
                 container.uri, command,
                 file_kwargs={"scores": fp.name}, kwargs={}):
-            models.SubmissionRunScore.objects.create(
-                submission_run=submission_run,
-                score_type=submission_run_score_types[key],
-                value=value,
-            )
+            if key in submission_run_score_types:
+                models.SubmissionRunScore.objects.create(
+                    submission_run=submission_run,
+                    score_type=submission_run_score_types[key],
+                    value=value,
+                )
 
 
 def score_submission(submission_id, *run_ids):

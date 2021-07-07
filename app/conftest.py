@@ -74,9 +74,9 @@ def scoring_container(challenge, user, db):
         name="subtraction container",
         user=user,
         challenge=challenge,
-        registry="docker.io",
-        label="mmh42/calc-subtract",
-        tag="0.1",
+        registry="ghcr.io",
+        label="robbason/score-coords",
+        tag="latest",
     )
 
 

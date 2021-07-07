@@ -74,7 +74,7 @@ class Command(BaseCommand):
             challenge=challenge,
             # ghcr.io/robbason/calc-molwt:latest
             registry="ghcr.io",
-            label="robbason/calc-molwt",
+            label="robbason/calc-coords",
             tag="latest",
             # registry="docker.io",
             # label="mmh42/calc-molwt",
@@ -85,9 +85,9 @@ class Command(BaseCommand):
             name="scorer",
             user=user,
             challenge=challenge,
-            registry="docker.io",
-            label="mmh42/calc-subtract",
-            tag="0.1",
+            registry="ghcr.io",
+            label="robbason/score-coords",
+            tag="latest",
         )
 
         scoremaker = models.ScoreMaker.objects.create(

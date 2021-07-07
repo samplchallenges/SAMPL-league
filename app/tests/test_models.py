@@ -32,11 +32,11 @@ def test_value_registration():
 
 
 def test_container(scoring_container):
-    assert scoring_container.uri == "docker.io/mmh42/calc-subtract:0.1"
+    assert scoring_container.uri == "ghcr.io/robbason/score-coords:latest"
 
     scoring_container.tag = None
 
-    assert scoring_container.uri == "docker.io/mmh42/calc-subtract"
+    assert scoring_container.uri == "ghcr.io/robbason/score-coords"
 
 
 def test_file_value(input_elements, molfile_type):

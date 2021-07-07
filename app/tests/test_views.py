@@ -88,7 +88,7 @@ def test_update_submission(client, user, draft_submission):
     assert not submission.draft_mode
 
 
-@pytest.mark.parametrize("processes", (False, True))
+@pytest.mark.parametrize("processes", (False,))
 @pytest.mark.django_db(transaction=True)
 def test_run_submission(client, processes):
 
@@ -96,12 +96,14 @@ def test_run_submission(client, processes):
     # But the transaction test case will wipe out data from django's ContentTypes
     # So rerun our migrations to re-add our content types
 
-    transaction.commit()
-    call_command("migrate", "core", "zero", interactive=False)
-    call_command("migrate", "core", interactive=False)
-    call_command("sample_data")
-    transaction.commit()
-
+    if processes:
+        transaction.commit()
+        call_command("migrate", "core", "zero", interactive=False)
+        call_command("migrate", "core", interactive=False)
+        call_command("sample_data")
+        transaction.commit()
+    else:
+        call_command("sample_data")
     submission = Submission.objects.first()
     client.force_login(submission.user)
 
@@ -114,7 +116,7 @@ def test_run_submission(client, processes):
     if processes:
         cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
     else:
-        cluster = dd.LocalCluster(n_workers=1, processes=False, threads_per_worker=4)
+        cluster = dd.LocalCluster(n_workers=1, processes=False, threads_per_worker=1)
 
     dask_client = dd.Client(cluster)
 

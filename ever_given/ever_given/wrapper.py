@@ -14,8 +14,8 @@ def _guest_input_path(filename):
 
 
 def _prepare_commandline(command, args_dict):
-    return command + " ".join(
-        [f"--{key} {shlex.quote(value)}" for key, value in args_dict.items()]
+    return command + " " + " ".join(
+        [f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()]
     )
 
 
