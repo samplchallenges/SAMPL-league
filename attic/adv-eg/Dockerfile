@@ -1,4 +1,4 @@
-FROM adv-rdkit-base
+FROM osatom/adv-rdkit-base
 
 WORKDIR /opt/app/
 
