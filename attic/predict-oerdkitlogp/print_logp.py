@@ -16,7 +16,8 @@ from rdkit.Chem import Crippen
 )
 @click.option(
     "--smiles", 
-    default="CCCCCCCCO"
+    default="CCCCCCCCO",
+    help="ligand SMILES string"
 )
 @click.option(
     "--output-dir", 

@@ -4,10 +4,13 @@ import random
 import sys
 
 # python packages
+from openmoltools import openeye
+from openeye import oechem
 import click
-from rdkit.Chem.Descriptors import ExactMolWt
-from rdkit import Chem
-from rdkit.Chem import AllChem
+import mdtraj as md
+
+# my python modules
+import charge
 
 SCORE_KEY = "score"
 LIGAND_KEY = "docked_ligand"
@@ -23,6 +26,7 @@ def print_debug(debug: bool, msg:str):
 	print(f"{msg}\n" if debug else "", end="")
 	sys.stdout.flush()
 
+
 def get_out_dir(bind_dir: str):
 	''' creates a unique outfile directory to store the results in
 	'''
@@ -31,6 +35,13 @@ def get_out_dir(bind_dir: str):
 		ID += 1
 	return f"{bind_dir}/out-{ID}"
 
+
+def smiles_to_smi(smiles_str: str, smiles_path:str):
+	''' transfer SMILES string to a .smi file
+	    used for debugging
+	'''
+	smiles_files = open(smiles_path, "w")
+	smiles_files.write(smiles_str)
 
 
 def make_config_file(receptor, smiles, flex, boxsize, center, exhaustiveness, num_modes, config_path):
@@ -59,16 +70,43 @@ def make_config_file(receptor, smiles, flex, boxsize, center, exhaustiveness, nu
 
 
 
+def smi_to_pdb(smiles_path: str, charge_path: str):
+	''' converts a .smi file to a pdb of a charged ligand with 3D coordinates
+	    pairs with smiles_to_smi(smiles, smiles_path) for debugging purposes
+	'''
+	ifs = oechem.oemolistream()
+	if not ifs.open(smiles_path):
+		oechem.OEThrow.Fatal("Unable to open %s for reading" % smiles_file)
+
+	for ligand in ifs.GetOEMols():
+		ligand = openeye.generate_conformers(ligand)
+		ligand = charge.sanitize_OEMol(ligand)
+		chgd_ligand = charge.assign_ELF10_charges(ligand)
+		
+		ofs = oechem.oemolostream()
+		if not ofs.open(charge_path):
+			oechem.OEThrow.Fatal("Unable to open %s for reading" % charge_path)
+		ofs.SetFormat(oechem.OEFormat_SDF)
+		oechem.OEWriteMolecule(ofs, chgd_ligand)
+		ofs.close()
+
+
 def smiles_to_chgpdb(smiles: str, charge_path: str):
 	''' convers a smiles string to a pdb of a charged ligand with 3D coordinates
 	'''
+	ligand = oechem.OEMol()
+	oechem.OEParseSmiles(ligand, smiles)
+	ligand = openeye.generate_conformers(ligand)
+	ligand = charge.sanitize_OEMol(ligand)
+	chgd_ligand = charge.assign_ELF10_charges(ligand)
 
-	mol = Chem.MolFromSmiles(smiles)
-	mol2 = Chem.AddHs(mol)
-	AllChem.EmbedMolecule(mol2)
+	ofs = oechem.oemolostream()
+	if not ofs.open(charge_path):
+		oechem.OEThrow.Fatal("Unable to open %s for reading" % charge_path)
+	ofs.SetFormat(oechem.OEFormat_SDF)
+	oechem.OEWriteMolecule(ofs, chgd_ligand)
+	ofs.close()	
 
-	ostream = Chem.SDWriter(charge_path)
-	ostream.write(mol2)
 
 def save_highest_score(dock_path: str, highscore_path: str):
 	''' writes the highest scoring docked pose into its own file
@@ -130,7 +168,7 @@ def append_ligand_receptor(complex_path: str, receptor_path: str, ligand_path: s
 
 
 def pdbqt_to_pdb(pdbqt_path, pdb_path):
-	os.system(f"cut -c-66 {pdbqt_path} > {pdb_path}")
+	os.system(f"cut -c-66 {pdbqt_path} > {pdb_path} 1>/data/out/outfile")
 
 
 def clean_tmp():
@@ -171,48 +209,59 @@ def get_score(score_path):
 	"--flex",
 	help="Not working yet. flexible sidechains if any pdb"
 )
-@click.option("--c_x",type=float)
-@click.option("--c_y",type=float)
-@click.option("--c_z",type=float)
+@click.option("--c_x",type=float, help="box center x coordinate; must be used with --c_y/z and --sz_x/y/z")
+@click.option("--c_y",type=float, help="box center y coordinate; must be used with --c_x/z and --sz_x/y/z")
+@click.option("--c_z",type=float, help="box center z coordinate; must be used with --c_x/y and --sz_x/y/z")
 
-@click.option("--sz_x",type=int)
-@click.option("--sz_y",type=int)
-@click.option("--sz_z",type=int)
+@click.option("--sz_x",type=int, help="box size in the x direction; must be used with --c_x/y/z and --sz_y/z")
+@click.option("--sz_y",type=int, help="box size in the y direction; must be used with --c_x/y/z and --sz_x/z")
+@click.option("--sz_z",type=int, help="box size in the z direction; must be used with --c_x/y/z and --sz_x/y")
 
-@click.option("--b_xmin",type=float)
-@click.option("--b_ymin",type=float)
-@click.option("--b_zmin",type=float)
-@click.option("--b_xmax",type=float)
-@click.option("--b_ymax",type=float)
-@click.option("--b_zmax",type=float)
+@click.option("--b_xmin",type=float, help="box coordinate x min must be used with --b_ymin/zmin/xmax/ymax/zmax")
+@click.option("--b_ymin",type=float, help="box coordinate y min must be used with --b_xmin/zmin/xmax/ymax/zmax")
+@click.option("--b_zmin",type=float, help="box coordinate z min must be used with --b_xmin/ymin/xmax/ymax/zmax")
+@click.option("--b_xmax",type=float, help="box coordinate x max must be used with --b_xmin/ymin/zmin/ymax/zmax")
+@click.option("--b_ymax",type=float, help="box coordinate y max must be used with --b_xmin/ymin/zmin/xmax/zmax")
+@click.option("--b_zmax",type=float, help="box coordinate z max must be used with --b_xmin/ymin/zmin/xmax/ymax")
 
 @click.option(
-	"-n",
-	"--num_modes",
-	type=int,
-	help="Number of modes to dock"
+        "-n",
+        "--num_modes",
+        type=int,
+        help="Number of modes to dock"
 )
 @click.option(
-	"-e",
-	"--exhaustiveness",
-	type=int,
-	help="exhaustiveness of the global search, default=8"
+        "-e",
+        "--exhaustiveness",
+        type=int,
+        help="exhaustiveness of the global search, default=8"
 )
 @click.option(
-	'--debug', 
-	is_flag=True,
-	help="prints debug print statements when --debug flag is used"
+        '--debug',
+        is_flag=True,
+        help="prints debug print statements when --debug flag is used"
 )
 @click.option(
-	"--output-dir", 
-	help="Output Directory", 
-	type=click.Path(exists=True)
+        "--output-dir",
+        help="Output Directory",
+        type=click.Path(exists=True)
 )
 def autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,b_zmin,b_xmax,b_ymax,b_zmax, exhaustiveness, num_modes, output_dir, debug):
 	''' docks the given smiles string into the receptor within the box specified by
 	    boxsize and center
 	    exhaustiveness does not work at this moment
 	'''
+	if b_xmin and b_ymin and b_zmin and b_xmax and b_ymax and b_zmax:
+		boxcoords = (b_xmin, b_ymin, b_zmin, b_xmax, b_ymax, b_zmax)
+		boxsize,center = get_center_and_boxsize(boxcoords)
+
+	elif sz_x and sz_y and sz_z and c_x and c_y and c_z:
+		boxsize = (sz_x, sz_y, sz_z)
+		center = (c_x, c_y, c_z)
+
+	else:
+		print("ERROR: Either boxsize (sz_x/y/z) and center (c_x/y/z) OR boxcoords (b_x/y/zmin and b_x/y/zmax) must be specified")
+		return
 
 	# Set file names for intermediate and output files
 	# Output file names should probably become an input option
@@ -222,28 +271,17 @@ def autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,
 
 	receptor_path = f"{receptor}"
 	receptorprep_pdbqt_path = "/tmp/rec-prep.pdbqt"
-	receptor_pdb_path = f"{output_dir}/rec-dock.pdb" # switch to join()
+	receptor_pdb_path = f"{output_dir}/rec-dock.pdb"
 
 	config_path = "/tmp/config.txt"
 
 	ligdock_path = "/tmp/lig_dock.pdbqt"
 	highscore_pdbqt_path = "/tmp/best_dock.pdbqt"
-	highscore_pdb_path = f"{output_dir}/best_dock.pdb" # switch to join()
+	highscore_pdb_path = f"{output_dir}/best_dock.pdb"
 
 	score_path = "/tmp/score.txt"
 
 	# Make the config file
-	if b_xmin and b_ymin and b_zmin and b_xmax and b_ymax and b_zmax:
-		boxcoords = (b_xmin, b_ymin, b_zmin, b_xmax, b_ymax, b_zmax)
-		boxsize,center = get_center_and_boxsize(boxcoords)
-
-	elif sz_x and sz_y and sz_z and c_x and c_y and c_z:
-		boxsize = (sz_x, sz_y, sz_z)
-		center = (c_x, c_y, c_z)
-	
-	else:
-		print("ERROR: Either boxsize (sz_x/y/z) and center (c_x/y/z) OR boxcoords (b_x/y/zmin and b_x/y/zmax) must be specified")
-
 	make_config_file(receptorprep_pdbqt_path, smiles, flex, boxsize, center, exhaustiveness, num_modes, config_path)
 
 	
@@ -264,7 +302,6 @@ def autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,
 
 	# Running AutoDock Vina
 	print_debug(debug, "DOCK:   running vina")
-	#print(f"{VINA_PATH} --config {config_path} --ligand {ligprep_path} --out {ligdock_path}")
 	os.system(f"{VINA_PATH} --config {config_path} --ligand {ligprep_path} --out {ligdock_path} > /dev/null")
 	
 	# Save the highest scoring pose which should be the first pose in the file
@@ -272,6 +309,7 @@ def autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,
 	print_debug(debug, "SAVE:   saving highest scoring pose")
 	save_highest_score(ligdock_path, highscore_pdbqt_path)
 	pdbqt_to_pdb(highscore_pdbqt_path, highscore_pdb_path)	
+
 
 	# Get score with more sigfigs for highest scoring pose
 	print_debug(debug, "SCORE:  scoring highest scorint pose")
@@ -286,8 +324,11 @@ def autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,
 	print_debug(debug, "CLEAN:  clearing tmp files")
 	clean_tmp()
 
+	
+	# print the important outputs
 	print(f"{SCORE_KEY} {score} kcal/mol")
 	print(f"{LIGAND_KEY} {highscore_pdb_path}")
 	print(f"{RECEPTOR_KEY} {receptor_pdb_path}", end="")
+
 if __name__ == "__main__":
 	autodock()
