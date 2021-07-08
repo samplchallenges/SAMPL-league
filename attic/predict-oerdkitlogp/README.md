@@ -1,5 +1,5 @@
 # Description: 
-Outputs LogP of the solute SMILES string using the average of `oechem` and `rdkit`'s LogP calculations
+Calculates LogP of the solute SMILES string using the average of `oechem` and `rdkit`'s LogP calculations
 
 # Setup: 
 1. `cp oe_license.txt SAMPL-league/attic/predict-oerdkitlogp`
