@@ -11,7 +11,11 @@ from rdkit.Chem import Crippen
     show_default=True,
     help="Random change logP value by +/- 10%",
 )
-@click.option("--smiles", default="CCCCCCCCO")
+@click.option(
+	"--smiles", 
+	default="CCCCCCCCO",
+	help="ligand SMILES string"
+)
 @click.option(
         "--output-dir", 
         help="Output Directory", 
