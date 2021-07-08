@@ -81,20 +81,21 @@ def get_boxcoords(boxsize: (int,int,int), center: (float,float,float)):
 	"--hint_ligand",
 	help="PDB of ligand docked into receptor to improve docking. Must be used without --boxcoords --boxsize and --center."
 )
-@click.option("--c_x",type=float)
-@click.option("--c_y",type=float)
-@click.option("--c_z",type=float)
 
-@click.option("--sz_x",type=int)
-@click.option("--sz_y",type=int)
-@click.option("--sz_z",type=int)
+@click.option("--c_x",type=float,help="box center x coordinate; must be used with --c_y/z and --sz_x/y/z")
+@click.option("--c_y",type=float,help="box center y coordinate; must be used with --c_x/z and --sz_x/y/z")
+@click.option("--c_z",type=float,help="box center z coordinate; must be used with --c_x/y and --sz_x/y/z")
 
-@click.option("--b_xmin",type=float)
-@click.option("--b_ymin",type=float)
-@click.option("--b_zmin",type=float)
-@click.option("--b_xmax",type=float)
-@click.option("--b_ymax",type=float)
-@click.option("--b_zmax",type=float)
+@click.option("--sz_x",type=int,help="box size in the x direction; must be used with --c_x/y/z and --sz_y/z")
+@click.option("--sz_y",type=int,help="box size in the y direction; must be used with --c_x/y/z and --sz_x/z")
+@click.option("--sz_z",type=int,help="box size in the z direction; must be used with --c_x/y/z and --sz_x/y")
+
+@click.option("--b_xmin",type=float,help="box coordinate x min must be used with --b_ymin/zmin/xmax/ymax/zmax")
+@click.option("--b_ymin",type=float,help="box coordinate y min must be used with --b_xmin/zmin/xmax/ymax/zmax")
+@click.option("--b_zmin",type=float,help="box coordinate z min must be used with --b_xmin/ymin/xmax/ymax/zmax")
+@click.option("--b_xmax",type=float,help="box coordinate x max must be used with --b_xmin/ymin/zmin/ymax/zmax")
+@click.option("--b_ymax",type=float,help="box coordinate y max must be used with --b_xmin/ymin/zmin/xmax/zmax")
+@click.option("--b_zmax",type=float,help="box coordinate z max must be used with --b_xmin/ymin/zmin/xmax/ymax")
 
 @click.option("--output-dir", help="Output Directory", type=click.Path(exists=True))
 
