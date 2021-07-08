@@ -1,14 +1,17 @@
+# Description
+Calculates fake LogD by outputting the LogP of the given solute and ignoring the solvents using `rdkit`'s LogP calculation
+
 # Setup
 Not applicable
 
 # Build
 1. `cd SAMPL-league/attic/predict-logd-from-rdkitlogp`
-2. `docker build -t logd-calc .`
+2. `docker build -t rdlogd .`
 
 # Run
 ### Options
 ```
-docker build -it --rm logd-calc --help
+docker build -it --rm rdlogd --help
 unknown shorthand flag: 'i' in -it
 See 'docker build --help'.
 (base) megosato@Admins-MacBook-Pro predict-logd-from-rdkitlogp % docker run -it --rm rdlogd --help
@@ -27,5 +30,5 @@ Options:
   ```
 
 ### Example Run Commands
-`docker run logd-calc --solute <solute_SMILES>  --solventA <solventA_SMILES> --solventB <solventB_SMILES>`
-* Ex: `docker run logd-calc --solute "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O"  --solventA "O" --solventB "CCCCCCCCO"`
+`docker ../../ever_given/run.py rdlogd --solute <solute_SMILES>  --solventA <solventA_SMILES> --solventB <solventB_SMILES>`
+* Ex: `docker ../../ever_given/run.py rdlogd --solute "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O"  --solventA "O" --solventB "CCCCCCCCO"`
