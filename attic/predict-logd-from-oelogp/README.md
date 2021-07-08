@@ -13,7 +13,7 @@ Calculates fake LogD by outputting the LogP of the given solute and ignoring the
 # Run 
 ### Options
 ```
-docker run -it --rm logd-calc --help
+docker run -it --rm oelogd --help
 Usage: print-LogD [OPTIONS]
 
   takes in all inputs required for a LogD calculation (solute, solventA and
