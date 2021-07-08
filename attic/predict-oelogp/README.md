@@ -1,23 +1,29 @@
-# How to build
+# Description:
 
-Copy `oe_license.txt` into this folder (it should look like this when you run the `tree` command)
 
+# Setup:
+1. `cp oe_license.txt SAMPL-league/attic/predict-oelogp`
+
+
+# Build:
+1. `cd SAMPL-league/attic/predict-oelogp`
+2. `docker build -t oelogp .`
+
+
+# Run:
+
+### Options
 ```
-$ tree
-.
-├── Dockerfile
-├── environment.yml
-├── oe_license.txt
-├── print_logP.py
-├── README.md
-└── setup.py
+% docker run -it --rm oelogp --help
+Usage: print-LogP [OPTIONS]
+
+Options:
+  --fuzz             Random change logP value by +/- 10%  [default: False]
+  --smiles TEXT      ligand SMILES string
+  --output-dir PATH  path to output directory
+  --help             Show this message and exit.
 ```
 
-NOTE: Do not push this container to a public repository or commit the `oe_license.txt` license file (you may push the container to a private repository, we just want to be sure not to leak the file to the public).
-
-Then run `docker build -t calc-logp:0.1 .` to build the container.
-
-# How to use
-
-Run `docker run --rm -it calc-logp:0.1  "CCC"` to calculate the logP of propane.
-Run `docker run --rm -it calc-logp:0.1  --help` to see options.
+### Run Commands
+`python ../../ever_given/run.py oelogp --smiles <SMILES_str>`
+* `python ../../ever_given/run.py oelogp --smiles "CCCCc1ccccc1"`
