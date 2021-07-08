@@ -79,4 +79,4 @@ Options:
 
 ### Example run commands
 `python ../../ever_given/run.py adv --output-dir <PATH> -s <SMILES_str> -r <receptor_path_from_INPUT_DIR> --sz_x <boxsize_x> --sz_y <boxsize_y> --sz_z <boxsize_z> --c_x <center_x> --c_y <center_y> --c_z <center_z> --output-keys <ligand_key>,<receptor_key>` 
-* `python ../../ever_given/run.py adv --file-receptor ~/SAMPL-league/attic/adv-testing/input/4w51-cryo.pdb --smiles "CC(C)Cc1ccccc1 " --sz_x 14 --sz_y 14 --sz_z 14 --c_x -32.355 --c_y 7.263 --c_z 2.207 --output-keys docked_ligand,receptor`
+* `python ../../ever_given/run.py adv --file-receptor ../data/adv/4w51-cryo.pdb --smiles "CC(C)Cc1ccccc1 " --sz_x 14 --sz_y 14 --sz_z 14 --c_x -32.355 --c_y 7.263 --c_z 2.207 --output-keys docked_ligand,receptor`
