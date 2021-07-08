@@ -1,5 +1,5 @@
 # Description:
-Calculates LogP of the solute SMILES string using the average of `oechem` and `rdkit`'s LogP calculations
+Calculates LogP of the solute SMILES string using `rdkit`'s LogP calculations
 
 # Setup:
 Not applicable
