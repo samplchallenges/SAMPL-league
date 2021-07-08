@@ -1,5 +1,5 @@
 # Description:
-
+Calculates LogP of the solute SMILES string using the average of `oechem`'s LogP calculations
 
 # Setup:
 1. `cp oe_license.txt SAMPL-league/attic/predict-oelogp`
