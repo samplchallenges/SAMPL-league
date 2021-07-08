@@ -1,6 +1,6 @@
 # Description:
 * This container takes a ligand SMILES string and receptor, uses `oechem` to charge the ligand and add 3D coordinates, then uses AutoDock Vina to dock the ligand into the specified binding site. 
-* This README.md details how to setup, build and run the Autodock Vina docker container. 
+* This `README.md` details how to setup, build and run the Autodock Vina docker container. 
 
 # Setup:
 1. `mkdir SAMPL-league/attic/adv-base/dependencies`
