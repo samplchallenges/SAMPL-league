@@ -1,4 +1,5 @@
-FROM osatom/adv-rdkit-base
+FROM adv-base
+
 
 WORKDIR /opt/app/
 
@@ -8,5 +9,5 @@ ENV PATH="/root/.local/bin:$PATH"
 
 RUN pip install .
 
-ENTRYPOINT ["conda", "run", "-n", "ADVRDenv", "dock"]
+ENTRYPOINT ["conda", "run", "-n", "ADVenv", "dock"]
 

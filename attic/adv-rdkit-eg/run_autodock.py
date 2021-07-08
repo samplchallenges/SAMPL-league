@@ -4,13 +4,15 @@ import random
 import sys
 
 # python packages
-from openmoltools import openeye
-from openeye import oechem
 import click
-import mdtraj as md
+from rdkit.Chem.Descriptors import ExactMolWt
+from rdkit import Chem
+from rdkit.Chem import AllChem
 
-# my python modules
-import charge
+SCORE_KEY = "score"
+LIGAND_KEY = "docked_ligand"
+RECEPTOR_KEY = "receptor"
+
 
 PYTHON_PATH = "/opt/app/dependencies/mgl/bin/python"
 UTILITIES_PATH = "/opt/app/dependencies/mgl/MGLToolsPckgs/AutoDockTools/Utilities24/"
@@ -29,13 +31,6 @@ def get_out_dir(bind_dir: str):
 		ID += 1
 	return f"{bind_dir}/out-{ID}"
 
-
-def smiles_to_smi(smiles_str: str, smiles_path:str):
-	''' transfer SMILES string to a .smi file
-	    used for debugging
-	'''
-	smiles_files = open(smiles_path, "w")
-	smiles_files.write(smiles_str)
 
 
 def make_config_file(receptor, smiles, flex, boxsize, center, exhaustiveness, num_modes, config_path):
@@ -64,43 +59,16 @@ def make_config_file(receptor, smiles, flex, boxsize, center, exhaustiveness, nu
 
 
 
-def smi_to_pdb(smiles_path: str, charge_path: str):
-	''' converts a .smi file to a pdb of a charged ligand with 3D coordinates
-	    pairs with smiles_to_smi(smiles, smiles_path) for debugging purposes
-	'''
-	ifs = oechem.oemolistream()
-	if not ifs.open(smiles_path):
-		oechem.OEThrow.Fatal("Unable to open %s for reading" % smiles_file)
-
-	for ligand in ifs.GetOEMols():
-		ligand = openeye.generate_conformers(ligand)
-		ligand = charge.sanitize_OEMol(ligand)
-		chgd_ligand = charge.assign_ELF10_charges(ligand)
-		
-		ofs = oechem.oemolostream()
-		if not ofs.open(charge_path):
-			oechem.OEThrow.Fatal("Unable to open %s for reading" % charge_path)
-		ofs.SetFormat(oechem.OEFormat_SDF)
-		oechem.OEWriteMolecule(ofs, chgd_ligand)
-		ofs.close()
-
-
 def smiles_to_chgpdb(smiles: str, charge_path: str):
 	''' convers a smiles string to a pdb of a charged ligand with 3D coordinates
 	'''
-	ligand = oechem.OEMol()
-	oechem.OEParseSmiles(ligand, smiles)
-	ligand = openeye.generate_conformers(ligand)
-	ligand = charge.sanitize_OEMol(ligand)
-	chgd_ligand = charge.assign_ELF10_charges(ligand)
 
-	ofs = oechem.oemolostream()
-	if not ofs.open(charge_path):
-		oechem.OEThrow.Fatal("Unable to open %s for reading" % charge_path)
-	ofs.SetFormat(oechem.OEFormat_SDF)
-	oechem.OEWriteMolecule(ofs, chgd_ligand)
-	ofs.close()	
+	mol = Chem.MolFromSmiles(smiles)
+	mol2 = Chem.AddHs(mol)
+	AllChem.EmbedMolecule(mol2)
 
+	ostream = Chem.SDWriter(charge_path)
+	ostream.write(mol2)
 
 def save_highest_score(dock_path: str, highscore_path: str):
 	''' writes the highest scoring docked pose into its own file
@@ -162,7 +130,7 @@ def append_ligand_receptor(complex_path: str, receptor_path: str, ligand_path: s
 
 
 def pdbqt_to_pdb(pdbqt_path, pdb_path):
-	os.system(f"cut -c-66 {pdbqt_path} > {pdb_path} 1>/data/out/outfile")
+	os.system(f"cut -c-66 {pdbqt_path} > {pdb_path}")
 
 
 def clean_tmp():
@@ -203,21 +171,21 @@ def get_score(score_path):
 	"--flex",
 	help="Not working yet. flexible sidechains if any pdb"
 )
-@click.option(
-	"--boxsize",
-	type=click.Tuple([int,int,int]),
-	help="The size of the box to dock into. Must be used with --center and without --boxcoords"
-)
-@click.option(
-	"--center",
-	type=click.Tuple([float,float,float]),
-	help="The center of the box to dock into. Must be used with --boxsize and without --boxcoords"
-)
-@click.option(
-	"--boxcoords",
-	type=click.Tuple([float,float,float,float,float,float]),
-	help="The minimum and maximum corners of the box to dock into. Must be used without --boxsize and --center"
-)
+@click.option("--c_x",type=float)
+@click.option("--c_y",type=float)
+@click.option("--c_z",type=float)
+
+@click.option("--sz_x",type=int)
+@click.option("--sz_y",type=int)
+@click.option("--sz_z",type=int)
+
+@click.option("--b_xmin",type=float)
+@click.option("--b_ymin",type=float)
+@click.option("--b_zmin",type=float)
+@click.option("--b_xmax",type=float)
+@click.option("--b_ymax",type=float)
+@click.option("--b_zmax",type=float)
+
 @click.option(
 	"-n",
 	"--num_modes",
@@ -231,39 +199,20 @@ def get_score(score_path):
 	help="exhaustiveness of the global search, default=8"
 )
 @click.option(
-	"--bind_out",
-	help="Directory in the container the outputs are bound to"
-)
-@click.option(
-	"--bind_in",
-	help="Directory in the container the inputs are bound to"
-)
-@click.option(
 	'--debug', 
 	is_flag=True,
 	help="prints debug print statements when --debug flag is used"
 )
-def autodock(receptor, smiles, flex, boxsize, center, boxcoords, exhaustiveness, num_modes, bind_out, bind_in, debug):
+@click.option(
+	"--output-dir", 
+	help="Output Directory", 
+	type=click.Path(exists=True)
+)
+def autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,b_zmin,b_xmax,b_ymax,b_zmax, exhaustiveness, num_modes, output_dir, debug):
 	''' docks the given smiles string into the receptor within the box specified by
 	    boxsize and center
 	    exhaustiveness does not work at this moment
 	'''
-
-	if boxcoords != None and center != None or boxcoords != None and boxsize != None:
-		print("ERROR: either --boxcoords alone or the pair --center and --boxsize together can be used")
-		return
-	if center != None and boxsize == None or center == None and boxsize != None:
-		print("ERROR: --center and --boxsize must be used together")
-		return
-	if boxcoords != None:
-		center, boxsize = get_center_and_boxsize(boxcoords)
-
-	if not os.path.exists(f"{bind_in}/{receptor}"):
-		print(f"ERROR: receptor file {receptor} does not exist")
-		return
-	# Create output directory	
-	out_dir = get_out_dir(bind_out)
-	os.mkdir(out_dir)
 
 	# Set file names for intermediate and output files
 	# Output file names should probably become an input option
@@ -271,21 +220,30 @@ def autodock(receptor, smiles, flex, boxsize, center, boxcoords, exhaustiveness,
 	ligchg_pdbqt_path = "/tmp/lig-chg.pdbqt"
 	ligprep_path = "/tmp/lig-prep.pdbqt"
 
-	receptor_path = f"{bind_in}/{receptor}"
+	receptor_path = f"{receptor}"
 	receptorprep_pdbqt_path = "/tmp/rec-prep.pdbqt"
-	receptor_pdb_path = f"{out_dir}/rec-dock.pdb"
+	receptor_pdb_path = f"{output_dir}/rec-dock.pdb" # switch to join()
 
-	config_path = f"{out_dir}/config.txt"
+	config_path = "/tmp/config.txt"
 
-	ligdock_path = f"{out_dir}/lig_dock.pdbqt"
+	ligdock_path = "/tmp/lig_dock.pdbqt"
 	highscore_pdbqt_path = "/tmp/best_dock.pdbqt"
-	highscore_pdb_path = f"{out_dir}/best_dock.pdb"
-
-	complex_pdb_path = f"{out_dir}/docked_complex.pdb"
+	highscore_pdb_path = f"{output_dir}/best_dock.pdb" # switch to join()
 
 	score_path = "/tmp/score.txt"
 
 	# Make the config file
+	if b_xmin and b_ymin and b_zmin and b_xmax and b_ymax and b_zmax:
+		boxcoords = (b_xmin, b_ymin, b_zmin, b_xmax, b_ymax, b_zmax)
+		boxsize,center = get_center_and_boxsize(boxcoords)
+
+	elif sz_x and sz_y and sz_z and c_x and c_y and c_z:
+		boxsize = (sz_x, sz_y, sz_z)
+		center = (c_x, c_y, c_z)
+	
+	else:
+		print("ERROR: Either boxsize (sz_x/y/z) and center (c_x/y/z) OR boxcoords (b_x/y/zmin and b_x/y/zmax) must be specified")
+
 	make_config_file(receptorprep_pdbqt_path, smiles, flex, boxsize, center, exhaustiveness, num_modes, config_path)
 
 	
@@ -315,7 +273,6 @@ def autodock(receptor, smiles, flex, boxsize, center, boxcoords, exhaustiveness,
 	save_highest_score(ligdock_path, highscore_pdbqt_path)
 	pdbqt_to_pdb(highscore_pdbqt_path, highscore_pdb_path)	
 
-
 	# Get score with more sigfigs for highest scoring pose
 	print_debug(debug, "SCORE:  scoring highest scorint pose")
 	os.system(f"{VINA_PATH} --config {config_path} --ligand {highscore_pdbqt_path} --out /tmp/rescore.pdbqt --score_only | grep 'Affinity:' > {score_path}")
@@ -329,6 +286,8 @@ def autodock(receptor, smiles, flex, boxsize, center, boxcoords, exhaustiveness,
 	print_debug(debug, "CLEAN:  clearing tmp files")
 	clean_tmp()
 
-	print(f"score = {score} kcal/mol")
+	print(f"{SCORE_KEY} {score} kcal/mol")
+	print(f"{LIGAND_KEY} {highscore_pdb_path}")
+	print(f"{RECEPTOR_KEY} {receptor_pdb_path}", end="")
 if __name__ == "__main__":
 	autodock()

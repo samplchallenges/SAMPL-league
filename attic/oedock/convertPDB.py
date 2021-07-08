@@ -38,7 +38,7 @@ def get_oebox(boxcoords: (float,float,float,float,float,float)):
 
 
 def PDB_to_oeb(receptor_pdb: str, ligand_pdb: str, boxcoords: (float,float,float,float,float,float)) -> "filename":
-	receptor_oeb_path = "/data/out/receptor.oeb"
+	receptor_oeb_path = "/tmp/receptor.oeb"
 	
 	protein_oemol = PDB_to_mol(receptor_pdb)
 	receptor = oechem.OEGraphMol()
@@ -55,7 +55,7 @@ def PDB_to_oeb(receptor_pdb: str, ligand_pdb: str, boxcoords: (float,float,float
 	ofs = oechem.oemolostream()
 	ofs.SetFormat(oechem.OEFormat_OEB)
 	if not ofs.open(receptor_oeb_path):
-		oechem.OEThrow.Fatal(f"Unable to open {receptor_oeb} for writing")
+		oechem.OEThrow.Fatal(f"Unable to open {receptor_oeb_path} for writing")
 	oechem.OEWriteMolecule(ofs, receptor)
 	ofs.close()
 	return receptor_oeb_path
