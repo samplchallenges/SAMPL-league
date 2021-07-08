@@ -9,6 +9,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        print-LogD=print_logd:get_logd
+        print-LogD=print_logD:get_logd
     ''',
 )
