@@ -15,11 +15,13 @@ from openeye.oemolprop import OEGetXLogP
 )
 @click.option(
     "--smiles", 
-    default="CCCCCCCCO"
+    default="CCCCCCCCO",
+    help="ligand SMILES string"
 )
 @click.option(
     "--output-dir",
-    type=click.Path(exists=True)
+    type=click.Path(exists=True),
+    help="path to output directory"
 )
 def get_LogP(smiles, fuzz, output_dir):
     mol = OEMol()
