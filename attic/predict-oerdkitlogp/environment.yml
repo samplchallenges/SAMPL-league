@@ -1,4 +1,4 @@
-name: SAMPL-hello-world
+name: base
 channels:
   - openeye
   - rdkit

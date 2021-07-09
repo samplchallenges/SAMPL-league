@@ -8,5 +8,5 @@ ENV PATH="/root/.local/bin:$PATH"
 
 RUN pip install .
 
-ENTRYPOINT ["conda", "run", "-n", "ADVRDenv", "dock"]
+ENTRYPOINT ["dock"]
 

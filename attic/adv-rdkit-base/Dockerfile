@@ -21,4 +21,3 @@ ENV PATH="/opt/app/dependencies/:/opt/app/dependencies/mgl/:$PATH"
 RUN /opt/app/dependencies/adv/bin/vina --help
 
 
-

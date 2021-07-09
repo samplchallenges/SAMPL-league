@@ -8,3 +8,5 @@ RUN conda env update -f environment.yml && \
     conda clean --all --yes
 
 RUN pip install .
+
+ENTRYPOINT ["print-LogD"]

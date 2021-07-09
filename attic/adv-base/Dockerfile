@@ -5,10 +5,8 @@ WORKDIR /opt/app/
 
 COPY . ./
 
-RUN conda env create -f environment.yml && \
+RUN conda env update -f environment.yml && \
     conda clean --all --yes
-
-SHELL ["conda", "run", "-n", "ADVenv", "/bin/ash", "-c"]
 
 ENV PATH="/root/.local/bin:$PATH"
 

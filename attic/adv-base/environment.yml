@@ -1,4 +1,4 @@
-name: ADVenv
+name: base
 channels:
   - openeye
   - conda-forge
@@ -131,4 +131,3 @@ dependencies:
     - pymsmt==18.0
     - pytraj==2.0.3
     - sander==16.0
-prefix: /opt/conda/envs/ADVenv

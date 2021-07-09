@@ -1,17 +1,13 @@
 FROM continuumio/miniconda3:4.9.2-alpine
 WORKDIR /opt/app
 
-COPY oe_license.txt setup.py environment.yml ./
+COPY oe_license.txt setup.py environment-2.yml ./
 
-RUN conda env create -f environment.yml && \
+RUN conda env update -f environment-2.yml && \
     conda clean --all --yes
-RUN conda install -n SAMPL-hello-world -c conda-forge rdkit
-
-
-SHELL ["conda", "run", "-n", "SAMPL-hello-world", "/bin/ash", "-c"]
 
 COPY print_logp.py ./
 
 RUN pip install .
 
-ENTRYPOINT ["conda", "run", "-n", "SAMPL-hello-world", "print-LogP"]
+ENTRYPOINT ["print-LogP"]

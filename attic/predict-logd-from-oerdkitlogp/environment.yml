@@ -1,7 +1,6 @@
-name: SAMPL-hello-world
+name: base
 channels:
   - openeye
-  - rdkit
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
