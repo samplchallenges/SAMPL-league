@@ -33,3 +33,6 @@ Options:
 ### Example Run Commands
 `python ../../ever_given/run.py oelogd --solute <solute_SMILES> --solventA <solventA_SMILES> --solventB <solventB_SMILES>`
 * Ex: `docker ../../ever_given/run.py oelogd --solute "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O" --solventA "O" --solventB "CCCCCCCCO"`
+
+`docker run --rm oelogd <entry_point> --solute <SMILES_str>`
+* `docker run --rm oelogd print-LogD --solute "CC(C)CC1=CC=C(C=C1)C(C)C(=O)"`
