@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.db import transaction
 
 from core import models
-from referee import tasks, scoring
+from referee import scoring, tasks
 
 
 @pytest.mark.django_db(transaction=True)

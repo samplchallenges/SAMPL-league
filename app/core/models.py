@@ -361,8 +361,6 @@ class Prediction(Solution):
         assert prediction.value_object is not None, "after save"
         print(f"{prediction.value_object.__dict__}")
 
-
-
         return prediction
 
     def __str__(self):
@@ -455,9 +453,9 @@ def _upload_location(instance, filename):
 class FileValue(GenericValue):
     value = models.FileField(upload_to=_upload_location)
 
-#    def __init__(self, *, value, challenge, **kwargs):
+    #    def __init__(self, *, value, challenge, **kwargs):
 
-#        super().__init__(value=value, challenge=challenge, **kwargs)
+    #        super().__init__(value=value, challenge=challenge, **kwargs)
 
     @classmethod
     def from_string(cls, filepath, *, challenge, evaluation=None):

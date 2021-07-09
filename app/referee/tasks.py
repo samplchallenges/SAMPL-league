@@ -2,23 +2,20 @@ import json
 import logging
 import math
 import os
-from pathlib import Path
 import shlex
 import shutil
 import tempfile
 from collections import namedtuple
+from pathlib import Path
 
 import dask
 import dask.distributed as dd
-
-from django.contrib.contenttypes.models import ContentType
-
 import ever_given.wrapper
+from django.contrib.contenttypes.models import ContentType
 
 from core import models
 
 from . import scoring
-
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +31,9 @@ def run_and_score_submission(client, submission):
     challenge = submission.challenge
     delayed_conditional = True
     for is_public in (True, False):
-        element_ids = challenge.inputelement_set.filter(is_public=is_public).values_list(
-            "id", flat=True
-        )
+        element_ids = challenge.inputelement_set.filter(
+            is_public=is_public
+        ).values_list("id", flat=True)
         run_id, prediction_ids = run_submission(
             submission.pk, element_ids, delayed_conditional, is_public=is_public
         )
@@ -134,9 +131,7 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     output_types_dict = {
         output_type.key: output_type for output_type in output_types.all()
     }
-    has_output_files = output_types.filter(
-        content_type=file_content_type
-    ).exists()
+    has_output_files = output_types.filter(content_type=file_content_type).exists()
 
     container = submission.container
 
@@ -154,18 +149,26 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
             if has_output_files:
                 output_dir = dirpath / "output"
                 output_dir.mkdir()
-                output_file_keys = set([key for key, output_type in output_types_dict.items() if output_type.content_type == file_content_type])
+                output_file_keys = set(
+                    [
+                        key
+                        for key, output_type in output_types_dict.items()
+                        if output_type.content_type == file_content_type
+                    ]
+                )
 
             for key, value in ever_given.wrapper.run(
-                    container.uri,
-                    kwargs=kwargs,
-                    file_kwargs=file_kwargs,
-                    output_dir=output_dir,
-                    output_file_keys=output_file_keys
+                container.uri,
+                kwargs=kwargs,
+                file_kwargs=file_kwargs,
+                output_dir=output_dir,
+                output_file_keys=output_file_keys,
             ):
                 output_type = output_types_dict.get(key)
                 if output_type:
-                    prediction = models.Prediction.load_output(challenge, evaluation, output_type, value)
+                    prediction = models.Prediction.load_output(
+                        challenge, evaluation, output_type, value
+                    )
                     print(f"{prediction.__dict__}")
                     prediction.save()
                 else:

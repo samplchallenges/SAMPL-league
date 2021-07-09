@@ -2,7 +2,6 @@ import os
 from collections import namedtuple
 from datetime import datetime, timezone
 
-
 import dask.distributed as dd
 import pytest
 from django.contrib.auth import get_user_model
@@ -12,7 +11,9 @@ from django.core.files import File
 from core import models
 
 # Collection tuple to simplify test setup
-TestConfig = namedtuple("TestConfig", ["challenge", "input_type", "output_type", "submission_run"])
+TestConfig = namedtuple(
+    "TestConfig", ["challenge", "input_type", "output_type", "submission_run"]
+)
 
 
 @pytest.fixture(scope="session")
@@ -32,6 +33,7 @@ def user(db):
 @pytest.fixture
 def challenge(challenge_factory, db):
     return challenge_factory("SAMPL1")
+
 
 @pytest.fixture
 def challenge2(challenge_factory, db):
@@ -60,11 +62,13 @@ def challenge_factory(db):
 
     return maker
 
+
 @pytest.fixture
 def config_factory(challenge_factory, container_factory, db):
     """
     Create a challenge and related objects for testing
     """
+
     def maker(label, score_label, input_key, input_model, output_key, output_model):
         challenge = challenge_factory("standard")
         scoring_container = container_factory(challenge, score_label, tag="latest")
@@ -72,8 +76,8 @@ def config_factory(challenge_factory, container_factory, db):
             challenge=challenge, container=scoring_container
         )
         for key, level in (
-                ("diff", models.ScoreType.Level.EVALUATION),
-                ("rmse", models.ScoreType.Level.SUBMISSION_RUN),
+            ("diff", models.ScoreType.Level.EVALUATION),
+            ("rmse", models.ScoreType.Level.SUBMISSION_RUN),
         ):
             models.ScoreType.objects.create(challenge=challenge, key=key, level=level)
 
@@ -105,6 +109,7 @@ def config_factory(challenge_factory, container_factory, db):
             status=models.Status.PENDING,
         )
         return TestConfig(challenge, input_type, output_type, submission_run)
+
     return maker
 
 
@@ -119,6 +124,7 @@ def container_factory(user, db):
             label=label,
             tag=tag,
         )
+
     return container_maker
 
 
@@ -148,8 +154,6 @@ def score_maker(challenge, scoring_container, db):
     return models.ScoreMaker.objects.create(
         challenge=challenge, container=scoring_container
     )
-
-
 
 
 @pytest.fixture
@@ -199,6 +203,7 @@ def submission_factory(db):
             container=container,
             challenge=container.challenge,
         )
+
     return submission_maker
 
 
@@ -211,6 +216,7 @@ def submission_run_factory(db):
             is_public=True,
             status=models.Status.PENDING,
         )
+
     return srun_maker
 
 
@@ -254,7 +260,8 @@ def molfile_molw_config(config_factory):
         "molfile",
         models.FileValue,
         "molWeight",
-        models.FloatValue)
+        models.FloatValue,
+    )
 
 
 @pytest.fixture
@@ -265,15 +272,21 @@ def smiles_molw_config(config_factory):
         "smiles",
         models.TextValue,
         "molWeight",
-        models.FloatValue)
+        models.FloatValue,
+    )
 
 
 @pytest.fixture
-def benzene_from_mol(
-    molfile_molw_config, elem_factory, float_answer_key_factory, db
-):
-    elem = elem_factory(molfile_molw_config.challenge, molfile_molw_config.input_type, "benzene", "ChEBI_16716.mdl")
-    answer_key = float_answer_key_factory(molfile_molw_config.challenge, elem, molfile_molw_config.output_type, 72.0)
+def benzene_from_mol(molfile_molw_config, elem_factory, float_answer_key_factory, db):
+    elem = elem_factory(
+        molfile_molw_config.challenge,
+        molfile_molw_config.input_type,
+        "benzene",
+        "ChEBI_16716.mdl",
+    )
+    answer_key = float_answer_key_factory(
+        molfile_molw_config.challenge, elem, molfile_molw_config.output_type, 72.0
+    )
     return elem
 
 

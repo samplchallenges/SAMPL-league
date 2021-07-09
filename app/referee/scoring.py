@@ -2,9 +2,8 @@ import json
 import os.path
 import tempfile
 
-from django.db.models.fields.files import FieldFile
-
 import ever_given.wrapper
+from django.db.models.fields.files import FieldFile
 
 from core import models
 
@@ -41,16 +40,22 @@ def _wrap_answer_path(value):
 
 
 def _build_kwargs(evaluation):
-    predictions_by_key, file_predictions_by_key = models.Prediction.dicts_by_key(evaluation.prediction_set.all())
+    predictions_by_key, file_predictions_by_key = models.Prediction.dicts_by_key(
+        evaluation.prediction_set.all()
+    )
     input_element = evaluation.input_element
 
-    answer_keys, file_answer_keys = models.AnswerKey.dicts_by_key(input_element.answerkey_set.all())
+    answer_keys, file_answer_keys = models.AnswerKey.dicts_by_key(
+        input_element.answerkey_set.all()
+    )
 
     assert len(predictions_by_key) == len(
         answer_keys
     ), "Error: number of predictions doesn't match answer keys, cannot score"
 
-    assert len(file_predictions_by_key) == len(file_answer_keys), "Error: number of file predictions doesn't match answer keys, cannot score"
+    assert len(file_predictions_by_key) == len(
+        file_answer_keys
+    ), "Error: number of file predictions doesn't match answer keys, cannot score"
     score_args = {
         key: AnswerPredictionPair(answer_value, predictions_by_key[key])
         for key, answer_value in answer_keys.items()
@@ -70,8 +75,8 @@ def score_evaluation(container, evaluation, evaluation_score_types):
     command = "score-evaluation"
     print(container.uri, command)
     for key, score_value in ever_given.wrapper.run(
-            container.uri, command,
-            file_kwargs=file_kwargs, kwargs=kwargs):
+        container.uri, command, file_kwargs=file_kwargs, kwargs=kwargs
+    ):
         if key in evaluation_score_types:
             models.EvaluationScore.objects.create(
                 evaluation=evaluation,
@@ -98,8 +103,8 @@ def score_submission_run(container, submission_run, score_types):
 
         command = f"score-submissionrun"
         for key, value in ever_given.wrapper.run(
-                container.uri, command,
-                file_kwargs={"scores": fp.name}, kwargs={}):
+            container.uri, command, file_kwargs={"scores": fp.name}, kwargs={}
+        ):
             if key in submission_run_score_types:
                 models.SubmissionRunScore.objects.create(
                     submission_run=submission_run,

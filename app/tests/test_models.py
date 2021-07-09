@@ -1,16 +1,15 @@
 import os.path
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
-import pytest
 
+import pytest
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models as django_models
 
 from core import models
-
 
 TEST_DATA_PATH = Path(__file__).parent / "data"
 
@@ -49,9 +48,7 @@ def test_file_value(input_elements, molfile_type):
         with open(hellopath, "w") as fp:
             fp.write("Hello world")
             fp.flush()
-        file_value = models.FileValue.from_string(
-            hellopath, challenge=challenge
-        )
+        file_value = models.FileValue.from_string(hellopath, challenge=challenge)
         file_value.save()
         expected_dirpath = Path(f"file_uploads/challenges/{challenge.id}")
         dirpath = Path(file_value.value.name).parent
@@ -74,7 +71,9 @@ def test_input_element(input_elements, benzene_from_mol):
     assert relative_path == Path(expected_path)
 
 
-def test_load_prediction_file(container_factory, submission_factory, submission_run_factory, benzene_from_mol):
+def test_load_prediction_file(
+    container_factory, submission_factory, submission_run_factory, benzene_from_mol
+):
     challenge = benzene_from_mol.challenge
     coordsfile_type = models.ValueType(
         challenge=challenge,
@@ -87,17 +86,21 @@ def test_load_prediction_file(container_factory, submission_factory, submission_
     submission = submission_factory(container)
     submission_run = submission_run_factory(submission)
     evaluation = models.Evaluation.objects.create(
-        submission_run=submission_run,
-        input_element=benzene_from_mol)
+        submission_run=submission_run, input_element=benzene_from_mol
+    )
     filename = "Conformer3D_CID_241.mdl"
     output_path = TEST_DATA_PATH / filename
 
     mock_field_file_save = Mock()
+
     def mock_save_side_effect(name, content, **kwargs):
         assert name == filename
+
     mock_field_file_save.side_effect = mock_save_side_effect
 
     with patch("django.db.models.fields.files.FieldFile.save", mock_field_file_save):
 
-        prediction = models.Prediction.load_output(challenge, evaluation, coordsfile_type, output_path)
+        prediction = models.Prediction.load_output(
+            challenge, evaluation, coordsfile_type, output_path
+        )
         assert mock_field_file_save.call_count == 1

@@ -13,11 +13,12 @@ def evaluations(smiles_molw_config, input_elements):
     for input_element in input_elements:
         if input_element.is_public:
             evaluation = models.Evaluation.objects.create(
-                input_element=input_element,
-                submission_run=submission_run
+                input_element=input_element, submission_run=submission_run
             )
             evaluations_list.append(evaluation)
-            prediction = models.Prediction.load_output(challenge, evaluation, molw_type, value)
+            prediction = models.Prediction.load_output(
+                challenge, evaluation, molw_type, value
+            )
 
     return evaluations_list
 
