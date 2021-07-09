@@ -56,3 +56,9 @@ Options:
 ### Run commands
 `python ../../ever_given/run.py oedock-eg --file-receptor <receptor_file> --smiles <SMILES_str> --sz_x <boxsize_x> --sz_y <boxsize_y> --sz_z <boxsize_z> --c_x <center_x> --c_y <center_y> --c_z <center_z> --output-keys <ligand_key>,<receptor_key>`
 * Ex: `python ../../ever_given/run.py oedock-eg --file-receptor ../data/oedock/4w51-cryo.pdb --smiles "CC(C)Cc1ccccc1 " --sz_x 14 --sz_y 14 --sz_z 14 --c_x -32.355 --c_y 7.263 --c_z 2.207 --output-keys docked_ligand,receptor`
+
+`python ../../ever_given/run.py oedock-eg --file-receptor <receptor_file> --smiles <SMILES_str> --b_xmin <boxcoord_xmin> --b_ymin <boxcoord_ymin> --b_zmin <boxcoord_zmin> --b_xmax <boxcoord_xmax> --b_ymax <boxcoord_ymax> --b_zmax <boxcoord_zmax> --output-keys <ligand_key>,<receptor_key>`
+* Ex: `python ../../ever_given/run.py oedock-eg --file-receptor ../data/oedock/4w51-cryo.pdb --smiles "CC(C)Cc1ccccc1 "--b_xmin 39.355 --b_ymin 0.2629999999999999  --b_zmin -4.793 --b_xmax -25.354999999999997 --b_ymax 14.263 --b_zmax 9.207 --output-keys docked_ligand,receptor`
+
+`python ../../ever_given/run.py oedock-eg --file-receptor <receptor_file> --smiles <SMILES_str> --file-hint-ligand <hint_ligand_file> --output-keys <ligand_key>,<receptor_key>`
+* Ex: `python ../../ever_given/run.py oedock-eg --file-receptor ../data/oedock/4xni_rec.pdb --smiles "CC(C)Cc1ccccc1 " --file-hint-ligand ../data/oedock/4xni_lig.pdb --output-keys docked_ligand,receptor`
