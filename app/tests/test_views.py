@@ -88,14 +88,16 @@ def test_update_submission(client, user, draft_submission):
     assert not submission.draft_mode
 
 
-@pytest.mark.parametrize("processes", (False,))
 @pytest.mark.django_db(transaction=True)
-def test_run_submission(client, processes):
+def test_run_submission(client):
 
     # Because we have dask worker in a separate thread, we need to commit our transaction.
     # But the transaction test case will wipe out data from django's ContentTypes
     # So rerun our migrations to re-add our content types
+    # Generally we don't run with processes False since it's a less thorough test
+    # But for debugging with pdb, it's more convenient
 
+    processes = True
     if processes:
         transaction.commit()
         call_command("migrate", "core", "zero", interactive=False)

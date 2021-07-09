@@ -1,5 +1,7 @@
 import os
+from collections import namedtuple
 from datetime import datetime, timezone
+
 
 import dask.distributed as dd
 import pytest
@@ -8,6 +10,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files import File
 
 from core import models
+
+# Collection tuple to simplify test setup
+TestConfig = namedtuple("TestConfig", ["challenge", "input_type", "output_type", "submission_run"])
 
 
 @pytest.fixture(scope="session")
@@ -55,14 +60,72 @@ def challenge_factory(db):
 
     return maker
 
+@pytest.fixture
+def config_factory(challenge_factory, container_factory, db):
+    """
+    Create a challenge and related objects for testing
+    """
+    def maker(label, score_label, input_key, input_model, output_key, output_model):
+        challenge = challenge_factory("standard")
+        scoring_container = container_factory(challenge, score_label, tag="latest")
+        models.ScoreMaker.objects.create(
+            challenge=challenge, container=scoring_container
+        )
+        for key, level in (
+                ("diff", models.ScoreType.Level.EVALUATION),
+                ("rmse", models.ScoreType.Level.SUBMISSION_RUN),
+        ):
+            models.ScoreType.objects.create(challenge=challenge, key=key, level=level)
+
+        input_type = models.ValueType.objects.create(
+            challenge=challenge,
+            is_input_flag=True,
+            content_type=ContentType.objects.get_for_model(input_model),
+            key=input_key,
+            description="N/A",
+        )
+        output_type = models.ValueType.objects.create(
+            challenge=challenge,
+            is_input_flag=False,
+            content_type=ContentType.objects.get_for_model(output_model),
+            key=output_key,
+            description="N/A",
+        )
+        container = container_factory(challenge, label, tag="latest")
+        submission = models.Submission.objects.create(
+            name="Draft Submission",
+            user=container.user,
+            container=container,
+            challenge=challenge,
+        )
+        submission_run = models.SubmissionRun.objects.create(
+            submission=submission,
+            digest="cafef00d",
+            is_public=True,
+            status=models.Status.PENDING,
+        )
+        return TestConfig(challenge, input_type, output_type, submission_run)
+    return maker
+
 
 @pytest.fixture
-def container(challenge, user, db):
-    return models.Container.objects.create(
-        name="Container1",
-        user=user,
-        challenge=challenge,
-        registry="ghcr.io",
+def container_factory(user, db):
+    def container_maker(challenge, label, tag):
+        return models.Container.objects.create(
+            name="Container1",
+            user=user,
+            challenge=challenge,
+            registry="ghcr.io",
+            label=label,
+            tag=tag,
+        )
+    return container_maker
+
+
+@pytest.fixture
+def container(container_factory, challenge):
+    return container_factory(
+        challenge,
         label="robbason/calc-molwt",
         tag="latest",
     )
@@ -87,25 +150,11 @@ def score_maker(challenge, scoring_container, db):
     )
 
 
-@pytest.fixture
-def score_types(challenge, db):
-    return [
-        models.ScoreType.objects.create(challenge=challenge, key=key, level=level)
-        for key, level in (
-            ("diff", models.ScoreType.Level.EVALUATION),
-            ("rmse", models.ScoreType.Level.SUBMISSION_RUN),
-        )
-    ]
 
 
 @pytest.fixture
-def draft_submission(container, db):
-    return models.Submission.objects.create(
-        name="Draft Submission",
-        user=container.user,
-        container=container,
-        challenge=container.challenge,
-    )
+def draft_submission(submission_factory, container, db):
+    return submission_factory(container)
 
 
 @pytest.fixture
@@ -142,6 +191,30 @@ def elem_factory(testing_data_path, db):
 
 
 @pytest.fixture
+def submission_factory(db):
+    def submission_maker(container):
+        return models.Submission.objects.create(
+            name="Draft Submission",
+            user=container.user,
+            container=container,
+            challenge=container.challenge,
+        )
+    return submission_maker
+
+
+@pytest.fixture
+def submission_run_factory(db):
+    def srun_maker(submission):
+        return models.SubmissionRun.objects.create(
+            submission=submission,
+            digest="cafef00d",
+            is_public=True,
+            status=models.Status.PENDING,
+        )
+    return srun_maker
+
+
+@pytest.fixture
 def float_answer_key_factory(db):
     def fak_maker(challenge, elem, value_type, value):
         float_value = models.FloatValue.from_string("72.0", challenge=challenge)
@@ -174,11 +247,33 @@ def file_answer_key_factory(testing_data_path, db):
 
 
 @pytest.fixture
+def molfile_molw_config(config_factory):
+    return config_factory(
+        "robbason/calc-molwt",
+        "robbason/score-coords",
+        "molfile",
+        models.FileValue,
+        "molWeight",
+        models.FloatValue)
+
+
+@pytest.fixture
+def smiles_molw_config(config_factory):
+    return config_factory(
+        "robbason/calc-molwt",
+        "robbason/score-coords",
+        "smiles",
+        models.TextValue,
+        "molWeight",
+        models.FloatValue)
+
+
+@pytest.fixture
 def benzene_from_mol(
-    challenge2, molfile_type, molw_type, elem_factory, float_answer_key_factory, db
+    molfile_molw_config, elem_factory, float_answer_key_factory, db
 ):
-    elem = elem_factory(challenge2, molfile_type, "benzene", "ChEBI_16716.mdl")
-    answer_key = float_answer_key_factory(challenge2, elem, molw_type, 72.0)
+    elem = elem_factory(molfile_molw_config.challenge, molfile_molw_config.input_type, "benzene", "ChEBI_16716.mdl")
+    answer_key = float_answer_key_factory(molfile_molw_config.challenge, elem, molfile_molw_config.output_type, 72.0)
     return elem
 
 
@@ -205,7 +300,10 @@ def molw_type(challenge, db):
 
 
 @pytest.fixture
-def input_elements(challenge, smiles_type, molw_type, db):
+def input_elements(smiles_molw_config, db):
+    challenge = smiles_molw_config.challenge
+    smiles_type = smiles_molw_config.input_type
+    molw_type = smiles_molw_config.output_type
     elems = []
     for idx, (name, smiles) in enumerate(
         [

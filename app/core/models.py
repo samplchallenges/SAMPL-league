@@ -351,7 +351,6 @@ class Prediction(Solution):
             value_type=output_type,
             evaluation=evaluation,
         )
-
         output_type_model = output_type.content_type.model_class()
         value_object = output_type_model.from_string(
             value, challenge=challenge, evaluation=evaluation

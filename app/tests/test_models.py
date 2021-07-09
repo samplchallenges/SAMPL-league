@@ -74,7 +74,7 @@ def test_input_element(input_elements, benzene_from_mol):
     assert relative_path == Path(expected_path)
 
 
-def test_load_prediction_file(benzene_from_mol, user):
+def test_load_prediction_file(container_factory, submission_factory, submission_run_factory, benzene_from_mol):
     challenge = benzene_from_mol.challenge
     coordsfile_type = models.ValueType(
         challenge=challenge,
@@ -83,7 +83,12 @@ def test_load_prediction_file(benzene_from_mol, user):
         key="conformation",
         description="3D output MOL file",
     )
-    evaluation = models.Evaluation()
+    container = container_factory(challenge, "robbason/score-coords", "latest")
+    submission = submission_factory(container)
+    submission_run = submission_run_factory(submission)
+    evaluation = models.Evaluation.objects.create(
+        submission_run=submission_run,
+        input_element=benzene_from_mol)
     filename = "Conformer3D_CID_241.mdl"
     output_path = TEST_DATA_PATH / filename
 
