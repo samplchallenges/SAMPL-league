@@ -83,8 +83,7 @@ def run(container_uri, command="", *, file_kwargs, kwargs, output_dir=None, outp
     result = run_container(
         container_uri, final_command, input_dir_map, output_dir=output_dir
     )
-    for item in _parse_output(output_dir, result, output_file_keys).items():
-        yield item
+    yield from _parse_output(output_dir, result, output_file_keys).items()
 
 
 
