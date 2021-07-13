@@ -1,12 +1,12 @@
-FROM osatom/adv-rdkit-base
+FROM osatom/adv-rdkit-base:latest
 
 WORKDIR /opt/app/
 
-COPY . ./
-
 ENV PATH="/root/.local/bin:$PATH"
+
+COPY run_autodock.py setup.py ./
 
 RUN pip install .
 
-ENTRYPOINT ["conda", "run", "-n", "ADVRDenv", "dock"]
+ENTRYPOINT ["run-autodock"]
 

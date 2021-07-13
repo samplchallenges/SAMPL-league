@@ -7,4 +7,4 @@ COPY . ./
 
 RUN pip install .
 
-ENTRYPOINT ["conda", "run", "-n", "oepy37", "oedock"]
+ENTRYPOINT ["oedock"]

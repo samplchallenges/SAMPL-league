@@ -4,10 +4,8 @@ WORKDIR /opt/app
 
 COPY . ./
 
-RUN conda env create -f environment.yml && \
+RUN conda env update -f environment.yml && \
     conda clean --all --yes
-
-SHELL ["conda", "run", "-n", "oepy37", "/bin/ash", "-c"]
 
 RUN pip install .
 

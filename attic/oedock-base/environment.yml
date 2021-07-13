@@ -1,4 +1,4 @@
-name: oepy37
+name: base
 channels:
   - openeye
   - omnia
@@ -166,4 +166,3 @@ dependencies:
     - pdb4amber==20.1
     - pytraj==2.0.6
     - sander==16.0
-prefix: /opt/conda/envs/oepy37
