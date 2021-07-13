@@ -1,7 +1,10 @@
+import os.path
+
 import django.contrib.auth.models as auth_models
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -38,8 +41,32 @@ class Challenge(Timestamped):
     secret_score_reference_url = models.URLField()
     execution_options_json = models.JSONField()
 
+    __output_types_dict = None
+
     def __str__(self):
         return str(self.name)
+
+    def __load_output_types(self):
+        output_types = self.valuetype_set.filter(is_input_flag=False)
+        self.__output_types_dict = {
+            output_type.key: output_type for output_type in output_types.all()
+        }
+        file_content_type = ContentType.objects.get_for_model(FileValue)
+        self.__output_file_keys = set(
+            key
+            for key, output_type in self.__output_types_dict.items()
+            if output_type.content_type == file_content_type
+        )
+
+    def output_file_keys(self):
+        if self.__output_types_dict is None:
+            self.__load_output_types()
+        return self.__output_file_keys
+
+    def output_type(self, key):
+        if self.__output_types_dict is None:
+            self.__load_output_types()
+        return self.__output_types_dict.get(key)
 
 
 class Container(Timestamped):
@@ -53,6 +80,11 @@ class Container(Timestamped):
 
     def __str__(self):
         return str(self.name)
+
+    @property
+    def uri(self):
+        suffix = f":{self.tag}" if self.tag else ""
+        return f"{self.registry}/{self.label}{suffix}"
 
 
 class ScoreMaker(Timestamped):
@@ -147,6 +179,25 @@ class InputElement(Timestamped):
     class Meta:
         unique_together = ["challenge", "name"]
 
+    def all_values(self):
+        """
+        Returns a pair of key: value dicts, where the first dict is regular values
+        and the second is file values
+        """
+        file_values = {}
+        values = {}
+        for input_value in self.inputvalue_set.select_related(
+            "value_type", "value_type__content_type"
+        ).all():
+            value_type = input_value.value_type
+            key = value_type.key
+            content_type = value_type.content_type
+            if content_type.model_class() == FileValue:
+                file_values[key] = input_value.value.path
+            else:
+                values[key] = input_value.value
+        return values, file_values
+
     def __str__(self):
         return f"{self.name}, is public? {self.is_public}"
 
@@ -230,8 +281,16 @@ class ScoreType(Timestamped):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
     key = models.CharField(max_length=255)
 
+    class Level(models.TextChoices):
+        EVALUATION = "evaluation"
+        SUBMISSION_RUN = "submission_run"
+
+    level = models.CharField(
+        max_length=255, choices=Level.choices, default=Level.EVALUATION
+    )
+
     class Meta:
-        unique_together = ["challenge", "key"]
+        unique_together = ["challenge", "key", "level"]
 
     def __str__(self):
         return self.key
@@ -241,14 +300,24 @@ class ScoreBase(Timestamped):
     score_type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
     value = models.FloatField()
 
+    REQUIRED_LEVEL = None
+
     class Meta:
         abstract = True
+
+    def clean(self):
+        if self.score_type.level != self.REQUIRED_LEVEL:
+            raise ValueError(
+                f"Score Type {self.score_type} cannot be set on an {self.REQUIRED_LEVEL} score"
+            )
 
 
 class EvaluationScore(ScoreBase):
     evaluation = models.ForeignKey(
         Evaluation, on_delete=models.CASCADE, related_name="scores"
     )
+
+    REQUIRED_LEVEL = ScoreType.Level.EVALUATION
 
     class Meta:
         unique_together = ["evaluation", "score_type"]
@@ -261,6 +330,8 @@ class SubmissionRunScore(ScoreBase):
     submission_run = models.ForeignKey(
         SubmissionRun, on_delete=models.CASCADE, related_name="scores"
     )
+
+    REQUIRED_LEVEL = ScoreType.Level.SUBMISSION_RUN
 
     class Meta:
         unique_together = ["submission_run", "score_type"]
@@ -275,12 +346,46 @@ class Solution(ValueParentMixin):
     class Meta:
         abstract = True
 
+    @classmethod
+    def dicts_by_key(cls, instances):
+        by_key = {}
+        files_by_key = {}
+        for instance in instances:
+            if isinstance(instance.value_type, FileValue):
+                files_by_key[instance.value_type.key] = instance.value.path
+            else:
+                by_key[instance.value_type.key] = instance.value
+        return by_key, files_by_key
+
 
 class Prediction(Solution):
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ["evaluation", "value_type"]
+
+    @classmethod
+    def load_output(cls, challenge, evaluation, output_type, value):
+        assert challenge is not None
+        assert evaluation is not None
+        assert output_type is not None
+
+        prediction = cls(
+            challenge=challenge,
+            value_type=output_type,
+            evaluation=evaluation,
+        )
+        output_type_model = output_type.content_type.model_class()
+        value_object = output_type_model.from_string(
+            value, challenge=challenge, evaluation=evaluation
+        )
+
+        value_object.save()
+        prediction.value_object = value_object
+        assert prediction.value_object is not None, "after save"
+        print(f"{prediction.value_object.__dict__}")
+
+        return prediction
 
     def __str__(self):
         return f"{self.evaluation}::{self.value_type.key}::{self.content_type}"
@@ -305,12 +410,21 @@ class AnswerKey(Solution):
 
 
 class GenericValue(models.Model):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, null=True)
     prediction = GenericRelation(Prediction)
     answer_key = GenericRelation(AnswerKey)
-    input_element = GenericRelation(InputValue)
+    input_value = GenericRelation(InputValue)
 
     class Meta:
         abstract = True
+
+    @classmethod
+    def from_string(cls, raw_value, *, challenge, evaluation=None, **_kwargs):
+        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
+        value_field = cls._meta.get_field("value")
+        value = value_field.to_python(raw_value)
+        return cls(value=value, **cls_kwargs)
 
     def __str__(self):
         # pylint: disable=no-member
@@ -348,6 +462,30 @@ class FloatValue(GenericValue):
     value = models.FloatField()
 
 
+def _upload_location(instance, filename):
+    now = timezone.now()
+    challenge = instance.challenge
+    evaluation = instance.evaluation
+    if evaluation:
+        parent_path = os.path.join("evaluations", f"{evaluation.id}")
+    else:
+        parent_path = os.path.join("challenges", f"{challenge.id}")
+    return os.path.join("file_uploads", parent_path, filename)
+
+
 @register_value_model
-class BlobValue(GenericValue):
-    value = models.BinaryField()
+class FileValue(GenericValue):
+    value = models.FileField(upload_to=_upload_location)
+
+    #    def __init__(self, *, value, challenge, **kwargs):
+
+    #        super().__init__(value=value, challenge=challenge, **kwargs)
+
+    @classmethod
+    def from_string(cls, filepath, *, challenge, evaluation=None):
+        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
+        filename = os.path.basename(filepath)
+        instance = cls(value=filename, **cls_kwargs)
+        with open(filepath) as fp:
+            instance.value.save(filename, File(fp))
+        return instance

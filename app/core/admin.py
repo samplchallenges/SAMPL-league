@@ -190,11 +190,19 @@ class AnswerKeyAdmin(TimestampedAdmin):
         return "No value"
 
 
-class GenericOutputValueAdmin(admin.ModelAdmin):
-    readonly_fields = ("prediction", "answer_key")
+class GenericValueAdmin(admin.ModelAdmin):
+    readonly_fields = ("prediction", "answer_key", "input_element")
+
+    def input_element(self, instance):
+        if instance.input_element.exists():
+            url = reverse(
+                "admin:core_inputelement_change", args=[instance.input_element.get().pk]
+            )
+            return format_html('<a href="{}">{}</a>', url, "Input Element")
+        return "No input element"
 
     def prediction(self, instance):
-        if instance.prediction:
+        if instance.prediction.exists():
             url = reverse(
                 "admin:core_prediction_change", args=[instance.prediction.get().pk]
             )
@@ -202,7 +210,7 @@ class GenericOutputValueAdmin(admin.ModelAdmin):
         return "No prediction"
 
     def answer_key(self, instance):
-        if instance.answer_key:
+        if instance.answer_key.exists():
             url = reverse(
                 "admin:core_answerkey_change", args=[instance.answer_key.get().pk]
             )
@@ -211,15 +219,15 @@ class GenericOutputValueAdmin(admin.ModelAdmin):
 
 
 @register(models.TextValue)
-class TextValueAdmin(GenericOutputValueAdmin):
+class TextValueAdmin(GenericValueAdmin):
     pass
 
 
 @register(models.FloatValue)
-class FloatValueAdmin(GenericOutputValueAdmin):
+class FloatValueAdmin(GenericValueAdmin):
     pass
 
 
-@register(models.BlobValue)
-class BlobValueAdmin(GenericOutputValueAdmin):
+@register(models.FileValue)
+class FileValueAdmin(GenericValueAdmin):
     pass

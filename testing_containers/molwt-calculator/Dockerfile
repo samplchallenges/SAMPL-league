@@ -1,10 +1,11 @@
-FROM mcs07/rdkit:latest
+#FROM mcs07/rdkit:latest
+FROM robbason/basepyrd:latest
 
 WORKDIR /opt/app
 
 COPY setup.py molwt.py ./
 
-RUN apt update && apt install -y python3-pip && apt clean
+#RUN apt update && apt install -y python3-pip && apt clean
 
 ENV PATH="/root/.local/bin:$PATH"
 

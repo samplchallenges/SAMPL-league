@@ -94,13 +94,18 @@ def test_run_submission(client):
     # Because we have dask worker in a separate thread, we need to commit our transaction.
     # But the transaction test case will wipe out data from django's ContentTypes
     # So rerun our migrations to re-add our content types
+    # Generally we don't run with processes False since it's a less thorough test
+    # But for debugging with pdb, it's more convenient
 
-    transaction.commit()
-    call_command("migrate", "core", "zero", interactive=False)
-    call_command("migrate", "core", interactive=False)
-    call_command("sample_data")
-    transaction.commit()
-
+    processes = True
+    if processes:
+        transaction.commit()
+        call_command("migrate", "core", "zero", interactive=False)
+        call_command("migrate", "core", interactive=False)
+        call_command("sample_data")
+        transaction.commit()
+    else:
+        call_command("sample_data")
     submission = Submission.objects.first()
     client.force_login(submission.user)
 
@@ -110,7 +115,11 @@ def test_run_submission(client):
         nonlocal future
         future = l_future
 
-    cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+    if processes:
+        cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+    else:
+        cluster = dd.LocalCluster(n_workers=1, processes=False, threads_per_worker=1)
+
     dask_client = dd.Client(cluster)
 
     mock_get_client = Mock(return_value=dask_client)
