@@ -41,8 +41,32 @@ class Challenge(Timestamped):
     secret_score_reference_url = models.URLField()
     execution_options_json = models.JSONField()
 
+    __output_types_dict = None
+
     def __str__(self):
         return str(self.name)
+
+    def __load_output_types(self):
+        output_types = self.valuetype_set.filter(is_input_flag=False)
+        self.__output_types_dict = {
+            output_type.key: output_type for output_type in output_types.all()
+        }
+        file_content_type = ContentType.objects.get_for_model(FileValue)
+        self.__output_file_keys = set(
+            key
+            for key, output_type in self.__output_types_dict.items()
+            if output_type.content_type == file_content_type
+        )
+
+    def output_file_keys(self):
+        if self.__output_types_dict is None:
+            self.__load_output_types()
+        return self.__output_file_keys
+
+    def output_type(self, key):
+        if self.__output_types_dict is None:
+            self.__load_output_types()
+        return self.__output_types_dict.get(key)
 
 
 class Container(Timestamped):

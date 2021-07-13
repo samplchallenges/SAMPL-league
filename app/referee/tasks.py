@@ -20,10 +20,6 @@ from . import scoring
 logger = logging.getLogger(__name__)
 
 
-SIMPLE = "SIMPLE"
-MULTI = "MULTI"
-
-
 def run_and_score_submission(client, submission):
     """
     Runs public and private, plus scoring
@@ -120,18 +116,7 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
 
     element = challenge.inputelement_set.get(pk=element_id, is_public=is_public)
 
-    if challenge.valuetype_set.filter(is_input_flag=True).count() == 1:
-        input_arg_handling = SIMPLE
-    else:
-        input_arg_handling = MULTI
-
-    file_content_type = ContentType.objects.get_for_model(models.FileValue)
-
-    output_types = challenge.valuetype_set.filter(is_input_flag=False)
-    output_types_dict = {
-        output_type.key: output_type for output_type in output_types.all()
-    }
-    has_output_files = output_types.filter(content_type=file_content_type).exists()
+    output_file_keys = challenge.output_file_keys()
 
     container = submission.container
 
@@ -145,17 +130,9 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
             output_dir = None
-            output_file_keys = None
-            if has_output_files:
+            if output_file_keys:
                 output_dir = dirpath / "output"
                 output_dir.mkdir()
-                output_file_keys = set(
-                    [
-                        key
-                        for key, output_type in output_types_dict.items()
-                        if output_type.content_type == file_content_type
-                    ]
-                )
 
             for key, value in ever_given.wrapper.run(
                 container.uri,
@@ -164,7 +141,7 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
                 output_dir=output_dir,
                 output_file_keys=output_file_keys,
             ):
-                output_type = output_types_dict.get(key)
+                output_type = challenge.output_type(key)
                 if output_type:
                     prediction = models.Prediction.load_output(
                         challenge, evaluation, output_type, value

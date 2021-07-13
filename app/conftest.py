@@ -36,11 +36,6 @@ def challenge(challenge_factory, db):
 
 
 @pytest.fixture
-def challenge2(challenge_factory, db):
-    return challenge_factory("SAMPL2")
-
-
-@pytest.fixture
 def challenge_factory(db):
     def maker(name):
         empty_url = "http://github.com"
