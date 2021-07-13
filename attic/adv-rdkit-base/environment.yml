@@ -1,4 +1,4 @@
-name: ADVRDenv
+name: base
 channels:
   - conda-forge
   - defaults
@@ -89,4 +89,3 @@ dependencies:
   - zipp=3.5.0=pyhd8ed1ab_0
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.5.0=ha95c52a_0
-prefix: /opt/conda/envs/ADVRDenv

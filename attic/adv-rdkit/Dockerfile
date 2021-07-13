@@ -1,4 +1,4 @@
-FROM osatom/adv-rdkit-base
+FROM osatom/adv-rdkit-base:latest
 
 WORKDIR /opt/app/
 
@@ -11,5 +11,5 @@ RUN pip install .
 
 RUN ls -l /opt/app
 
-#ENTRYPOINT ["dock"]
+ENTRYPOINT ["run-autodock"]
 
