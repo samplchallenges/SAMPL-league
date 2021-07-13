@@ -28,5 +28,5 @@ def score_evaluation(item):
 @cli.command()
 @click.argument("scores", nargs=-1, type=click.FLOAT)
 def score_submissionrun(scores):
-    print("RMSE", math.sqrt(sum([score*score for score in scores])/len(scores)))
-    print("MAU", sum([abs(score) for score in scores])/len(scores))
+    print("RMSE", math.sqrt(sum(score*score for score in scores)/len(scores)))
+    print("MAU", sum(abs(score) for score in scores)/len(scores))
