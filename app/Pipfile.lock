@@ -96,12 +96,8 @@
             "version": "==5.0.0"
         },
         "ever-given": {
-            "hashes": [
-                "sha256:6c76aab21806952c3925906bd62cb670b8d5dbdd25703dc2c0dca93cb735501c",
-                "sha256:9a68ca99aa5633b1834ce8624e89b3462c30a448a53279d824b7662d1ae2ae77"
-            ],
-            "index": "pypi",
-            "version": "==0.0.1"
+            "editable": true,
+            "path": "./../ever_given"
         },
         "fsspec": {
             "hashes": [
