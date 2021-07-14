@@ -1,3 +1,6 @@
+# Ignore media directory that may be created 
+/app/media/
+
 # Created by https://www.toptal.com/developers/gitignore/api/python,vim
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,vim
 

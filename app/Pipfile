@@ -11,7 +11,7 @@ dask = "*"
 distributed = "*"
 docker = "*"
 six = "*"
-ever-given = "*"
+ever-given = "0.0.2"
 sampl = {path = "."}
 
 [dev-packages]

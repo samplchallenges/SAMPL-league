@@ -63,7 +63,7 @@ jobs:
           pipenv install --dev
       - name: Run test suite
         run: |
-          pipenv run pytest --cov=./ --cov-report=xml -s
+          pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given
         env:
           RDS_HOSTNAME: localhost
           RDS_DB_NAME: sampl
@@ -80,10 +80,10 @@ jobs:
 
       - name: Run linter
         run: |
-          pipenv run pylint tests/ core/ sampl/
+          pipenv run pylint tests/ referee/ core/ sampl/ ../ever_given/ever_given/
         env:
           DJANGO_SETTINGS_MODULE: sampl.settings_dev
       - name: Run formatting checks
         run: |
           pipenv run black --check --diff .
-          pipenv run isort --check --diff core/ sampl/ tests/ conftest.py
+          pipenv run isort --check --diff core/ referee/ sampl/ tests/  conftest.py
