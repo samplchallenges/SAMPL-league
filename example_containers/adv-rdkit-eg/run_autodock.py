@@ -70,6 +70,7 @@ def smiles_to_chgpdb(smiles: str, charge_path: str):
 	ostream = Chem.SDWriter(charge_path)
 	ostream.write(mol2)
 
+
 def save_highest_score(dock_path: str, highscore_path: str):
 	''' writes the highest scoring docked pose into its own file
 	'''
@@ -156,21 +157,16 @@ def get_score(score_path):
 				return float(line.split()[1])
 
 
+def get_utility_cmd(pyfile: str):
+	return f"{PYTHON_PATH} {UTILITIES_PATH}{pyfile}"
+
+
 @click.command()
-@click.option(
-	"-r",
-	"--receptor",
-	help="path of receptor PDB to dock the ligand into"
-)
-@click.option(
-	"-s",
-	"--smiles",
-	help="SMILES str of ligand to be docked. quote and add white space at the end \"CCC \""
-)
-@click.option(
-	"--flex",
-	help="Not working yet. flexible sidechains if any pdb"
-)
+@click.option("-r","--receptor",help="path of receptor PDB to dock the ligand into")
+@click.option("-s","--smiles",help="SMILES str of ligand to be docked. quote and add white space at the end \"CCC \"")
+@click.option("--flex",help="Not working yet. flexible sidechains if any pdb")
+@click.option("--output-dir", help="Output Directory", type=click.Path(exists=True))
+
 @click.option("--c_x",type=float,help="box center x coordinate; must be used with --c_y/z and --sz_x/y/z")
 @click.option("--c_y",type=float,help="box center y coordinate; must be used with --c_x/z and --sz_x/y/z")
 @click.option("--c_z",type=float,help="box center z coordinate; must be used with --c_x/y and --sz_x/y/z")
@@ -186,28 +182,11 @@ def get_score(score_path):
 @click.option("--b_ymax",type=float,help="box coordinate y max must be used with --b_xmin/ymin/zmin/xmax/zmax")
 @click.option("--b_zmax",type=float,help="box coordinate z max must be used with --b_xmin/ymin/zmin/xmax/ymax")
 
-@click.option(
-	"-n",
-	"--num_modes",
-	type=int,
-	help="Number of modes to dock"
-)
-@click.option(
-	"-e",
-	"--exhaustiveness",
-	type=int,
-	help="exhaustiveness of the global search, default=8"
-)
-@click.option(
-	'--debug', 
-	is_flag=True,
-	help="prints debug print statements when --debug flag is used"
-)
-@click.option(
-	"--output-dir", 
-	help="Output Directory", 
-	type=click.Path(exists=True)
-)
+@click.option("-n","--num_modes",type=int,help="Number of modes to dock")
+@click.option("-e","--exhaustiveness",type=int,help="exhaustiveness of the global search, default=8")
+
+@click.option('--debug', is_flag=True,help="prints debug print statements when --debug flag is used")
+
 def autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,b_zmin,b_xmax,b_ymax,b_zmax, exhaustiveness, num_modes, output_dir, debug):
 	''' docks the given smiles string into the receptor within the box specified by
 	    boxsize and center
@@ -252,14 +231,15 @@ def autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,
 	smiles_to_chgpdb(smiles, ligchg_sdf_path)
 	print("PREP:   converting sdf to pdbqt using openbabel\n" if debug else "", end="")
 	os.system(f"obabel {ligchg_sdf_path} -O {ligchg_pdbqt_path} 2>/dev/null 1>/dev/null")
-	
 	print("PREP:   preparing ligand\n" if debug else "", end="")
-	os.system(f"{PYTHON_PATH} {UTILITIES_PATH}prepare_ligand4.py -l {ligchg_pdbqt_path} -o {ligprep_path} > /dev/null")
+	cmd = get_utility_cmd("prepare_ligand4.py")
+	os.system(f"{cmd} -l {ligchg_pdbqt_path} -o {ligprep_path} > /dev/null")
 	
 
 	# Preparing receptor
 	print_debug(debug, "PREP:   preparing receptor")
-	os.system(f"{PYTHON_PATH} {UTILITIES_PATH}prepare_receptor4.py -r {receptor_path} -o {receptorprep_pdbqt_path} > /dev/null")
+	cmd = get_utility_cmd("prepare_receptor4.py")
+	os.system(f"{cmd} -r {receptor_path} -o {receptorprep_pdbqt_path} > /dev/null")
 
 
 	# Running AutoDock Vina
