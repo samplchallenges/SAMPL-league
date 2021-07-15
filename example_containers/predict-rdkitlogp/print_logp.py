@@ -22,10 +22,10 @@ from rdkit.Chem import Crippen
         type=click.Path(exists=True)
 )
 
-def get_logp(SMILES, fuzz, output_dir):
-	rdmol = Chem.MolFromSmiles(SMILES)
+def get_logp(smiles, fuzz, output_dir):
+	rdmol = Chem.MolFromSmiles(smiles)
 	rdlogP = Crippen.MolLogP(rdmol)
-	print(rdlogP)
+	print(f"molwt {rdlogP}")
 
 
 
