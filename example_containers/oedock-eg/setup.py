@@ -5,9 +5,10 @@ setup(
     version='0.1',
     py_modules=[
         "run_oedock", 
-        "charge", 
+        "ligand", 
+        "receptor",
         "docking",
-        "convertPDB"
+	"oe_io"
     ],
     install_requires=[
         'Click',
