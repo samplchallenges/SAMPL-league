@@ -1,5 +1,5 @@
 #FROM mcs07/rdkit:latest
-FROM robbason/basepyrd:latest
+FROM basepyrd:latest
 
 WORKDIR /opt/app
 
