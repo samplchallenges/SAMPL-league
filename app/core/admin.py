@@ -53,6 +53,7 @@ class ChallengeAdmin(TimestampedAdmin):
 @register(models.Container)
 class ContainerAdmin(TimestampedAdmin):
     list_display = ("name", "user", "challenge", "created_at")
+    list_filter = ("challenge", )
     date_hierarchy = "created_at"
     readonly_fields = ("submissions", *TimestampedAdmin.readonly_fields)
 
@@ -63,12 +64,13 @@ class ContainerAdmin(TimestampedAdmin):
 @register(models.ScoreMaker)
 class ScoreMakerAdmin(TimestampedAdmin):
     list_display = ("challenge", "container")
+    list_filter = ("challenge", )
 
 
 @register(models.Submission)
 class SubmissionAdmin(TimestampedAdmin):
     list_display = ("challenge", "user", "container", "created_at")
-
+    list_filter = ("challenge", )
     readonly_fields = ("submission_runs", *TimestampedAdmin.readonly_fields)
 
     def submission_runs(self, instance):
@@ -82,6 +84,10 @@ class SubmissionRunAdmin(TimestampedAdmin):
         "user",
         "challenge",
         "is_public",
+        "status",
+    )
+    list_filter = (
+        "submission__challenge",
         "status",
     )
     readonly_fields = (
@@ -106,12 +112,14 @@ class SubmissionRunAdmin(TimestampedAdmin):
 
 @register(models.InputElement)
 class InputElementAdmin(TimestampedAdmin):
-    pass
+    list_display = ("name", "challenge", "is_public")
+    list_filter = ("challenge", )
 
 
 @register(models.ValueType)
 class ValueTypeAdmin(TimestampedAdmin):
-    pass
+    list_display = ("key", "challenge", "description", "content_type", "is_input_flag")
+    list_filter = ("challenge", )
 
 
 @register(models.InputValue)
@@ -122,6 +130,7 @@ class InputValueAdmin(TimestampedAdmin):
         "value_type",
         "content_type",
     )
+    list_filter = ("input_element__challenge", )
 
 
 @register(models.Evaluation)
@@ -153,6 +162,7 @@ class PredictionAdmin(TimestampedAdmin):
         "value_type",
         "content_type",
     )
+    list_filter = ("challenge",)
     readonly_fields = ("challenge", "value", *TimestampedAdmin.readonly_fields)
 
     def value(self, instance):
@@ -176,6 +186,7 @@ class AnswerKeyAdmin(TimestampedAdmin):
         "value_type",
         "content_type",
     )
+    list_filter = ("challenge", )
     readonly_fields = ("challenge", "value", *TimestampedAdmin.readonly_fields)
 
     def value(self, instance):
@@ -191,6 +202,8 @@ class AnswerKeyAdmin(TimestampedAdmin):
 
 
 class GenericValueAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "challenge", "evaluation")
+    list_filter = ("challenge",)
     readonly_fields = ("prediction", "answer_key", "input_element")
 
     def input_element(self, instance):
