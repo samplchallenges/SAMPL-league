@@ -260,6 +260,12 @@ class InputValue(ValueParentMixin):
             return f"{self.value:.100}..."
         return str(self.value)
 
+    def clean(self):
+        if self.input_element.challenge.id != self.value_type.challenge.id:
+            raise ValidationError(
+                {"input_element": "Challenge must match value_type's"}
+            )
+
 
 class Evaluation(Timestamped):
     submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
@@ -411,7 +417,9 @@ class AnswerKey(Solution):
 
 class GenericValue(models.Model):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
-    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, null=True)
+    evaluation = models.ForeignKey(
+        Evaluation, on_delete=models.CASCADE, null=True, blank=True
+    )
     prediction = GenericRelation(Prediction)
     answer_key = GenericRelation(AnswerKey)
     input_value = GenericRelation(InputValue)
