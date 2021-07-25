@@ -11,6 +11,7 @@ AWS_S3_REGION_NAME = "us-east-2"
 
 
 LOGGING = {
+    "version": 1,
     "disable_existing_loggers": False,
     'handlers': {
         'console': {
@@ -29,7 +30,17 @@ LOGGING = {
         },
         'core': {
             'handlers': ['console'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'level': os.getenv('SAMPL_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'referee': {
+            'handlers': ['console'],
+            'level': os.getenv('SAMPL_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'ever_given': {
+            'handlers': ['console'],
+            'level': os.getenv('SAMPL_LOG_LEVEL', 'INFO'),
             'propagate': False,
         }
     },

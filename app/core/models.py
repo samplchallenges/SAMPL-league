@@ -1,3 +1,4 @@
+import logging
 import os.path
 
 import django.contrib.auth.models as auth_models
@@ -11,7 +12,11 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from . import configurator
-from . import ensure_local_copy
+from . import filecache
+
+
+logger = logging.getLogger(__name__)
+
 
 class Status(models.TextChoices):
     FAILURE = "FAILURE"
@@ -193,7 +198,7 @@ class InputElement(Timestamped):
             key = value_type.key
             content_type = value_type.content_type
             if content_type.model_class() == FileValue:
-                file_values[key] = ensure_local_copy(input_value.value.path)
+                file_values[key] = filecache.ensure_local_copy(input_value.value)
             else:
                 values[key] = input_value.value
         return values, file_values
@@ -389,7 +394,7 @@ class Prediction(Solution):
         value_object.save()
         prediction.value_object = value_object
         assert prediction.value_object is not None, "after save"
-        print(f"{prediction.value_object.__dict__}")
+        logger.debug(f"{prediction.value_object.__dict__}")
 
         return prediction
 
