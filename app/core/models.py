@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from . import configurator
-
+from . import ensure_local_copy
 
 class Status(models.TextChoices):
     FAILURE = "FAILURE"
@@ -193,7 +193,7 @@ class InputElement(Timestamped):
             key = value_type.key
             content_type = value_type.content_type
             if content_type.model_class() == FileValue:
-                file_values[key] = input_value.value.path
+                file_values[key] = ensure_local_copy(input_value.value.path)
             else:
                 values[key] = input_value.value
         return values, file_values
@@ -484,10 +484,6 @@ def _upload_location(instance, filename):
 @register_value_model
 class FileValue(GenericValue):
     value = models.FileField(upload_to=_upload_location)
-
-    #    def __init__(self, *, value, challenge, **kwargs):
-
-    #        super().__init__(value=value, challenge=challenge, **kwargs)
 
     @classmethod
     def from_string(cls, filepath, *, challenge, evaluation=None):
