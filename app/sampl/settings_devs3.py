@@ -2,7 +2,6 @@ import os
 
 from .settings_dev import *  # lgtm [py/polluting-import]
 
-
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID_S3"]
 AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY_S3"]
