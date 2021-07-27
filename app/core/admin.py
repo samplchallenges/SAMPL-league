@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import register
 from django.contrib.admin.templatetags import admin_urls
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join, mark_safe
 
@@ -17,7 +18,9 @@ def _admin_url(obj):
 
 
 def _admin_link(obj):
-    return format_html(HREF_TEMPLATE, _admin_url(obj), obj, obj.created_at)
+    return format_html(
+        HREF_TEMPLATE, _admin_url(obj), obj, getattr(obj, "created_at", "")
+    )
 
 
 def _admin_links(objects):
@@ -53,6 +56,7 @@ class ChallengeAdmin(TimestampedAdmin):
 @register(models.Container)
 class ContainerAdmin(TimestampedAdmin):
     list_display = ("name", "user", "challenge", "created_at")
+    list_filter = ("challenge",)
     date_hierarchy = "created_at"
     readonly_fields = ("submissions", *TimestampedAdmin.readonly_fields)
 
@@ -63,12 +67,31 @@ class ContainerAdmin(TimestampedAdmin):
 @register(models.ScoreMaker)
 class ScoreMakerAdmin(TimestampedAdmin):
     list_display = ("challenge", "container")
+    list_filter = ("challenge",)
+
+
+@register(models.ScoreType)
+class ScoreTypeAdmin(TimestampedAdmin):
+    list_display = ("key", "level", "challenge")
+    list_filter = ("challenge",)
+
+
+@register(models.EvaluationScore)
+class EvaluationScoreAdmin(TimestampedAdmin):
+    list_display = ("evaluation", "score_type", "value")
+    list_filter = ("score_type__challenge",)
+
+
+@register(models.SubmissionRunScore)
+class SubmissionRunScoreAdmin(TimestampedAdmin):
+    list_display = ("submission_run", "score_type", "value")
+    list_filter = ("score_type__challenge",)
 
 
 @register(models.Submission)
 class SubmissionAdmin(TimestampedAdmin):
     list_display = ("challenge", "user", "container", "created_at")
-
+    list_filter = ("challenge",)
     readonly_fields = ("submission_runs", *TimestampedAdmin.readonly_fields)
 
     def submission_runs(self, instance):
@@ -82,6 +105,10 @@ class SubmissionRunAdmin(TimestampedAdmin):
         "user",
         "challenge",
         "is_public",
+        "status",
+    )
+    list_filter = (
+        "submission__challenge",
         "status",
     )
     readonly_fields = (
@@ -106,12 +133,14 @@ class SubmissionRunAdmin(TimestampedAdmin):
 
 @register(models.InputElement)
 class InputElementAdmin(TimestampedAdmin):
-    pass
+    list_display = ("name", "challenge", "is_public")
+    list_filter = ("challenge",)
 
 
 @register(models.ValueType)
 class ValueTypeAdmin(TimestampedAdmin):
-    pass
+    list_display = ("key", "challenge", "description", "content_type", "is_input_flag")
+    list_filter = ("challenge",)
 
 
 @register(models.InputValue)
@@ -122,6 +151,56 @@ class InputValueAdmin(TimestampedAdmin):
         "value_type",
         "content_type",
     )
+    list_filter = ("input_element__challenge",)
+    fields = (
+        ("value_type", "value_type_challenge"),
+        ("content_type", "object_id"),
+        ("object_link", "value_object_challenge"),
+        ("input_element", "input_element_challenge"),
+        ("created_at", "updated_at"),
+    )
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "value_type_challenge",
+        "input_element_challenge",
+        "object_link",
+        "value_object_challenge",
+    )
+
+    def input_element_challenge(self, instance):
+        return instance.input_element.challenge
+
+    def value_type_challenge(self, instance):
+        return instance.value_type.challenge
+
+    def value_object_challenge(self, instance):
+        return instance.value_object.challenge
+
+    def object_link(self, instance):
+        return _admin_link(instance.value_object)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "content_type":
+            allowed_models = (
+                content_type.id
+                for content_type in ContentType.objects.get_for_models(
+                    *models.Solution._value_models
+                ).values()
+            )
+            kwargs["queryset"] = ContentType.objects.filter(id__in=allowed_models)
+
+        url_name = request.resolver_match.url_name
+        if url_name == "core_inputvalue_change":
+            input_value_id = int(request.resolver_match.kwargs["object_id"])
+            input_value = models.InputValue.objects.get(pk=input_value_id)
+
+            if db_field.name == "input_element":
+                kwargs[
+                    "queryset"
+                ] = input_value.value_type.challenge.inputelement_set.order_by("name")
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @register(models.Evaluation)
@@ -153,6 +232,7 @@ class PredictionAdmin(TimestampedAdmin):
         "value_type",
         "content_type",
     )
+    list_filter = ("challenge",)
     readonly_fields = ("challenge", "value", *TimestampedAdmin.readonly_fields)
 
     def value(self, instance):
@@ -176,6 +256,7 @@ class AnswerKeyAdmin(TimestampedAdmin):
         "value_type",
         "content_type",
     )
+    list_filter = ("challenge",)
     readonly_fields = ("challenge", "value", *TimestampedAdmin.readonly_fields)
 
     def value(self, instance):
@@ -191,6 +272,8 @@ class AnswerKeyAdmin(TimestampedAdmin):
 
 
 class GenericValueAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "challenge", "evaluation")
+    list_filter = ("challenge",)
     readonly_fields = ("prediction", "answer_key", "input_element")
 
     def input_element(self, instance):
