@@ -7,8 +7,7 @@ import shutil
 
 from django.conf import settings
 
-
-BUFSIZE = 10*1024*1024  # Break big files into 10MB chunks
+BUFSIZE = 10 * 1024 * 1024  # Break big files into 10MB chunks
 # BUFSIZE = 100
 
 logger = logging.getLogger(__name__)
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def _local_cache_path(field_file):
     local_path = os.path.join(settings.MEDIA_ROOT, field_file.name)
-    os.makedirs(os.path.dirname(local_path))
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
     return local_path
 
 
@@ -27,7 +26,7 @@ def ensure_local_copy(field_file):
     local_path = _local_cache_path(field_file)
     if not os.path.exists(local_path):
         logger.debug("Creating local cache %s", local_path)
-        with open(local_path, 'wb') as local_fp:
+        with open(local_path, "wb") as local_fp:
             while True:
                 data = field_file.read(BUFSIZE)
                 if not data:

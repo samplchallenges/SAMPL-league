@@ -149,7 +149,8 @@ class ValueParentAdminMixin(TimestampedAdmin):
         "input_element_challenge",
         "object_link",
         "value_object_challenge",
-        *TimestampedAdmin.readonly_fields)
+        *TimestampedAdmin.readonly_fields,
+    )
 
     def input_element_challenge(self, instance):
         return instance.input_element.challenge
@@ -276,12 +277,11 @@ class AnswerKeyAdmin(ValueParentAdminMixin):
             answer_key = models.AnswerKey.objects.get(pk=answer_key_id)
 
             if db_field.name == "input_element":
-                kwargs[
-                    "queryset"
-                ] = answer_key.challenge.inputelement_set.order_by("name")
+                kwargs["queryset"] = answer_key.challenge.inputelement_set.order_by(
+                    "name"
+                )
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
 
 
 class GenericValueAdmin(admin.ModelAdmin):
