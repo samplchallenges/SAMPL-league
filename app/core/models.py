@@ -363,7 +363,7 @@ class Solution(ValueParentMixin):
         files_by_key = {}
         for instance in instances:
             if isinstance(instance.value_type, FileValue):
-                files_by_key[instance.value_type.key] = instance.value.path
+                files_by_key[instance.value_type.key] = filecache.ensure_local_copy(instance.value)
             else:
                 by_key[instance.value_type.key] = instance.value
         return by_key, files_by_key
@@ -394,7 +394,7 @@ class Prediction(Solution):
         value_object.save()
         prediction.value_object = value_object
         assert prediction.value_object is not None, "after save"
-        logger.debug(f"{prediction.value_object.__dict__}")
+        logger.debug(f"Prediction: {prediction.value_object.__dict__}")
 
         return prediction
 
@@ -497,4 +497,5 @@ class FileValue(GenericValue):
         instance = cls(value=filename, **cls_kwargs)
         with open(filepath) as fp:
             instance.value.save(filename, File(fp))
+        filecache.preserve_local_copy(instance.value, filepath)
         return instance
