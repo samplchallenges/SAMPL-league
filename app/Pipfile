@@ -27,4 +27,4 @@ pytest-cov = "*"
 pytest-xdist = {extras = ["psutil"], version = "*"}
 
 [requires]
-python_version = "3"
+python_version = "3.8"

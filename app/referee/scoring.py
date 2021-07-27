@@ -48,6 +48,18 @@ def _build_kwargs(evaluation):
     answer_keys, file_answer_keys = models.AnswerKey.dicts_by_key(
         input_element.answerkey_set.all()
     )
+    print()
+    print("##########################")
+    print("ANSWER KEYS:", answer_keys)
+    print("##########################")
+    print()
+
+    print()
+    print("##########################")
+    print("PREDICT KEYS:", predictions_by_key)
+    print("##########################")
+    print()
+
 
     assert len(predictions_by_key) == len(
         answer_keys

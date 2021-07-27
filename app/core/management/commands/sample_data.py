@@ -27,8 +27,8 @@ def _create_challenge_inputs(challenge):
         challenge=challenge,
         is_input_flag=False,
         content_type=ContentType.objects.get_for_model(models.FloatValue),
-        key="molWeight",
-        description="Molecular Weight",
+        key="LogP",
+        description="LogP Value",
     )
 
     smiles = "c1ccccc1"
@@ -50,6 +50,7 @@ def _create_challenge_inputs(challenge):
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        print("handle() is being run")
         User = get_user_model()
 
         (user, _) = User.objects.get_or_create(
@@ -57,7 +58,7 @@ class Command(BaseCommand):
         )
         foo_url = "https://foo.com"
         challenge = models.Challenge.objects.create(
-            name="Milo",
+            name="Megs Test",
             start_at=timezone.now(),
             end_at=timezone.now(),
             repo_url=foo_url,
@@ -72,10 +73,13 @@ class Command(BaseCommand):
             name="crate",
             user=user,
             challenge=challenge,
-            # ghcr.io/robbason/calc-molwt:latest
-            registry="ghcr.io",
-            label="robbason/calc-coords",
+            registry="docker.io",
+            label="osatom/logpcalc",
             tag="latest",
+            # ghcr.io/robbason/calc-molwt:latest
+            #registry="ghcr.io",
+            #label="robbason/calc-coords",
+            #tag="latest",
             # registry="docker.io",
             # label="mmh42/calc-molwt",
             # tag="0.1",
@@ -85,9 +89,12 @@ class Command(BaseCommand):
             name="scorer",
             user=user,
             challenge=challenge,
-            registry="ghcr.io",
-            label="robbason/score-coords",
+            registry="docker.io",
+            label="osatom/scoremore",
             tag="latest",
+            #registry="ghcr.io",
+            #label="robbason/score-coords",
+            #tag="latest",
         )
 
         scoremaker = models.ScoreMaker.objects.create(

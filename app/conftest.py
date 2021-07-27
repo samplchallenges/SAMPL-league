@@ -254,7 +254,8 @@ def molfile_molw_config(config_factory):
         "robbason/score-coords",
         "molfile",
         models.FileValue,
-        "molWeight",
+        "logP",
+        #"molWeight",
         models.FloatValue,
     )
 
@@ -266,7 +267,8 @@ def smiles_molw_config(config_factory):
         "robbason/score-coords",
         "smiles",
         models.TextValue,
-        "molWeight",
+        "logP"
+        #"molWeight",
         models.FloatValue,
     )
 
@@ -302,8 +304,11 @@ def molw_type(challenge, db):
         challenge=challenge,
         is_input_flag=False,
         content_type=ContentType.objects.get_for_model(models.FloatValue),
-        key="molWeight",
-        description="Molecular Weight",
+        key="LogP",
+        #key="molWeight",
+        description="LogP Value",
+        #key="molWeight",
+        #description="Molecular Weight",
     )
 
 
