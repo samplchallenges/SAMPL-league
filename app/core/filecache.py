@@ -5,8 +5,6 @@ import logging
 import os.path
 import shutil
 
-import boto3
-
 from django.conf import settings
 
 
