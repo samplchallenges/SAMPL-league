@@ -7,7 +7,7 @@ from django.utils.html import format_html, format_html_join, mark_safe
 
 from . import models
 
-HREF_TEMPLATE = '<a href="{}">{}</a> {}t'
+HREF_TEMPLATE = '<a href="{}">{}</a> {}'
 
 
 def _admin_url(obj):
@@ -143,30 +143,13 @@ class ValueTypeAdmin(TimestampedAdmin):
     list_filter = ("challenge",)
 
 
-@register(models.InputValue)
-class InputValueAdmin(TimestampedAdmin):
-    list_display = (
-        "pk",
-        "input_element",
-        "value_type",
-        "content_type",
-    )
-    list_filter = ("input_element__challenge",)
-    fields = (
-        ("value_type", "value_type_challenge"),
-        ("content_type", "object_id"),
-        ("object_link", "value_object_challenge"),
-        ("input_element", "input_element_challenge"),
-        ("created_at", "updated_at"),
-    )
+class ValueParentAdminMixin(TimestampedAdmin):
     readonly_fields = (
-        "created_at",
-        "updated_at",
         "value_type_challenge",
         "input_element_challenge",
         "object_link",
         "value_object_challenge",
-    )
+        *TimestampedAdmin.readonly_fields)
 
     def input_element_challenge(self, instance):
         return instance.input_element.challenge
@@ -189,7 +172,27 @@ class InputValueAdmin(TimestampedAdmin):
                 ).values()
             )
             kwargs["queryset"] = ContentType.objects.filter(id__in=allowed_models)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+
+@register(models.InputValue)
+class InputValueAdmin(ValueParentAdminMixin):
+    list_display = (
+        "pk",
+        "input_element",
+        "value_type",
+        "content_type",
+    )
+    list_filter = ("input_element__challenge",)
+    fields = (
+        ("value_type", "value_type_challenge"),
+        ("content_type", "object_id"),
+        ("object_link", "value_object_challenge"),
+        ("input_element", "input_element_challenge"),
+        ("created_at", "updated_at"),
+    )
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
         url_name = request.resolver_match.url_name
         if url_name == "core_inputvalue_change":
             input_value_id = int(request.resolver_match.kwargs["object_id"])
@@ -248,7 +251,7 @@ class PredictionAdmin(TimestampedAdmin):
 
 
 @register(models.AnswerKey)
-class AnswerKeyAdmin(TimestampedAdmin):
+class AnswerKeyAdmin(ValueParentAdminMixin):
     list_display = (
         "pk",
         "challenge",
@@ -257,22 +260,32 @@ class AnswerKeyAdmin(TimestampedAdmin):
         "content_type",
     )
     list_filter = ("challenge",)
-    readonly_fields = ("challenge", "value", *TimestampedAdmin.readonly_fields)
+    fields = (
+        "challenge",
+        ("value_type", "value_type_challenge"),
+        ("content_type", "object_id"),
+        ("object_link", "value_object_challenge"),
+        ("input_element", "input_element_challenge"),
+        ("created_at", "updated_at"),
+    )
 
-    def value(self, instance):
-        if instance.value_object:
-            url = reverse(
-                admin_urls.admin_urlname(instance.value_object._meta, "change"),
-                args=[instance.object_id],
-            )
-            print(url)
-            return format_html('<a href="{}">{}</a>', url, instance.value_object)
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        url_name = request.resolver_match.url_name
+        if url_name == "core_answerkey_change":
+            answer_key_id = int(request.resolver_match.kwargs["object_id"])
+            answer_key = models.AnswerKey.objects.get(pk=answer_key_id)
 
-        return "No value"
+            if db_field.name == "input_element":
+                kwargs[
+                    "queryset"
+                ] = answer_key.challenge.inputelement_set.order_by("name")
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 
 class GenericValueAdmin(admin.ModelAdmin):
-    list_display = ("__str__", "challenge", "evaluation")
+    list_display = ("id", "__str__", "challenge", "evaluation")
     list_filter = ("challenge",)
     readonly_fields = ("prediction", "answer_key", "input_element")
 

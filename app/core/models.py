@@ -224,7 +224,8 @@ class ValueType(Timestamped):
 class ValueParentMixin(Timestamped):
     value_type = models.ForeignKey(ValueType, on_delete=models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
+    object_id = models.PositiveIntegerField(
+        help_text="The ID of the object in the table for that type of value (Float Value, Text Value, File Value)")
     value_object = GenericForeignKey("content_type", "object_id")
 
     _value_models = ()
