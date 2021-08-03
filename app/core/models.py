@@ -1,3 +1,4 @@
+import logging
 import os.path
 
 import django.contrib.auth.models as auth_models
@@ -10,7 +11,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from . import configurator
+from . import configurator, filecache
+
+logger = logging.getLogger(__name__)
 
 
 class Status(models.TextChoices):
@@ -193,7 +196,7 @@ class InputElement(Timestamped):
             key = value_type.key
             content_type = value_type.content_type
             if content_type.model_class() == FileValue:
-                file_values[key] = input_value.value.path
+                file_values[key] = filecache.ensure_local_copy(input_value.value)
             else:
                 values[key] = input_value.value
         return values, file_values
@@ -219,7 +222,9 @@ class ValueType(Timestamped):
 class ValueParentMixin(Timestamped):
     value_type = models.ForeignKey(ValueType, on_delete=models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
+    object_id = models.PositiveIntegerField(
+        help_text="The ID of the object in the table for that type of value (Float Value, Text Value, File Value)"
+    )
     value_object = GenericForeignKey("content_type", "object_id")
 
     _value_models = ()
@@ -358,7 +363,9 @@ class Solution(ValueParentMixin):
         files_by_key = {}
         for instance in instances:
             if isinstance(instance.value_type, FileValue):
-                files_by_key[instance.value_type.key] = instance.value.path
+                files_by_key[instance.value_type.key] = filecache.ensure_local_copy(
+                    instance.value
+                )
             else:
                 by_key[instance.value_type.key] = instance.value
         return by_key, files_by_key
@@ -389,7 +396,7 @@ class Prediction(Solution):
         value_object.save()
         prediction.value_object = value_object
         assert prediction.value_object is not None, "after save"
-        print(f"{prediction.value_object.__dict__}")
+        logger.debug(f"Prediction: {prediction.value_object.__dict__}")
 
         return prediction
 
@@ -485,15 +492,12 @@ def _upload_location(instance, filename):
 class FileValue(GenericValue):
     value = models.FileField(upload_to=_upload_location)
 
-    #    def __init__(self, *, value, challenge, **kwargs):
-
-    #        super().__init__(value=value, challenge=challenge, **kwargs)
-
     @classmethod
     def from_string(cls, filepath, *, challenge, evaluation=None):
         cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
         filename = os.path.basename(filepath)
         instance = cls(value=filename, **cls_kwargs)
-        with open(filepath) as fp:
+        with open(filepath, "rb") as fp:
             instance.value.save(filename, File(fp))
+        filecache.preserve_local_copy(instance.value, filepath)
         return instance
