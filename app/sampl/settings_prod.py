@@ -38,22 +38,22 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ['file'],
+            "handlers": ["file"],
             "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "core": {
-            "handlers": ['file'],
+            "handlers": ["file"],
             "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "referee": {
-            "handlers": ['file'],
+            "handlers": ["file"],
             "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "ever_given": {
-            "handlers": ['file'],
+            "handlers": ["file"],
             "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
