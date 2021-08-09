@@ -161,6 +161,7 @@ Sessionx.vim
 .netrwhist
 *~
 # Auto-generated tag files
+.DS_Store
 tags
 # Persistent undo
 [._]*.un~

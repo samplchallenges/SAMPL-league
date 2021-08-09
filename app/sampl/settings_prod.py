@@ -25,3 +25,37 @@ DATABASES = {
         "PORT": os.environ["RDS_PORT"],
     }
 }
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "/opt/python/log/app.log",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+        "core": {
+            "handlers": ["file"],
+            "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+        "referee": {
+            "handlers": ["file"],
+            "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+        "ever_given": {
+            "handlers": ["file"],
+            "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+    },
+}

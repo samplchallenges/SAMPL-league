@@ -25,20 +25,6 @@ class AnswerPredictionPair:
         return args_dict
 
 
-def _wrap_path(value, label):
-    if isinstance(value, FieldFile):
-        return os.path.join("/mnt", "inputs", label, os.path.basename(value.name))
-    return value
-
-
-def _wrap_prediction_path(value):
-    return _wrap_path(value, "prediction")
-
-
-def _wrap_answer_path(value):
-    return _wrap_path(value, "answer")
-
-
 def _build_kwargs(evaluation):
     predictions_by_key, file_predictions_by_key = models.Prediction.dicts_by_key(
         evaluation.prediction_set.all()
