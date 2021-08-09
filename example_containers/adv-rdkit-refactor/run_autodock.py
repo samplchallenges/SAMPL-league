@@ -239,7 +239,7 @@ def run_autodock(receptor, smiles, flex, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_y
 
 	score = adv.dock(ligprep_pdbqt_path, ligdock_pdbqt_path, highscore_pdbqt_path, highscore_pdb_path, exhaustiveness, num_modes, flex)
 
-	adv.pdbqt_to_pdb(receptorprep_pdbqt_path, receptor_pdb_path)
+	Autodock.pdbqt_to_pdb_static(receptorprep_pdbqt_path, receptor_pdb_path)
 
 	#print(adv)
 	print(f"{SCORE_KEY} {score} kcal/mol")

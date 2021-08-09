@@ -79,14 +79,18 @@ class Autodock():
 	def sdf_to_pdbqt(sdf_file: str, pdbqt_file: str):
 		os.system(f"obabel {sdf_file} -O {pdbqt_file} 2>/dev/null 1>/dev/null")
 
+	@staticmethod
+	def pdbqt_to_pdb_static(pdbqt_path, pdb_path):
+		os.system(f"cut -c-66 {pdbqt_path} > {pdb_path}")
+
 	def pdbqt_to_pdb(self, pdbqt_path, pdb_path):
 		cmd = self._get_utility_cmd("pdbqt_to_pdb.py")
 		#os.system(f"cut -c-66 {pdbqt_path} > {pdb_path}")
-		os.system(f"{cmd} -f {pdbqt_path} -o {pdb_path}")
+		os.system(f"{cmd} -f {pdbqt_path} -o {pdb_path} > /dev/null")
 
 	def prep_ligand(self, ligchg_pdbqt: str, ligprep_pdbqt: str):
 		cmd = self._get_utility_cmd("prepare_ligand4.py")
-		os.system(f"{cmd} -l {ligchg_pdbqt} -o {ligprep_pdbqt}")
+		os.system(f"{cmd} -l {ligchg_pdbqt} -o {ligprep_pdbqt} > /dev/null")
 
 
 	def prep_receptor(self, recprep_pdbqt: str):
