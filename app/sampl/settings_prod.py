@@ -33,7 +33,7 @@ LOGGING = {
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
-            "filename": "/opt/python/log/app.log",
+            "filename": "/var/log/app.log",
         },
     },
     "loggers": {
