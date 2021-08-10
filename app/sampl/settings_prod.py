@@ -49,7 +49,7 @@ LOGGING = {
             "filename": "/var/log/app.log",
         },
         "rollbar": {
-            "filters": ["require_debug_false"],
+            "level": "DEBUG",
             "access_token": POST_SERVER_ITEM_ACCESS_TOKEN,
             "environment": "production",
             "class": "rollbar.logger.RollbarHandler",
