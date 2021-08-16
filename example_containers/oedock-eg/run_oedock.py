@@ -1,5 +1,8 @@
 # imports for python library
 import os
+import os.path
+import shutil
+import tempfile
 
 # imports for python packages
 from openeye import oechem, oedocking
@@ -68,10 +71,12 @@ def format_inputs(sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,b_zmin,b_xmax,b_yma
 def oedock(smiles, receptor, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,b_zmin,b_xmax,b_ymax,b_zmax, hint_ligand, output_dir) -> None:
 
 
+	tempdir = tempfile.mkdtemp() 
+	
 	hint_ligand,boxcoords = format_inputs(sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,b_zmin,b_xmax,b_ymax,b_zmax, hint_ligand)
 
 	# make a ligand from smiles string and write to oeb
-	ligand_oeb_file = f"{output_dir}/ligand_prepped.oeb"
+	ligand_oeb_file = os.path.join(tempdir,"ligand_prepped.oeb")
 	lig = Ligand(smiles)
 	lig.generate_conformers()
 	lig.charge()
@@ -79,7 +84,7 @@ def oedock(smiles, receptor, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,b_zmin,b
 
 
 	# make receptor from pdb and write to oeb
-	receptor_oeb_file = f"{output_dir}/receptor.oeb"
+	receptor_oeb_file = os.path.join(tempdir,"receptor.oeb")
 	rec = Receptor(receptor)
 	rec.set_make_receptor_param(hint_ligand, boxcoords)
 	rec.make_receptor()
@@ -107,6 +112,10 @@ def oedock(smiles, receptor, sz_x,sz_y,sz_z, c_x,c_y,c_z, b_xmin,b_ymin,b_zmin,b
 	print(f"{LIGAND_KEY} {docked_lig_pdb_file}")
 	print(f"{RECEPTOR_KEY} {docked_rec_pdb_file}")
 	print(f"{SCORE_KEY} {score}")
+
+
+	shutil.rmtree(tempdir)
+
 
 if __name__ == "__main__":
 	oedock()

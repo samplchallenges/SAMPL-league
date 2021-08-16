@@ -21,5 +21,5 @@ Details how to setup and build Autodock Vina Base docker container for Autodock 
 17. Save install.sh
 
 # Build
-1. `cd SAMPL-league/attic/adv-base/dependencies`
+1. `cd adv-base/`
 2. `docker build -t adv-base .`
