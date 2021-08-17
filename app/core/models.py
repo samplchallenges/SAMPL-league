@@ -362,7 +362,7 @@ class Solution(ValueParentMixin):
         by_key = {}
         files_by_key = {}
         for instance in instances:
-            if isinstance(instance.value_type, FileValue):
+            if isinstance(instance.value_object, FileValue):
                 files_by_key[instance.value_type.key] = filecache.ensure_local_copy(
                     instance.value
                 )
