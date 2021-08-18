@@ -21,6 +21,8 @@
 ## Build your base container
 We want to build a base container that has all necessary packages and programs installed that will not be or rarely be changed. This way, the container you write your code in can inherit from this pre-built container, and your container will build much faster.
 
+For a more generalized explanation on how to create a conda environment inside your container please see `CondaEnvInstructions.pdf`
+
 ### Part 1: Create the conda environment
 In this section, we will run the `continuumio/miniconda3` container to dynamically create the conda environment we need.
 1. start the container: `docker run -it --rm continuumio/miniconda3`
