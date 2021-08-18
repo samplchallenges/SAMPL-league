@@ -1,6 +1,7 @@
 ## Directory Structure
   ```
   examples
+  ├── CondaEnvInstructions.pdf
   ├── README.md
   ├── adv
   │   ├── Dockerfile
