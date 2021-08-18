@@ -1,3 +1,22 @@
+## Directory Structure
+  ```
+  examples
+  ├── README.md
+  ├── adv
+  │   ├── Dockerfile
+  │   ├── autodock.py
+  │   ├── run_autodock.py
+  │   └── setup.py
+  ├── adv-base
+  │   ├── Dockerfile
+  │   ├── README.md
+  │   ├── environment.yml
+  │   └── setup.py
+  └── data
+      ├── xtal_lig.pdb
+      └── xtal_rec.pdb
+  ```
+
 ## Build your base container
 We want to build a base container that has all necessary packages and programs installed that will not be or rarely be changed. This way, the container you write your code in can inherit from this pre-built container, and your container will build much faster.
 
@@ -144,4 +163,5 @@ To run your container, and ensure that it will work with our infrastructure, ple
     * You will need to specify the expected output keys as well. For docking it is as follows
         * `--output-keys docked_ligand,receptor`
 * `ever_given` will handle all the overhead of running the docker container and mounting the directories so files can be passed between your computer and container
-* To run this container: `python run.py adv --file-receptor receptor.pdb --file-hint hint.pdb --hint_radius <float> --hint_ligname --output-keys docked_ligand, receptor`
+* To run this container: `python run.py adv --file-receptor receptor.pdb --file-hint hint.pdb --hint_radius <float> --hint_molinfo <str> --output-keys docked_ligand, receptor`
+  * `python ever_given/run.py adv --file-receptor data/xtal_rec.pdb --file-hint data/hint.pdb --hint_radius 6 --hint_molinfo "E51" --smiles "CCCCNc1cc(cc(n1)OC)C(=O)N[C@@H](Cc2ccccc2)[C@H](C[C@@H](C)C(=O)NCCCC)O" --output-keys docked_ligand, receptor`
