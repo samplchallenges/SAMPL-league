@@ -60,7 +60,7 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 ## Build your container with your methods
 
 ### Part 1: Write your methods
-1. Your method you run as your main should include the following flags to deal with our command line inputs. We typically use @click.option to handle this in python
+1. Your method you run as your main should include the following flags to deal with our command line inputs. We typically use `@click.option` to handle this in python
     * `--receptor`: a pdb of the receptor to dock into
     * `--smiles`: SMILES strof the ligand to dock
     * `--hint`: a pdb of a receptor and ligand complex
