@@ -13,8 +13,8 @@
   │   ├── environment.yml
   │   └── setup.py
   └── data
-      ├── xtal_lig.pdb
-      └── xtal_rec.pdb
+      ├── hint.pdb
+      └── receptor.pdb
   ```
 
 ## Build your base container
