@@ -2,6 +2,7 @@
   ```
   examples
   ├── CondaEnvInstructions.pdf
+  ├── ContainerRequirements.md
   ├── README.md
   ├── adv
   │   ├── Dockerfile
@@ -18,6 +19,43 @@
       └── receptor.pdb
   ```
 
+## Tutorial Purpose:
+The following tutorial is meant to teach you the basics of building a basic docking pose prediction container using python code and command line programs (specifically Autodock Vina and MGL Tools). 
+
+For a more generalized explanation about inputs and outputs please see `ContainerRequirements.md`
+
+For a more generalized explanation on how to create a conda environment inside your container please see `CondaEnvInstructions.pdf`
+
+
+## Important Notes:
+Please note that Docker and docking are two separate things. 
+* **Docker** is a program that allows you to containerize methods, essentially taking out human intervention from your containerized program. 
+* **Docking** describes predicting the structure of a complex, in this case a protein-ligand complex.
+
+## Tutorial Requirements
+* Download Docker Desktop: https://www.docker.com/products/docker-desktop
+* Open the Docker Desktop app to start the Docker daemon. 
+  * If you ever have trouble running Docker commands from the command line, please make sure you have already started your Docker Desktop app
+* From the command line, run `pip install docker` 
+* Go to Docker hub https://hub.docker.com/ and create an account to store your Docker containers
+  * Please remember a free account can only have one private container at a time, so if your container has sensitive information be sure you are uploading it to your one private container
+
+
+## Mini Docker Tutorial
+* Context: Every time you build your program/Docker container a "Docker image" of your program is created. This image is built by using the build instructions in the `Dockerfile` (explained further below)
+* To build an image, ensure you are in the directory with your Dockerfile and container code. Then run `docker build -t <name>:<tag/version> .` (i.e. `docker build -t adv:0.1 .` or `docker build -t adv:latest .`
+* From the command line, run: `docker login` and follow the prompts to log in to the Docker hub account you created in the previous section. This will allow you to 
+push docker images directly to your Docker hub account from the command line
+* To push a container to your Docker hub use the command: `docker push <name>:<tag/version>`
+* Use the command `docker images` to list out your built images
+* Eventually, your Docker images will build up and you may run out of memory. To delete docker images, list use `docker images` to list your current images and their IMAGE IDs, then run the command `docker image rm <IMAGE IDs>`
+* For more detailed tutorials on how to use docker please see the following resources:
+  * Official Docker documentation: https://docs.docker.com/get-started/
+  * Brief Docker Tutorial (12m): https://www.youtube.com/watch?v=YFl2mCHdv24
+  * Docker Beginners Course (2hrs): https://www.youtube.com/watch?v=fqMOX6JJhGo
+  * Brief video on inner workings of Docker (15m): https://www.youtube.com/watch?v=rOTqprHv1YE 
+
+
 ## Build your base container
 We want to build a base container that has all necessary packages and programs installed that will not be or rarely be changed. This way, the container you write your code in can inherit from this pre-built container, and your container will build much faster.
 
@@ -25,17 +63,18 @@ For a more generalized explanation on how to create a conda environment inside y
 
 ### Part 1: Create the conda environment
 In this section, we will run the `continuumio/miniconda3` container to dynamically create the conda environment we need.
-1. start the container: `docker run -it --rm continuumio/miniconda3`
-2. create a conda env called advenv: `conda create --name advenv`
-3. activate advenv: `conda activate advenv`
-4. install rdkit: `conda install -c conda-forge rdkit`
-5. install mdtraj: `conda install -c conda-forge mdtraj`
-6. install click: `pip install click`
-7. export the environment: `conda env export -n advenv`
-8. copy the output from the export command in step 7
-9. exit the container: `exit`
+1. Open a terminal
+2. Start the container: `docker run -it --rm continuumio/miniconda3` upon running this command, your command line prompt should change
+3. Create a conda env called advenv: `conda create --name advenv`
+4. Activate advenv: `conda activate advenv`
+5. Install rdkit: `conda install -c conda-forge rdkit`
+6. Install mdtraj: `conda install -c conda-forge mdtraj`
+7. Install click: `pip install click`
+8. Export the environment: `conda env export -n advenv`
+9. Copy the output from the export command in step 7
+10. Exit the container: `exit`
 
-### Part 2: Create a Dockerfile and add the lines to install the conda environment
+### Part 2: Create a Dockerfile with build instructions and add the lines to install the conda environment
 1. Navigate to the directory you will begin writing your container
 2. Create and open a file called `environment.yml` and paste the output you previously copied
 3. Change the first line of the file `name: advenv` to `name: base`
