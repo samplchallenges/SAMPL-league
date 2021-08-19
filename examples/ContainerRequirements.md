@@ -26,7 +26,7 @@
 docked_ligand {path_to_docked_ligand_file}
 receptor {path_to_receptor_file}
 ```
-* Your container should output above in the format `key value` where the keys are `docked_ligand`/`receptor` and the values are file paths
+* Your container should output above in the format `key value` where the keys are `docked_ligand`/`receptor` and the values are file paths. The key and value should be separated by a single space
 * These are the only two outputs that should be printed to stdout. Please print any extraneous error messages to stderr so output parsing is not compromised
 
 
