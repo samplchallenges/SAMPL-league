@@ -60,7 +60,7 @@ Please note that Docker and docking are two separate things.
 * To build an image, ensure you are in the directory with your `Dockerfile` and container code. Then run `docker build -t <name>:<tag/version> .` (i.e. `docker build -t adv:0.1 .` or `docker build -t adv:latest .`)
 * From the command line, run: `docker login` and follow the prompts to log in to the Docker hub account you created in the previous section. This will allow you to 
 push docker images directly to your Docker hub account from the command line
-* To push a container to your Docker hub use the command: `docker push <name>:<tag/version>`
+* To push a container image to your Docker hub use the command: `docker push <name>:<tag/version>`
 * Use the command `docker images` to list out your built images
 * Eventually, your Docker images will build up and you may run out of memory. To delete docker images, use `docker images` to list your current images and their IMAGE IDs, then run the command `docker image rm <IMAGE IDs>`
 * For more detailed tutorials on how to use docker please see the following resources:
