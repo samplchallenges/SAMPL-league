@@ -113,6 +113,7 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 ```
 
 ### Part 3: Add the Autodock Vina executables and MGL directories
+In this section, please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
 1. Create a directory called dependencies: `mkdir dependencies`
 2. Download Autodock Tools linux x86 .tgz file (`autodock_vina_1_1_2_linux_x86.tgz`) from http://vina.scripps.edu/download.html
 3. Move `autodock_vina_1_1_2_linux_x86.tgz` to the `dependencies` directory, untar and rename the directory to `adv`; remove the .tgz file
