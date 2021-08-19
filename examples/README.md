@@ -91,14 +91,14 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 9. Copy the output from the export command in step 7
 10. Exit the container: `exit`
 
-### Part 2: Create a Dockerfile with build instructions and add the lines to install the conda environment
+### Part 2: Create a `Dockerfile` with build instructions and add the lines to install the conda environment
 1. Navigate to the directory you will begin writing your container
 2. Create and open a file called `environment.yml` and paste the output you previously copied
 3. Change the first line of the file `name: advenv` to `name: base`
 4. Delete the last line: `prefix: /opt/conda/envs/advenv`
 5. Save the changes to `environment.yml` and exit
 6. Create and open a file called `Dockerfile` which will contain your build instructions
-7. Copy the following lines into the Dockerfile, save the file, and exit:
+7. Copy the following lines into the `Dockerfile`, save the file, and exit:
   ```
   FROM continuumio/miniconda3:4.9.2-alpine  
   # tells the container to inherit from a miniconda container
@@ -134,7 +134,7 @@ In this section, please do not change which installer you download based on your
   ```
 
 ### Part 4: Build your base container
-1. Run the following command: docker build -t adv-base .
+1. Run the following command: `docker build -t adv-base .`
 
 
 ## Build your container with your methods
@@ -142,7 +142,7 @@ In this section, please do not change which installer you download based on your
 ### Part 1: Write your methods
 1. Your method you run as your main should include the following flags to deal with our command line inputs. We typically use `@click.option` to handle this in python
     * `--receptor`: a pdb of the receptor to dock into
-    * `--smiles`: SMILES strof the ligand to dock
+    * `--smiles`: SMILES string of the ligand to dock
     * `--hint`: a pdb of a receptor and ligand complex
     * `--hint_radius`: radius from the ligand considered part of the binding site
     * `--hint_molinfo`: ligand resname used in the hint pdb
@@ -158,7 +158,7 @@ In this section, please do not change which installer you download based on your
     * `receptor no_prediction`
 
 ### Part 2: Create your setup.py file
-1. Create a file called setup.py with the following
+1. Create a file called `setup.py` with the following
   ```
   from setuptools import setup
 
@@ -177,9 +177,9 @@ In this section, please do not change which installer you download based on your
       '''
   )
   ```
-2. In py_modules add any modules you have built that your program requires
-3. In install_requires add any pip installable packages you did not add in the previous base build that you’d like to add here. You can also go back and rebuild the base build with the new package edit
-4. Add an entry_point: {command-to-call-in-Dockerfile}={py_module_with_main}:{function_to_run}
+2. In `py_modules` add any modules you have built that your program requires
+3. In `install_requires` add any pip installable packages you did not add in the previous base build that you’d like to add here. You can also go back and rebuild the base build with the new package edit
+4. Add an `entry_point`: `{command-to-call-in-Dockerfile}={py_module_with_main}:{function_to_run}`
 
 ### Part 3: Create your Dockerfile
 1. Create a file called Dockerfile and copy the following
@@ -215,7 +215,7 @@ In this section, please do not change which installer you download based on your
 ## Test/Run your container
 To run your container, and ensure that it will work with our infrastructure, please use `ever_given`. `ever_given` handles file input/output and volume mounting
 * In the `ever_given` directory, there is file called `run.py`, this is the executable that mimics our infrastructure to run your container
-* To use ever_given/run.py:
+* To use `ever_given/run.py`:
     * any CLI options that are files need to be pre-pended by `--file-`
         * `--file-receptor`
         * `--file-hint`
