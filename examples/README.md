@@ -48,7 +48,7 @@ Please note that Docker and docking are two separate things.
 push docker images directly to your Docker hub account from the command line
 * To push a container to your Docker hub use the command: `docker push <name>:<tag/version>`
 * Use the command `docker images` to list out your built images
-* Eventually, your Docker images will build up and you may run out of memory. To delete docker images, list use `docker images` to list your current images and their IMAGE IDs, then run the command `docker image rm <IMAGE IDs>`
+* Eventually, your Docker images will build up and you may run out of memory. To delete docker images, use `docker images` to list your current images and their IMAGE IDs, then run the command `docker image rm <IMAGE IDs>`
 * For more detailed tutorials on how to use docker please see the following resources:
   * Official Docker documentation: https://docs.docker.com/get-started/
   * Brief Docker Tutorial (12m): https://www.youtube.com/watch?v=YFl2mCHdv24
