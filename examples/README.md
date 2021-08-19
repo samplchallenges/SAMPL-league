@@ -42,7 +42,7 @@ For a more generalized explanation about inputs and outputs please see `Containe
 For a more generalized explanation on how to create a conda environment inside your container please see `CondaEnvInstructions.pdf`
 
 
-## Important Notes:
+## Important Note on Docker v. Docking:
 Please note that Docker and docking are two separate things. 
 * **Docker** is a program that allows you to containerize methods, essentially taking out human intervention from your containerized program. 
 * **Docking** describes predicting the structure of a complex, in this case a protein-ligand complex.
@@ -56,7 +56,7 @@ Please note that Docker and docking are two separate things.
   * Please remember a free account can only have one private container at a time, so if your container has sensitive information be sure you are uploading it to your one private container
 
 
-## Brief Docker Tutorial
+## Brief Docker Usage Tutorial
 * Context: Every time you build your program/Docker container a "Docker image" of your program is created. This image is built by using the build instructions in the `Dockerfile` (explained further below)
 * To build an image, ensure you are in the directory with your `Dockerfile` and container code. Then run `docker build -t <name>:<tag/version> .` (i.e. `docker build -t adv:0.1 .` or `docker build -t adv:latest .`
 * From the command line, run: `docker login` and follow the prompts to log in to the Docker hub account you created in the previous section. This will allow you to 
