@@ -57,8 +57,8 @@ Please note that Docker and docking are two separate things.
 
 
 ## Brief Docker Usage Tutorial
-* Context: Every time you build your program/Docker container a "Docker image" of your program is created. This image is built by using the build instructions in the `Dockerfile` (explained further below)
-* To build an image, ensure you are in the directory with your `Dockerfile` and container code. Then run `docker build -t <name>:<tag/version> .` (i.e. `docker build -t adv:0.1 .` or `docker build -t adv:latest .`
+**Context**: Every time you build your program/Docker container a "Docker image" of your program is created. This image is built by using the build instructions in the `Dockerfile` (explained further below)
+* To build an image, ensure you are in the directory with your `Dockerfile` and container code. Then run `docker build -t <name>:<tag/version> .` (i.e. `docker build -t adv:0.1 .` or `docker build -t adv:latest .`)
 * From the command line, run: `docker login` and follow the prompts to log in to the Docker hub account you created in the previous section. This will allow you to 
 push docker images directly to your Docker hub account from the command line
 * To push a container to your Docker hub use the command: `docker push <name>:<tag/version>`
