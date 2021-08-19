@@ -124,7 +124,7 @@ In this section, please do not change which installer you download based on your
 7. Change line 6 `TarDir=` to `TarDir="/opt/app/dependencies/mgl/"`
 8. Change line 7 export MGL_ROOT="" to export MGL_ROOT="/opt/app/dependencies/mgl/"
 9. Close and save `mgl/install.sh`
-10. Add the following to your `Dockerfile`
+10. Add the following to your `Dockerfile`, save the file, and exit
   ```
   RUN /opt/app/dependencies/mgl/install.sh
 
