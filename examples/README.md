@@ -48,7 +48,7 @@ Please note that Docker and docking are two separate things.
 * **Docking** describes predicting the structure of a complex, in this case a protein-ligand complex.
 
 ## Tutorial Requirements
-* Download Docker Desktop: https://www.docker.com/products/docker-desktop
+* Download Docker Desktop for your native OS: https://www.docker.com/products/docker-desktop
 * Open the Docker Desktop app to start the Docker daemon. 
   * If you ever have trouble running Docker commands from the command line, please make sure you have already started your Docker Desktop app
 * From the command line, run `pip install docker` 
