@@ -122,7 +122,7 @@ In this section, please do not change which installer you download based on your
 5. Move `mgltools_x86_64Linux2_1.5.6.tar.gz` to the `dependencies` directory, untar and rename the directory to `mgl`; remove the tar file
 6. Open `mgl/install.sh`
 7. Change line 6 `TarDir=` to `TarDir="/opt/app/dependencies/mgl/"`
-8. Change line 7 export MGL_ROOT="" to export MGL_ROOT="/opt/app/dependencies/mgl/"
+8. Change line 7 `export MGL_ROOT=""` to `export MGL_ROOT="/opt/app/dependencies/mgl/"`
 9. Close and save `mgl/install.sh`
 10. Add the following to your `Dockerfile`, save the file, and exit
   ```
