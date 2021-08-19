@@ -2,7 +2,7 @@
 * `--receptor`: a receptor `.pdb` file to dock the ligand into
 * `--smiles`: a quoted SMILES str representing the ligand to dock (i.e. "CCC")
 * `--hint`: a `.pdb` file with a hint ligand to denote the docking region
-* `--hint_radius`: an Angstrom distance from the hint ligand (see above) to consider as the docking region
+* `--hint_radius`: a numeric Angstrom distance from the hint ligand (see above) to consider as the docking region
 * `--hint_molinfo`: the resname of the hint ligand used in the hint `.pdb` file
 * `--output-dir`: directory to save final docking files (docked ligand and receptor files)
 
