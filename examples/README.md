@@ -68,7 +68,7 @@ push docker images directly to your Docker hub account from the command line
   * Brief Docker Tutorial (12m): https://www.youtube.com/watch?v=YFl2mCHdv24
   * Docker Beginners Course (2hrs): https://www.youtube.com/watch?v=fqMOX6JJhGo
   * Brief video on inner workings of Docker (15m): https://www.youtube.com/watch?v=rOTqprHv1YE 
-  * YouTube was a great resource for learning Docker, feel free to search for other tutorials that suit your specific needs as well 
+  * YouTube is a great resource for learning Docker, feel free to search for other tutorials that suit your specific needs as well 
 
 
 # Tutorial: Build an AutoDock Vina Containerized Method
