@@ -2,23 +2,36 @@
 
 ## Directory Structure
   ```
-  examples
-  ├── CondaEnvInstructions.pdf
-  ├── ContainerRequirements.md
-  ├── README.md
-  ├── adv
-  │   ├── Dockerfile
-  │   ├── autodock.py
-  │   ├── run_autodock.py
-  │   └── setup.py
-  ├── adv-base
-  │   ├── Dockerfile
-  │   ├── README.md
-  │   ├── environment.yml
-  │   └── setup.py
-  └── data
-      ├── hint.pdb
-      └── receptor.pdb
+examples
+├── CondaEnvInstructions.pdf
+├── ContainerRequirements.md
+├── README.md
+├── adv
+│   ├── Dockerfile
+│   ├── autodock.py
+│   ├── run_autodock.py
+│   └── setup.py
+├── adv-base
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── environment.yml
+│   └── setup.py
+├── data
+│   ├── hint.pdb
+│   └── receptor.pdb
+└── ever_given
+    ├── LICENSE
+    ├── Pipfile
+    ├── Pipfile.lock
+    ├── README.md
+    ├── ever_given
+    │   └── wrapper.py
+    ├── ever_given.egg-info
+    ├── pyproject.toml
+    └── run.py
+    ├── setup.cfg
+    ├── setup.py
+    └── tests
   ```
 
 ## Tutorial Purpose:
