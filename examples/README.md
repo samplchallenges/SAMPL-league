@@ -1,3 +1,5 @@
+# Introduction to SAMPL Containerized Methods
+
 ## Directory Structure
   ```
   examples
@@ -55,6 +57,8 @@ push docker images directly to your Docker hub account from the command line
   * Docker Beginners Course (2hrs): https://www.youtube.com/watch?v=fqMOX6JJhGo
   * Brief video on inner workings of Docker (15m): https://www.youtube.com/watch?v=rOTqprHv1YE 
 
+
+# Tutorial: Build an AutoDock Vina Containerized Method
 
 ## Build your base container
 We want to build a base container that has all necessary packages and programs installed that will not be or rarely be changed. This way, the container you write your code in can inherit from this pre-built container, and your container will build much faster.
