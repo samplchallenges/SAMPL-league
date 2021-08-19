@@ -143,7 +143,7 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
     * `--smiles`: SMILES strof the ligand to dock
     * `--hint`: a pdb of a receptor and ligand complex
     * `--hint_radius`: radius from the ligand considered part of the binding site
-    * `--hint_ligname`: ligand resname used in the hint pdb
+    * `--hint_molinfo`: ligand resname used in the hint pdb
     * `--output-dir`: directory to output the output files to
 2. Ensure your method writes out to the following files:
     * A receptor pdb in the same frame of reference as your docked ligand
