@@ -202,9 +202,9 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 2. In the `FROM` inherit from your previous base build (see section "Build your base container")
 3. Set the `WORKDIR`
 4. Copy your `setup.py` and other py modules into the container
-5. Install `setup.py` using `RUN pip install .``
+5. Install `setup.py` using `RUN pip install .`
 6. Set the `ENV PATH`
-7. Add the `ENTRYPOINT`
+7. Add the `ENTRYPOINT` you declared in step 4 of the previous section
 
 ### Part 4: Build your container
 1. Build the container: `docker build -t adv .`
