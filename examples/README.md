@@ -150,7 +150,7 @@ In this section, please do not change which installer you download based on your
 2. Ensure your method writes out to the following files:
     * A receptor pdb in the same frame of reference as your docked ligand
     * A ligand pdb, mol2, or sdf in the same frame of reference as your output pdb
-3. Ensure your method prints the following lines with `docked_ligand` and `receptor` both no caps exactly as is. This is extremely important as these are the keys we will look for in your output to find the file information
+3. Ensure your method prints the following lines with `docked_ligand` and `receptor` both no caps exactly as is. This is extremely important as these keys will be used to parse your output to find the file information
     * `docked_ligand {path_to_ligand_file}`
     * `receptor {path_to_receptor_file}`
 4. If you would like to decline to predict a pose for a ligand please print the following. This tells us your program is intentionally avoiding these predictions
