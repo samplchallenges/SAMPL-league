@@ -27,8 +27,7 @@ examples
     ├── ever_given
     │   └── wrapper.py
     ├── ever_given.egg-info
-    ├── pyproject.toml
-    └── run.py
+    ├── run.py
     ├── setup.cfg
     ├── setup.py
     └── tests
