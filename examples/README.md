@@ -95,9 +95,10 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 1. Navigate to the directory you will begin writing your container
 2. Create and open a file called `environment.yml` and paste the output you previously copied
 3. Change the first line of the file `name: advenv` to `name: base`
-4. Delete the last line: `prefix: /opt/conda/envs/my-rdkit-env`
-5. Create and open a file called `Dockerfile` which will contain your build instructions
-6. Copy the following lines into the Dockerfile:
+4. Delete the last line: `prefix: /opt/conda/envs/advenv`
+5. Save the changes to `environment.yml` and exit
+6. Create and open a file called `Dockerfile` which will contain your build instructions
+7. Copy the following lines into the Dockerfile:
   ```
   FROM continuumio/miniconda3:4.9.2-alpine  
   # tells the container to inherit from a miniconda container
