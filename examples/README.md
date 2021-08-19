@@ -98,7 +98,7 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 4. Delete the last line: `prefix: /opt/conda/envs/advenv`
 5. Save the changes to `environment.yml` and exit
 6. Create and open a file called `Dockerfile` which will contain your build instructions
-7. Copy the following lines into the Dockerfile:
+7. Copy the following lines into the Dockerfile, save the file, and exit:
   ```
   FROM continuumio/miniconda3:4.9.2-alpine  
   # tells the container to inherit from a miniconda container
