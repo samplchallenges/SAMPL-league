@@ -27,8 +27,7 @@ examples
     ├── ever_given
     │   └── wrapper.py
     ├── ever_given.egg-info
-    ├── pyproject.toml
-    └── run.py
+    ├── run.py
     ├── setup.cfg
     ├── setup.py
     └── tests
@@ -42,13 +41,13 @@ For a more generalized explanation about inputs and outputs please see `Containe
 For a more generalized explanation on how to create a conda environment inside your container please see `CondaEnvInstructions.pdf`
 
 
-## Important Notes:
+## Important Note on Docker v. Docking:
 Please note that Docker and docking are two separate things. 
 * **Docker** is a program that allows you to containerize methods, essentially taking out human intervention from your containerized program. 
 * **Docking** describes predicting the structure of a complex, in this case a protein-ligand complex.
 
 ## Tutorial Requirements
-* Download Docker Desktop: https://www.docker.com/products/docker-desktop
+* Download Docker Desktop for your native OS: https://www.docker.com/products/docker-desktop
 * Open the Docker Desktop app to start the Docker daemon. 
   * If you ever have trouble running Docker commands from the command line, please make sure you have already started your Docker Desktop app
 * From the command line, run `pip install docker` 
@@ -56,12 +55,12 @@ Please note that Docker and docking are two separate things.
   * Please remember a free account can only have one private container at a time, so if your container has sensitive information be sure you are uploading it to your one private container
 
 
-## Brief Docker Tutorial
-* Context: Every time you build your program/Docker container a "Docker image" of your program is created. This image is built by using the build instructions in the `Dockerfile` (explained further below)
-* To build an image, ensure you are in the directory with your `Dockerfile` and container code. Then run `docker build -t <name>:<tag/version> .` (i.e. `docker build -t adv:0.1 .` or `docker build -t adv:latest .`
+## Brief Docker Usage Tutorial
+**Context**: Every time you build your program/Docker container a "Docker image" of your program is created. This image is built by using the build instructions in the `Dockerfile` (explained further below)
+* To build an image, ensure you are in the directory with your `Dockerfile` and container code. Then run `docker build -t <name>:<tag/version> .` (i.e. `docker build -t adv:0.1 .` or `docker build -t adv:latest .`)
 * From the command line, run: `docker login` and follow the prompts to log in to the Docker hub account you created in the previous section. This will allow you to 
 push docker images directly to your Docker hub account from the command line
-* To push a container to your Docker hub use the command: `docker push <name>:<tag/version>`
+* To push a container image to your Docker hub use the command: `docker push <name>:<tag/version>`
 * Use the command `docker images` to list out your built images
 * Eventually, your Docker images will build up and you may run out of memory. To delete docker images, use `docker images` to list your current images and their IMAGE IDs, then run the command `docker image rm <IMAGE IDs>`
 * For more detailed tutorials on how to use docker please see the following resources:
@@ -69,6 +68,7 @@ push docker images directly to your Docker hub account from the command line
   * Brief Docker Tutorial (12m): https://www.youtube.com/watch?v=YFl2mCHdv24
   * Docker Beginners Course (2hrs): https://www.youtube.com/watch?v=fqMOX6JJhGo
   * Brief video on inner workings of Docker (15m): https://www.youtube.com/watch?v=rOTqprHv1YE 
+  * YouTube is a great resource for learning Docker, feel free to search for other tutorials that suit your specific needs as well 
 
 
 # Tutorial: Build an AutoDock Vina Containerized Method
@@ -91,13 +91,14 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 9. Copy the output from the export command in step 7
 10. Exit the container: `exit`
 
-### Part 2: Create a Dockerfile with build instructions and add the lines to install the conda environment
+### Part 2: Create a `Dockerfile` with build instructions and add the lines to install the conda environment
 1. Navigate to the directory you will begin writing your container
 2. Create and open a file called `environment.yml` and paste the output you previously copied
 3. Change the first line of the file `name: advenv` to `name: base`
-4. Delete the last line: `prefix: /opt/conda/envs/my-rdkit-env`
-5. Create and open a file called `Dockerfile` which will contain your build instructions
-6. Copy the following lines into the Dockerfile:
+4. Delete the last line: `prefix: /opt/conda/envs/advenv`
+5. Save the changes to `environment.yml` and exit
+6. Create and open a file called `Dockerfile` which will contain your build instructions
+7. Copy the following lines into the `Dockerfile`, save the file, and exit:
   ```
   FROM continuumio/miniconda3:4.9.2-alpine  
   # tells the container to inherit from a miniconda container
@@ -113,6 +114,7 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 ```
 
 ### Part 3: Add the Autodock Vina executables and MGL directories
+In this section, please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
 1. Create a directory called dependencies: `mkdir dependencies`
 2. Download Autodock Tools linux x86 .tgz file (`autodock_vina_1_1_2_linux_x86.tgz`) from http://vina.scripps.edu/download.html
 3. Move `autodock_vina_1_1_2_linux_x86.tgz` to the `dependencies` directory, untar and rename the directory to `adv`; remove the .tgz file
@@ -120,9 +122,9 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 5. Move `mgltools_x86_64Linux2_1.5.6.tar.gz` to the `dependencies` directory, untar and rename the directory to `mgl`; remove the tar file
 6. Open `mgl/install.sh`
 7. Change line 6 `TarDir=` to `TarDir="/opt/app/dependencies/mgl/"`
-8. Change line 7 export MGL_ROOT="" to export MGL_ROOT="/opt/app/dependencies/mgl/"
+8. Change line 7 `export MGL_ROOT=""` to `export MGL_ROOT="/opt/app/dependencies/mgl/"`
 9. Close and save `mgl/install.sh`
-10. Add the following to your `Dockerfile`
+10. Add the following to your `Dockerfile`, save the file, and exit
   ```
   RUN /opt/app/dependencies/mgl/install.sh
 
@@ -132,7 +134,7 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
   ```
 
 ### Part 4: Build your base container
-1. Run the following command: docker build -t adv-base .
+1. Run the following command: `docker build -t adv-base .`
 
 
 ## Build your container with your methods
@@ -140,15 +142,15 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 ### Part 1: Write your methods
 1. Your method you run as your main should include the following flags to deal with our command line inputs. We typically use `@click.option` to handle this in python
     * `--receptor`: a pdb of the receptor to dock into
-    * `--smiles`: SMILES strof the ligand to dock
+    * `--smiles`: SMILES string of the ligand to dock
     * `--hint`: a pdb of a receptor and ligand complex
     * `--hint_radius`: radius from the ligand considered part of the binding site
-    * `--hint_ligname`: ligand resname used in the hint pdb
+    * `--hint_molinfo`: ligand resname used in the hint pdb
     * `--output-dir`: directory to output the output files to
 2. Ensure your method writes out to the following files:
     * A receptor pdb in the same frame of reference as your docked ligand
     * A ligand pdb, mol2, or sdf in the same frame of reference as your output pdb
-3. Ensure your method prints the following lines with `docked_ligand` and `receptor` both no caps exactly as is. This is extremely important as these are the keys we will look for in your output to find the file information
+3. Ensure your method prints the following lines with `docked_ligand` and `receptor` both no caps exactly as is. This is extremely important as these keys will be used to parse your output to find the file information
     * `docked_ligand {path_to_ligand_file}`
     * `receptor {path_to_receptor_file}`
 4. If you would like to decline to predict a pose for a ligand please print the following. This tells us your program is intentionally avoiding these predictions
@@ -156,7 +158,7 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
     * `receptor no_prediction`
 
 ### Part 2: Create your setup.py file
-1. Create a file called setup.py with the following
+1. Create a file called `setup.py` with the following
   ```
   from setuptools import setup
 
@@ -175,9 +177,9 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
       '''
   )
   ```
-2. In py_modules add any modules you have built that your program requires
-3. In install_requires add any pip installable packages you did not add in the previous base build that you’d like to add here. You can also go back and rebuild the base build with the new package edit
-4. Add an entry_point: {command-to-call-in-Dockerfile}={py_module_with_main}:{function_to_run}
+2. In `py_modules` add any modules you have built that your program requires
+3. In `install_requires` add any pip installable packages you did not add in the previous base build that you’d like to add here. You can also go back and rebuild the base build with the new package edit
+4. Add an `entry_point`: `{command-to-call-in-Dockerfile}={py_module_with_main}:{function_to_run}`
 
 ### Part 3: Create your Dockerfile
 1. Create a file called Dockerfile and copy the following
@@ -202,9 +204,9 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 2. In the `FROM` inherit from your previous base build (see section "Build your base container")
 3. Set the `WORKDIR`
 4. Copy your `setup.py` and other py modules into the container
-5. Install `setup.py` using `RUN pip install .``
+5. Install `setup.py` using `RUN pip install .`
 6. Set the `ENV PATH`
-7. Add the `ENTRYPOINT`
+7. Add the `ENTRYPOINT` you declared in step 4 of the previous section
 
 ### Part 4: Build your container
 1. Build the container: `docker build -t adv .`
@@ -213,7 +215,7 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 ## Test/Run your container
 To run your container, and ensure that it will work with our infrastructure, please use `ever_given`. `ever_given` handles file input/output and volume mounting
 * In the `ever_given` directory, there is file called `run.py`, this is the executable that mimics our infrastructure to run your container
-* To use ever_given/run.py:
+* To use `ever_given/run.py`:
     * any CLI options that are files need to be pre-pended by `--file-`
         * `--file-receptor`
         * `--file-hint`
@@ -222,5 +224,5 @@ To run your container, and ensure that it will work with our infrastructure, ple
     * You will need to specify the expected output keys as well. For docking it is as follows
         * `--output-keys docked_ligand,receptor`
 * `ever_given` will handle all the overhead of running the docker container and mounting the directories so files can be passed between your computer and container
-* To run this container: `python run.py adv --file-receptor receptor.pdb --file-hint hint.pdb --hint_radius <float> --hint_molinfo <str> --output-keys docked_ligand, receptor`
-  * `python ever_given/run.py adv --file-receptor data/xtal_rec.pdb --file-hint data/hint.pdb --hint_radius 6 --hint_molinfo "E51" --smiles "CCCCNc1cc(cc(n1)OC)C(=O)N[C@@H](Cc2ccccc2)[C@H](C[C@@H](C)C(=O)NCCCC)O" --output-keys docked_ligand, receptor`
+* To run this container from the `examples` directory: `python ever_given/run.py adv --file-receptor <receptor_pdb> --file-hint <hint_pdb> --hint_radius <float> --hint_molinfo <str> --output-keys docked_ligand,receptor`
+  * `python ever_given/run.py adv --file-receptor data/receptor.pdb --file-hint data/hint.pdb --hint_radius 6 --hint_molinfo "E51" --smiles "CCCCNc1cc(cc(n1)OC)C(=O)N[C@@H](Cc2ccccc2)[C@H](C[C@@H](C)C(=O)NCCCC)O" --output-keys docked_ligand,receptor`
