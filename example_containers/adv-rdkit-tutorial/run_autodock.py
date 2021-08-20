@@ -13,20 +13,16 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from autodock import Autodock
 
-
 LIGAND_KEY = "docked_ligand"
 RECEPTOR_KEY = "receptor"
-
 
 PYTHON_PATH = "/opt/app/dependencies/mgl/bin/python"
 UTILITIES_PATH = "/opt/app/dependencies/mgl/MGLToolsPckgs/AutoDockTools/Utilities24"
 VINA_PATH = "/opt/app/dependencies/adv/bin/vina"
 
-
 def print_debug(debug: bool, msg:str):
 	print(f"{msg}\n" if debug else "", end="")
 	sys.stdout.flush()
-
 
 # set command line options
 @click.command()
