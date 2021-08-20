@@ -71,6 +71,14 @@ push docker images directly to your Docker hub account from the command line
   * YouTube is a great resource for learning Docker, feel free to search for other tutorials that suit your specific needs as well 
 
 
+## Pre-Built Autodock Vina Container
+* There is a pre-built working version of the Autodock Vina container we will build below at docker hub docker.io registry under osatom/adv-tutorial. 
+1. Pull the docker container: `docker pull osatom/adv-tutorial:latest`
+2. change directories into the `examples` directory
+3. Run the command: `python ever_given/run.py osatom/adv-tutorial:latest --file-receptor data/receptor.pdb --file-hint data/hint.pdb --hint_radius 6 --hint_molinfo "E51" --smiles "CCCCNc1cc(cc(n1)OC)C(=O)N[C@@H](Cc2ccccc2)[C@H](C[C@@H](C)C(=O)NCCCC)O" --output-keys docked_ligand,receptor`
+4. The results will be stored in the directory `examples/evergiven_output`
+
+
 # Tutorial: Build an AutoDock Vina Containerized Method
 
 ## Build your base container
