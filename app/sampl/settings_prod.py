@@ -2,8 +2,13 @@ import os
 
 from .base_settings import *  # lgtm [py/polluting-import]
 
+# We only need rollbar in production
+MIDDLEWARE.append("rollbar.contrib.django.middleware.RollbarNotifierMiddleware")
+
 DEBUG = False
 SECRET_KEY = os.environ["SAMPL_SECRET_KEY"]
+# Rollbar API key
+POST_SERVER_ITEM_ACCESS_TOKEN = os.environ["POST_SERVER_ITEM_ACCESS_TOKEN"]
 ALLOWED_HOSTS = [
     "app.samplchallenges.org",
     "samplmvp-env.eba-rhcwa63p.us-east-2.elasticbeanstalk.com",
@@ -26,6 +31,14 @@ DATABASES = {
     }
 }
 
+# rollbar settings
+ROLLBAR = {
+    "access_token": POST_SERVER_ITEM_ACCESS_TOKEN,
+    "environment": "production",
+    "branch": "main",
+    "root": BASE_DIR,
+}
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -33,27 +46,33 @@ LOGGING = {
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
-            "filename": "/opt/python/log/app.log",
+            "filename": "/var/log/app.log",
+        },
+        "rollbar": {
+            "level": "DEBUG",
+            "access_token": POST_SERVER_ITEM_ACCESS_TOKEN,
+            "environment": "production",
+            "class": "rollbar.logger.RollbarHandler",
         },
     },
     "loggers": {
         "django": {
-            "handlers": ["file"],
+            "handlers": ["file", "rollbar"],
             "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "core": {
-            "handlers": ["file"],
+            "handlers": ["file", "rollbar"],
             "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "referee": {
-            "handlers": ["file"],
+            "handlers": ["file", "rollbar"],
             "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "ever_given": {
-            "handlers": ["file"],
+            "handlers": ["file", "rollbar"],
             "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
