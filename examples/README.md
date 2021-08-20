@@ -1,85 +1,70 @@
 # Introduction to SAMPL Containerized Methods
 
-## Directory Structure
-  ```
-examples
-├── CondaEnvInstructions.pdf
-├── ContainerRequirements.md
-├── README.md
-├── adv
-│   ├── Dockerfile
-│   ├── autodock.py
-│   ├── run_autodock.py
-│   └── setup.py
-├── adv-base
-│   ├── Dockerfile
-│   ├── README.md
-│   ├── environment.yml
-│   └── setup.py
-├── data
-│   ├── hint.pdb
-│   └── receptor.pdb
-└── ever_given
-    ├── LICENSE
-    ├── Pipfile
-    ├── Pipfile.lock
-    ├── README.md
-    ├── ever_given
-    │   └── wrapper.py
-    ├── ever_given.egg-info
-    ├── run.py
-    ├── setup.cfg
-    ├── setup.py
-    └── tests
-  ```
+### Purpose:
+In [SAMPL4](https://link.springer.com/article/10.1007%2Fs10822-013-9702-2), we learned that human knowledge can be a key factor influencing the success of a computational drug discovery method. To work around this discovery, we are creating an automated arm of SAMPL challenges to run methods head-to-head without human intervention. To accomplish this, we will containerized [Docker](https://www.docker.com/resources/what-container) methods. 
 
-## Tutorial Purpose:
-The following tutorial is meant to teach you the basics of building a basic docking pose prediction container using python code and command line programs (specifically Autodock Vina and MGL Tools). 
-
-For a more generalized explanation about inputs and outputs please see `ContainerRequirements.md`
-
-For a more generalized explanation on how to create a conda environment inside your container please see `CondaEnvInstructions.pdf`
+The following tutorial is meant to teach the basics of building a simple docking pose prediction container using Python code and command line programs (specifically Autodock Vina and MGL Tools). 
 
 
-## Important Note on Docker v. Docking:
-Please note that Docker and docking are two separate things. 
-* **Docker** is a program that allows you to containerize methods, essentially taking out human intervention from your containerized program. 
-* **Docking** describes predicting the structure of a complex, in this case a protein-ligand complex.
-
-## Tutorial Requirements
-* Download Docker Desktop for your native OS: https://www.docker.com/products/docker-desktop
-* Open the Docker Desktop app to start the Docker daemon. 
-  * If you ever have trouble running Docker commands from the command line, please make sure you have already started your Docker Desktop app
-* From the command line, run `pip install docker` 
-* Go to Docker hub https://hub.docker.com/ and create an account to store your Docker containers
-  * Please remember a free account can only have one private container at a time, so if your container has sensitive information be sure you are uploading it to your one private container
+### Important Note on "Docker" v. "Docking":
+Please note that "Docker" and "docking" are two separate things. 
+* **"Docker"** is a program that allows you to containerize methods, essentially taking out human intervention from your containerized program. 
+* **"Docking"** describes predicting the structure of a complex, in this case a protein-ligand complex.
 
 
-## Brief Docker Usage Tutorial
-**Context**: Every time you build your program/Docker container a "Docker image" of your program is created. This image is built by using the build instructions in the `Dockerfile` (explained further below)
-* To build an image, ensure you are in the directory with your `Dockerfile` and container code. Then run `docker build -t <name>:<tag/version> .` (i.e. `docker build -t adv:0.1 .` or `docker build -t adv:latest .`)
-* From the command line, run: `docker login` and follow the prompts to log in to the Docker hub account you created in the previous section. This will allow you to 
-push docker images directly to your Docker hub account from the command line
-* To push a container image to your Docker hub use the command: `docker push <name>:<tag/version>`
+### Expected Background Knowledge
+* Basic knowledge of Python
+* Basic knowledge of Linux/UNIX command line
+
+
+### Software Requirements
+* Linux or Mac operating system
+* [Docker Desktop](https://www.docker.com/products/docker-desktop)
+* [Docker SDK for Python](https://pypi.org/project/docker/)
+* [Python 3](https://www.python.org/downloads/)
+
+
+### Brief Docker Usage Tutorial
+* To build an image, ensure you are in the directory with your Dockerfile and container code, then run `docker build -t <name>:<tag/version> .` (i.e. `docker build -t adv:0.1 .` or `docker build -t adv:latest .`)
 * Use the command `docker images` to list out your built images
-* Eventually, your Docker images will build up and you may run out of memory. To delete docker images, use `docker images` to list your current images and their IMAGE IDs, then run the command `docker image rm <IMAGE IDs>`
-* For more detailed tutorials on how to use docker please see the following resources:
-  * Official Docker documentation: https://docs.docker.com/get-started/
-  * Brief Docker Tutorial (12m): https://www.youtube.com/watch?v=YFl2mCHdv24
-  * Docker Beginners Course (2hrs): https://www.youtube.com/watch?v=fqMOX6JJhGo
-  * Brief video on inner workings of Docker (15m): https://www.youtube.com/watch?v=rOTqprHv1YE 
-  * YouTube is a great resource for learning Docker, feel free to search for other tutorials that suit your specific needs as well 
+* To delete Docker images, use `docker images` to list your current images and their IMAGE IDs, then run the command `docker image rm <IMAGE IDs>`
+
+
+### Pre-Built Autodock Vina Container
+
+A working version of the Autodock Vina container we will build in this tutorial can be found at [Docker hub](https://hub.docker.com/repository/docker/osatom/adv-tutorial). To play with this container, please use the following steps: 
+1. Pull the "adv-tutorial" docker container: `docker pull osatom/adv-tutorial:latest`
+2. Change directories into the "examples" directory
+3. Run the command: `python ever_given/run.py osatom/adv-tutorial:latest --file-receptor data/receptor.pdb --file-hint data/hint.pdb --hint_radius 6 --hint_molinfo "E51" --smiles "CCCCNc1cc(cc(n1)OC)C(=O)N[C@@H](Cc2ccccc2)[C@H](C[C@@H](C)C(=O)NCCCC)O" --output-keys docked_ligand,receptor`
+4. The results will be stored in the directory "examples/evergiven_output"
 
 
 # Tutorial: Build an AutoDock Vina Containerized Method
 
-## Build your base container
-We want to build a base container that has all necessary packages and programs installed that will not be or rarely be changed. This way, the container you write your code in can inherit from this pre-built container, and your container will build much faster.
+### Outline: 
+* Section 1: Build the Autodock Vina base container
+  * 1.1 Setup
+  * 1.2 Create a conda environment
+  * 1.3 Create a Dockerfile
+  * 1.4 Add the Autodock Vina and MGL Tools executables
+  * 1.5 Update the Dockerfile to include Autodock Vina and MGL Tools installations
+  * 1.6 Build the base container
+* Section 2: Build the Autodock Vina Docing methods container
+  * 2.1 Setup
 
-For a more generalized explanation on how to create a conda environment inside your container please see `CondaEnvInstructions.pdf`
 
-### Part 1: Create the conda environment
-In this section, we will run the `continuumio/miniconda3` container to dynamically create the conda environment we need.
+### Section 1: Build the Autodock Vina base container
+In this section, we will base container that has all necessary packages and programs installed that will not be or rarely be changed to improve build time. This way, the container we write our docking code in can be quickly built as we develop it. 
+
+
+**1.1: Setup**
+1. Create a directory called "adv-tutorial-base": `mkdir adv-tutorial-base`
+2. Change directories to "adv-tutorial-base": `cd adv-tutorial-base`
+
+
+**1.2: Create a conda environment**
+
+In 1.2, we will run the "continuumio/miniconda3" container to dynamically create the conda environment we need.
 1. Open a terminal
 2. Start the container: `docker run -it --rm continuumio/miniconda3` upon running this command, your command line prompt should change
 3. Create a conda env called advenv: `conda create --name advenv`
@@ -88,17 +73,19 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 6. Install mdtraj: `conda install -c conda-forge mdtraj`
 7. Install click: `pip install click`
 8. Export the environment: `conda env export -n advenv`
-9. Copy the output from the export command in step 7
+9. Copy the output from the export command in step 7 to be pasted into a file in the next section.
 10. Exit the container: `exit`
+11. Create and open a file called "environment.yml" and paste the output you previously copied at the end of 1.2
+12. Change the first line of the file "name: advenv" to "name: base"
+13. Delete the last line of the file: "prefix: /opt/conda/envs/advenv"
+14. Save the changes to "environment.yml" and exit
 
-### Part 2: Create a `Dockerfile` with build instructions and add the lines to install the conda environment
-1. Navigate to the directory you will begin writing your container
-2. Create and open a file called `environment.yml` and paste the output you previously copied
-3. Change the first line of the file `name: advenv` to `name: base`
-4. Delete the last line: `prefix: /opt/conda/envs/advenv`
-5. Save the changes to `environment.yml` and exit
-6. Create and open a file called `Dockerfile` which will contain your build instructions
-7. Copy the following lines into the `Dockerfile`, save the file, and exit:
+
+**1.3: Create a Dockerfile**
+
+In 1.3, we will begin creating a Dockerfile which contains the instructions required to build the container.
+1. Create and open a file called "Dockerfile"
+2. Copy the following lines into Dockerfile
   ```
   FROM continuumio/miniconda3:4.9.2-alpine  
   # tells the container to inherit from a miniconda container
@@ -112,19 +99,30 @@ In this section, we will run the `continuumio/miniconda3` container to dynamical
 
   ENV PATH="/root/.local/bin:$PATH"      # set the path
 ```
+3. Save the changes to Dockerfile and exit
 
-### Part 3: Add the Autodock Vina executables and MGL directories
-In this section, please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
+
+**1.4: Add the Autodock Vina and MGL Tools executables**
+
+In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
 1. Create a directory called dependencies: `mkdir dependencies`
-2. Download Autodock Tools linux x86 .tgz file (`autodock_vina_1_1_2_linux_x86.tgz`) from http://vina.scripps.edu/download.html
-3. Move `autodock_vina_1_1_2_linux_x86.tgz` to the `dependencies` directory, untar and rename the directory to `adv`; remove the .tgz file
-4. Download MGL Tools linux x86 .tar.gz (`mgltools_x86_64Linux2_1.5.6.tar.gz`) from http://mgltools.scripps.edu/downloads
-5. Move `mgltools_x86_64Linux2_1.5.6.tar.gz` to the `dependencies` directory, untar and rename the directory to `mgl`; remove the tar file
-6. Open `mgl/install.sh`
-7. Change line 6 `TarDir=` to `TarDir="/opt/app/dependencies/mgl/"`
-8. Change line 7 `export MGL_ROOT=""` to `export MGL_ROOT="/opt/app/dependencies/mgl/"`
-9. Close and save `mgl/install.sh`
-10. Add the following to your `Dockerfile`, save the file, and exit
+2. Download Autodock Tools linux x86 "autodock_vina_1_1_2_linux_x86.tgz" from [http://vina.scripps.edu/download.html]
+3. Untar "autodock_vina_1_1_2_linux_x86.tgz": `tar -xvf dependencies/autodock_vina_1_1_2_linux_x86.tgz`
+4. Delete the .tgz file: `rm autodock_vina_1_1_2_linux_x86.tgz`
+5. Rename "autodock_vina_1_1_2_linux_x86/" to "adv/": `mv autodock_vina_1_1_2_linux_x86 adv`
+6. Move the "adv" directory inside the "dependencies" directory: `mv adv dependencies`
+7. Download MGL Tools linux x86 `mgltools_x86_64Linux2_1.5.6.tar.gz` from [http://mgltools.scripps.edu/downloads]
+8. Untar "mgltools_x86_64Linux2_1.5.6.tar.gz": `tar -xvf mgltools_x86_64Linux2_1.5.6.tar.gz`
+9. Delete the .tgz file: `rm mgltools_x86_64Linux2_1.5.6.tar.gz`
+10. Rename "mgltools_x86_64Linux2_1.5.6.tar.gz" to "mgl": `mv mgltools_x86_64Linux2_1.5.6.tar.gz mgl`
+11. Move "mgl" directory inside the "dependencies" directory: `mv mgl dependencies/`
+12. Open "dependencies/mgl/install.sh"
+13. Change line 6 from `TarDir=""` to `TarDir="/opt/app/dependencies/mgl/"`
+14. Change line 7 from `export MGL_ROOT=""` to `export MGL_ROOT="/opt/app/dependencies/mgl/"`
+15. Close and save "dependencies/mgl/install.sh"
+
+**1.5 Update the Dockerfile to include Autodock Vina and MGL Tools installations**
+1. Open the Dockerfile and paste the following lines 
   ```
   RUN /opt/app/dependencies/mgl/install.sh
 
@@ -132,12 +130,13 @@ In this section, please do not change which installer you download based on your
 
   RUN /opt/app/dependencies/adv/bin/vina --help
   ```
+2. Save the changes to the `Dockerfile` and exit
 
-### Part 4: Build your base container
-1. Run the following command: `docker build -t adv-base .`
+**1.6: Build the base container**
+1. Build the base container: `docker build -t adv-tutorial-base .`
 
 
-## Build your container with your methods
+# Section 2: Build the container with Autodock Vina Docing methods
 
 ### Part 1: Write your methods
 1. Your method you run as your main should include the following flags to deal with our command line inputs. We typically use `@click.option` to handle this in python
@@ -226,3 +225,19 @@ To run your container, and ensure that it will work with our infrastructure, ple
 * `ever_given` will handle all the overhead of running the docker container and mounting the directories so files can be passed between your computer and container
 * To run this container from the `examples` directory: `python ever_given/run.py adv --file-receptor <receptor_pdb> --file-hint <hint_pdb> --hint_radius <float> --hint_molinfo <str> --output-keys docked_ligand,receptor`
   * `python ever_given/run.py adv --file-receptor data/receptor.pdb --file-hint data/hint.pdb --hint_radius 6 --hint_molinfo "E51" --smiles "CCCCNc1cc(cc(n1)OC)C(=O)N[C@@H](Cc2ccccc2)[C@H](C[C@@H](C)C(=O)NCCCC)O" --output-keys docked_ligand,receptor`
+
+
+
+
+
+### Helpful tidbits
+* To upload your own container to docker.io
+
+* Eventually, upon building enough Docker images, you may begin to run out of memory. Please remember to regularly delete any Docker images you no longer need. 
+
+* For more detailed tutorials on how to use docker please see the following resources:
+  * Official Docker documentation: https://docs.docker.com/get-started/
+  * Brief Docker Tutorial (12m): https://www.youtube.com/watch?v=YFl2mCHdv24
+  * Docker Beginners Course (2hrs): https://www.youtube.com/watch?v=fqMOX6JJhGo
+  * Brief video on inner workings of Docker (15m): https://www.youtube.com/watch?v=rOTqprHv1YE 
+  * YouTube is a great resource for learning Docker, feel free to search for other tutorials that suit your specific needs as well 
