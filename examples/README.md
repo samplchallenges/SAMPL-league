@@ -95,7 +95,7 @@ In 1.2, we will run the "continuumio/miniconda3" container to dynamically create
 
 ### 1.3: Create a Dockerfile
 
-In 1.3, we will begin creating a Dockerfile which contains the instructions required to build the container.
+In 1.3, we will begin creating a Dockerfile which contains the instructions required to build the base container.
 1. Create and open a file called "Dockerfile"
 2. Copy the following lines into Dockerfile
    ```
@@ -178,7 +178,7 @@ In 2.2, we will incorporate the docking code into our container directory. When 
 
 ### 2.3: Create a setup.py file
 
-In 2.3, we will modify a setup.py file to  
+In 2.3, we will customize a setup.py file to to match the python modules we have written.
 1. Create and open a file called "setup.py"
 2. Copy and paste the following into setup.py
     ```
@@ -221,6 +221,8 @@ In 2.3, we will modify a setup.py file to
 5. Save and close setup.py
 
 ### 2.4: Create a Dockerfile
+
+In 2.4, we will create a Dockerfile which contains the instructions required to build the docking container, as well as the entry_point (see 2.3) which tells the container which file and function to run.
 1. Create and open a file called "Dockerfile"
 2. Copy and paste the following into Dockerfile
     ```
