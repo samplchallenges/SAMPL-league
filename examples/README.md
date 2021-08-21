@@ -110,7 +110,7 @@ In 1.3, we will begin creating a Dockerfile which contains the instructions requ
        conda clean --all --yes      # install the packages in environment.yml into containers
 
    ENV PATH="/root/.local/bin:$PATH"      # set the path
-  ```
+   ```
 3. Save the changes to Dockerfile and exit
 
 
