@@ -270,7 +270,7 @@ In this section, we will use the wrapper ever_given to run the docking container
 3. Examine your container outputs in the directory "examples/evergiven_output"
 
 
-# Helpful Hints
+# Other Important Information
 * For more detailed tutorials on how to use docker please see the following resources:
   * [Official Docker Documentation](https://docs.docker.com/get-started/)
   * [Brief Docker Tutorial (12m)](https://www.youtube.com/watch?v=YFl2mCHdv24)
