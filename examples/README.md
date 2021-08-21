@@ -59,7 +59,7 @@ A working version of the Autodock Vina container we will build in this tutorial 
  * [Section 3: Test/Run your container](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#section-3-testrun-your-container)
 
 ## Section 1: Build the Autodock Vina base container
-In this section, we will build a base container that has all necessary packages and programs installed. This way, as we write our docking code it will build quickly as only the docking code will need to be built.
+In this section, we will build a base container that has all necessary packages and programs installed. This way, as we write our docking code it will build quickly since only the docking code will need to be built.
 
 
 ### 1.1: Setup
