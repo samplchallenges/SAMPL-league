@@ -156,7 +156,10 @@ In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container.
 
 
 ### 1.6: Build the base container
-1. Build the base container: `docker build -t adv-tutorial-base .`
+
+In 1.6, we will build a docker image using "docker build", which we will inherit from in the Section 2. 
+1. Build the base container
+   * command: `docker build -t adv-tutorial-base .`
 
 
 ## Section 2: Build the container with Autodock Vina Docking methods
@@ -252,6 +255,8 @@ In 2.4, we will create a Dockerfile which contains the instructions required to 
 
 
 ### 2.5: Build the docking container
+
+In 2.5, we will build a docker image that will execute our docking program when run.
 1. Build the container
    * command: `docker build -t adv-tutorial .`
 
