@@ -87,7 +87,7 @@ In 1.2, we will run the "continuumio/miniconda3" container to dynamically create
 8. Copy the output from the export command in step 7 to be pasted into a file in step 11.
 9. Exit the container
    * command: `exit`
-10. Create and open a file called "environment.yml" and paste the output you previously copied at the end of 1.2
+10. Create and open a file called "environment.yml" and paste the output you previously copied at step 8
 11. Change the first line of the file `name: advenv` to `name: base`
 12. Delete the last line of the file: `prefix: /opt/conda/envs/advenv`
 13. Save the changes to environment.yml and exit
@@ -203,7 +203,7 @@ In 2.3, we will customize a setup.py file to to match the python modules we have
         '''
     )
     ```
-2. Modify the "py_modules" list, by adding the two modules with our docking code from the previous subsection 2.2: "autodock" and "run_autodock"
+2. Modify the "py_modules" list, by adding the two modules with our docking code from the previous subsection ([2.2](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#22-add-the-docking-code)): "autodock" and "run_autodock"
     ```
     py_modules=[
         autodock,
