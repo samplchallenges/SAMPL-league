@@ -250,7 +250,7 @@ In 2.4, we will create a Dockerfile which contains the instructions required to 
    * `FROM adv-tutorial-base`
 3. Next to "COPY" add the names of all files necessary to run our docking program, including "setup.py", "autodock.py", and "main.py" as well as the container directory to copy them into "/opt/app" or "./"
    * `COPY setup.py autodock.py main.py ./`
-4. Next to "ENTRYPOINT", add the "entry_point" you declared in step 4 of the previous subsection inside the brackets, in quotations.
+4. Next to "ENTRYPOINT", add the "entry_point" you declared in step 4 of the previous subsection (2.3) inside the brackets, in quotations.
    * `ENTRYPOINT ["run-autodock"]`
 
 
