@@ -7,7 +7,7 @@ The following tutorial is meant to teach the basics of building a simple docking
 
 
 ### Important Note on "Docker" versus "Docking":
-Please note that "Docker" and "docking" are two separate things.
+   Please note that "Docker" and "docking" are two separate things.
 * **"Docker"** is a program that allows you to containerize methods, essentially taking out human intervention from your containerized program.
 * **"Docking"** describes predicting the structure of a complex, in this case a protein-ligand complex.
 
@@ -33,7 +33,7 @@ Please note that "Docker" and "docking" are two separate things.
 
 ### Pre-Built Autodock Vina Container
 
-A working version of the Autodock Vina container we will build in this tutorial can be found at [Docker Hub under osatom/adv-tutorial](https://hub.docker.com/repository/docker/osatom/adv-tutorial). To play with this container, please use the following steps:
+   A working version of the Autodock Vina container we will build in this tutorial can be found at [Docker Hub under osatom/adv-tutorial](https://hub.docker.com/repository/docker/osatom/adv-tutorial). To play with this container, please use the following steps:
 1. Pull the "adv-tutorial" docker container: `docker pull osatom/adv-tutorial:latest`
 2. Change directories into the "examples" directory: `cd examples`
 3. Run the command: `python ever_given/run.py osatom/adv-tutorial:latest --file-receptor data/receptor.pdb --file-hint data/hint.pdb --hint_radius 6 --hint_molinfo "E51" --smiles "CCCCNc1cc(cc(n1)OC)C(=O)N[C@@H](Cc2ccccc2)[C@H](C[C@@H](C)C(=O)NCCCC)O" --output-keys docked_ligand,receptor`
@@ -71,7 +71,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 1.2: Create a conda environment
 
-In 1.2, we will run the "continuumio/miniconda3" container to dynamically create the conda environment we need.
+   In 1.2, we will run the "continuumio/miniconda3" container to dynamically create the conda environment we need.
 1. Open a terminal
 2. Start the container and upon running this command, your command line prompt should change
    * command: `docker run -it --rm continuumio/miniconda3`
@@ -95,7 +95,7 @@ In 1.2, we will run the "continuumio/miniconda3" container to dynamically create
 
 ### 1.3: Create a Dockerfile
 
-In 1.3, we will begin creating a Dockerfile which contains the instructions required to build the base container.
+   In 1.3, we will begin creating a Dockerfile which contains the instructions required to build the base container.
 1. Create and open a file called "Dockerfile"
 2. Copy the following lines into Dockerfile
    ```
@@ -116,7 +116,7 @@ In 1.3, we will begin creating a Dockerfile which contains the instructions requ
 
 ### 1.4: Add the Autodock Vina and MGL Tools executables
 
-In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
+   In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
 1. Create a directory called dependencies
    * command: `mkdir dependencies`
 2. Download Autodock Tools linux x86 "autodock_vina_1_1_2_linux_x86.tgz" from [http://vina.scripps.edu/download.html]
@@ -157,7 +157,7 @@ In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container.
 
 ### 1.6: Build the base container
 
-In 1.6, we will build a docker image using "docker build", which we will inherit from in the Section 2. 
+   In 1.6, we will build a docker image using "docker build", which we will inherit from in the Section 2. 
 1. Build the base container
    * command: `docker build -t adv-tutorial-base .`
 
@@ -175,7 +175,7 @@ In this section, we will build our docking container with runnable docking code.
 
 ### 2.2: Add the docking code
 
-In 2.2, we will incorporate the docking code into our container directory. When building your own container, this is where you would add in your methods. However, for the sake of simplicity, we will be using pre-written docking code. Please see [examples/ContainerRequirements.md](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/ContainerRequirements.md) for more information on the inputs and kwargs required of each main function.
+   In 2.2, we will incorporate the docking code into our container directory. When building your own container, this is where you would add in your methods. However, for the sake of simplicity, we will be using pre-written docking code. Please see [examples/ContainerRequirements.md](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/ContainerRequirements.md) for more information on the inputs and kwargs required of each main function.
 1. Copy the AutoDock class file from "examples/adv/autodock.py" to "adv-tutorial"
    * command: `cp ../adv/autodock.py .`
 2. Copy the AutoDock main file from "examples/adv/main.py" to "adv-tutorial"
@@ -183,7 +183,7 @@ In 2.2, we will incorporate the docking code into our container directory. When 
 
 ### 2.3: Create a setup.py file
 
-In 2.3, we will customize a setup.py file to to match the python modules we have written.
+   In 2.3, we will customize a setup.py file to to match the python modules we have written.
 1. Create and open a file called "setup.py"
 2. Copy and paste the following into setup.py
     ```
@@ -227,7 +227,7 @@ In 2.3, we will customize a setup.py file to to match the python modules we have
 
 ### 2.4: Create a Dockerfile
 
-In 2.4, we will create a Dockerfile which contains the instructions required to build the docking container, as well as the entry_point (see [2.3](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/README.md#23-create-a-setuppy-file)) which tells the container which file and function to run.
+   In 2.4, we will create a Dockerfile which contains the instructions required to build the docking container, as well as the entry_point (see [2.3](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/README.md#23-create-a-setuppy-file)) which tells the container which file and function to run.
 1. Create and open a file called "Dockerfile"
 2. Copy and paste the following into Dockerfile
     ```
@@ -256,13 +256,13 @@ In 2.4, we will create a Dockerfile which contains the instructions required to 
 
 ### 2.5: Build the docking container
 
-In 2.5, we will build a docker image that will execute our docking program when run.
+   In 2.5, we will build a docker image that will execute our docking program when run.
 1. Build the container
    * command: `docker build -t adv-tutorial .`
 
 
 ## Section 3: Test/Run your container
-In this section, we will use the wrapper ever_given to run the docking container. ever_given mimics the infrastructure we will use to run your container on the SAMPL-league website, making it a great way to test that you container will run properly ahead of uploading to the website.
+   In this section, we will use the wrapper ever_given to run the docking container. ever_given mimics the infrastructure we will use to run your container on the SAMPL-league website, making it a great way to test that you container will run properly ahead of uploading to the website.
 1. Change directories into "examples":
    * command: `cd examples`
 2. Run the container
