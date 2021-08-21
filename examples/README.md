@@ -161,6 +161,8 @@ In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container.
 
 ## Section 2: Build the container with Autodock Vina Docking methods
 
+In this section, we will build our docking container with runnable docking code.
+
 ### 2.1: Setup
 
 1. Create a directory called "adv-tutorial" in the examples directory
@@ -255,7 +257,7 @@ In 2.4, we will create a Dockerfile which contains the instructions required to 
 
 
 ## Section 3: Test/Run your container
-To run the container we will use the wrapper ever_given which mimics the infrastructure we will use to run your container on the SAMPL-league website.
+In this section, we will use the wrapper ever_given to run the docking container. ever_given mimics the infrastructure we will use to run your container on the SAMPL-league website, making it a great way to test that you container will run properly ahead of uploading to the website.
 1. Change directories into "examples":
    * command: `cd examples`
 2. Run the container
