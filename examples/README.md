@@ -134,9 +134,9 @@ In this section, we will build a base container that has all necessary packages 
 9. Delete the .tgz file:
    * command: `rm mgltools_x86_64Linux2_1.5.6.tar.gz`
 10. Rename "mgltools_x86_64Linux2_1.5.6.tar.gz" to "mgl"
-   * command: `mv mgltools_x86_64Linux2_1.5.6.tar.gz mgl`
+      * command: `mv mgltools_x86_64Linux2_1.5.6.tar.gz mgl`
 11. Move "mgl" directory inside the "dependencies" directory:
-   * command: `mv mgl dependencies/`
+      * command: `mv mgl dependencies/`
 12. Open "dependencies/mgl/install.sh"
 13. Change line 6 from `TarDir=""` to `TarDir="/opt/app/dependencies/mgl/"`
 14. Change line 7 from `export MGL_ROOT=""` to `export MGL_ROOT="/opt/app/dependencies/mgl/"`
