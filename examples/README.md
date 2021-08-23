@@ -1,37 +1,37 @@
 # Introduction to SAMPL Containerized Methods
 
-## Purpose:
+### Purpose:
 In [SAMPL4](https://link.springer.com/article/10.1007%2Fs10822-013-9702-2), we learned that human knowledge can be a key factor influencing the success of a computational drug discovery method. To work around this discovery, we are creating an automated arm of SAMPL challenges to run methods head-to-head without human intervention. To accomplish this, we will use containerized [Docker](https://www.docker.com/resources/what-container) methods.
 
 The following tutorial is meant to teach the basics of building a simple docking pose prediction container using Python code and command line programs (specifically, Autodock Vina and MGL Tools).
 
 
-## Important Note on "Docker" versus "Docking":
-Please note that "Docker" and "docking" are two separate things.
+### Important Note on "Docker" versus "Docking":
+   Please note that "Docker" and "docking" are two separate things.
 * **"Docker"** is a program that allows you to containerize methods, essentially taking out human intervention from your containerized program.
 * **"Docking"** describes predicting the structure of a complex, in this case a protein-ligand complex.
 
 
-## Expected Background Knowledge
+### Expected Background Knowledge
 * Basic knowledge of Python
 * Basic knowledge of Linux/UNIX command line
 
 
-## Software Requirements
+### Software Requirements
 * Linux or Mac operating system
 * [Docker Desktop](https://www.docker.com/products/docker-desktop)
 * [Docker SDK for Python](https://pypi.org/project/docker/)
 * [Python 3](https://www.python.org/downloads/)
 
 
-## Brief Docker Usage Tips
+### Brief Docker Usage Tips
 * To build an image, ensure you are in the directory with your Dockerfile and container code, then run `docker build -t <name>:<tag/version> .`
   * Examples: `docker build -t adv:0.1 .` or `docker build -t adv:latest .`
 * Use the command `docker images` to list out your built images
 * To delete Docker images, use `docker images` to list your current images and their IMAGE IDs, then run the command `docker image rm <IMAGE IDs>`
 
 
-## Pre-Built Autodock Vina Container
+### Pre-Built Autodock Vina Container
 
 A working version of the Autodock Vina container we will build in this tutorial can be found at [Docker Hub under osatom/adv-tutorial](https://hub.docker.com/repository/docker/osatom/adv-tutorial). To play with this container, please use the following steps:
 1. Pull the "adv-tutorial" docker container: `docker pull osatom/adv-tutorial:latest`
@@ -43,142 +43,147 @@ A working version of the Autodock Vina container we will build in this tutorial 
 # Tutorial: Build an AutoDock Vina Containerized Method
 
 ## Outline:
-* Section 1: Build the Autodock Vina base container
-  * 1.1 Setup
-  * 1.2 Create a conda environment
-  * 1.3 Create a Dockerfile
-  * 1.4 Add the Autodock Vina and MGL Tools executables
-  * 1.5 Update the Dockerfile to include Autodock Vina and MGL Tools installations
-  * 1.6 Build the base container
-* Section 2: Build the Autodock Vina Docing methods container
-  * 2.1 Setup
-  * 2.2 Add the docking code
-  * 2.3 Create a setup.py file
-  * 2.4 Create a Dockerfile
-  * 2.5 Build the docking container
-
+* [Section 1: Build the Autodock Vina base container](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/README.md#section-1-build-the-autodock-vina-base-container)
+   * [1.1 Setup](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#11-setup)
+   * [1.2 Create a conda environment](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#12-create-a-conda-environment)
+   * [1.3 Create a Dockerfile](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#13-create-a-dockerfile)
+   * [1.4 Add the Autodock Vina and MGL Tools executables](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#14-add-the-autodock-vina-and-mgl-tools-executables)
+   * [1.5 Update the Dockerfile to include Autodock Vina and MGL Tools installation steps](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#15-update-the-dockerfile-to-include-autodock-vina-and-mgl-tools-installations)
+   * [1.6 Build the base container](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#16-build-the-base-container)
+* [Section 2: Build the Autodock Vina Docing methods container](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#section-2-build-the-container-with-autodock-vina-docking-methods)
+   * [2.1 Setup](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#21-setup)
+   * [2.2 Add the docking code](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#22-add-the-docking-code)
+   * [2.3 Create a setup.py file](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#23-create-a-setuppy-file)
+   * [2.4 Create a Dockerfile](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#24-create-a-dockerfile)
+   * [2.5 Build the docking container](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#24-create-a-dockerfile)
+ * [Section 3: Test/Run your container](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#section-3-testrun-your-container)
 
 ## Section 1: Build the Autodock Vina base container
-In this section, we will build a base container that has all necessary packages and programs installed. This way, as we write our docking code it will build quickly as only the docking code will need to be built.
+In this section, we will build a base container that has all necessary packages and programs installed. This way, as we write our docking code it will build quickly since only the docking code will need to be built.
 
 
-**1.1: Setup**
+### 1.1: Setup
 1. Create a directory called "adv-tutorial-base" in the examples directory
-  * command: `mkdir adv-tutorial-base`
+   * command: `mkdir adv-tutorial-base`
 2. Change directories to "adv-tutorial-base"
-  * command: `cd adv-tutorial-base`
+   * command: `cd adv-tutorial-base`
 
 
-**1.2: Create a conda environment**
+### 1.2: Create a conda environment
 
-In 1.2, we will run the "continuumio/miniconda3" container to dynamically create the conda environment we need.
+> In 1.2, we will run the "continuumio/miniconda3" container to dynamically create the conda environment we need.
 1. Open a terminal
 2. Start the container and upon running this command, your command line prompt should change
-  * command: `docker run -it --rm continuumio/miniconda3`
+   * command: `docker run -it --rm continuumio/miniconda3`
 3. Create a conda env called "advenv"
-  * command: `conda create --name advenv`
+   * command: `conda create --name advenv`
 4. Activate advenv: `conda activate advenv`
 5. Install rdkit
-  * command: `conda install -c conda-forge rdkit`
+   * command: `conda install -c conda-forge rdkit`
 6. Install mdtraj
-  * command: `conda install -c conda-forge mdtraj`
+   * command: `conda install -c conda-forge mdtraj`
 7. Export the environment
-  * command: `conda env export -n advenv`
+   * command: `conda env export -n advenv`
 8. Copy the output from the export command in step 7 to be pasted into a file in step 11.
 9. Exit the container
-  * command: `exit`
-10. Create and open a file called "environment.yml" and paste the output you previously copied at the end of 1.2
+   * command: `exit`
+10. Create and open a file called "environment.yml" and paste the output you previously copied at step 8
 11. Change the first line of the file `name: advenv` to `name: base`
 12. Delete the last line of the file: `prefix: /opt/conda/envs/advenv`
 13. Save the changes to environment.yml and exit
 
 
-**1.3: Create a Dockerfile**
+### 1.3: Create a Dockerfile
 
-In 1.3, we will begin creating a Dockerfile which contains the instructions required to build the container.
+> In 1.3, we will begin creating a Dockerfile which contains the instructions required to build the base container.
 1. Create and open a file called "Dockerfile"
 2. Copy the following lines into Dockerfile
-  ```
-  FROM continuumio/miniconda3:4.9.2-alpine  
-  # tells the container to inherit from a miniconda container
+   ```
+   FROM continuumio/miniconda3:4.9.2-alpine  
+   # tells the container to inherit from a miniconda container
 
-  WORKDIR /opt/app/   # set the work directory
+   WORKDIR /opt/app/   # set the work directory
 
-  COPY . ./    #  copy all the files and directories into the container
+   COPY . ./    #  copy all the files and directories into the container
 
-  RUN conda env update -f environment.yml && \
-      conda clean --all --yes      # install the packages in environment.yml into containers
+   RUN conda env update -f environment.yml && \
+       conda clean --all --yes      # install the packages in environment.yml into containers
 
-  ENV PATH="/root/.local/bin:$PATH"      # set the path
-```
+   ENV PATH="/root/.local/bin:$PATH"      # set the path
+   ```
 3. Save the changes to Dockerfile and exit
 
 
-**1.4: Add the Autodock Vina and MGL Tools executables**
+### 1.4: Add the Autodock Vina and MGL Tools executables
 
-In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
+> In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
 1. Create a directory called dependencies
-  * command: `mkdir dependencies`
+   * command: `mkdir dependencies`
 2. Download Autodock Tools linux x86 "autodock_vina_1_1_2_linux_x86.tgz" from [http://vina.scripps.edu/download.html]
 3. Untar "autodock_vina_1_1_2_linux_x86.tgz"
-  * command: `tar -xvf dependencies/autodock_vina_1_1_2_linux_x86.tgz`
+   * command: `tar -xvf dependencies/autodock_vina_1_1_2_linux_x86.tgz`
 4. Delete the .tgz file:
-  * command: `rm autodock_vina_1_1_2_linux_x86.tgz`
+   * command: `rm autodock_vina_1_1_2_linux_x86.tgz`
 5. Rename "autodock_vina_1_1_2_linux_x86/" to "adv/"
-  * command: `mv autodock_vina_1_1_2_linux_x86 adv`
+   * command: `mv autodock_vina_1_1_2_linux_x86 adv`
 6. Move the "adv" directory inside the "dependencies" directory
-  * command `mv adv dependencies`
+   * command `mv adv dependencies`
 7. Download MGL Tools linux x86 `mgltools_x86_64Linux2_1.5.6.tar.gz` from [http://mgltools.scripps.edu/downloads]
 8. Untar "mgltools_x86_64Linux2_1.5.6.tar.gz"
-  * command `tar -xvf mgltools_x86_64Linux2_1.5.6.tar.gz`
+   * command `tar -xvf mgltools_x86_64Linux2_1.5.6.tar.gz`
 9. Delete the .tgz file:
-  * command: `rm mgltools_x86_64Linux2_1.5.6.tar.gz`
+   * command: `rm mgltools_x86_64Linux2_1.5.6.tar.gz`
 10. Rename "mgltools_x86_64Linux2_1.5.6.tar.gz" to "mgl"
-  * command: `mv mgltools_x86_64Linux2_1.5.6.tar.gz mgl`
+      * command: `mv mgltools_x86_64Linux2_1.5.6.tar.gz mgl`
 11. Move "mgl" directory inside the "dependencies" directory:
-  * command: `mv mgl dependencies/`
+      * command: `mv mgl dependencies/`
 12. Open "dependencies/mgl/install.sh"
 13. Change line 6 from `TarDir=""` to `TarDir="/opt/app/dependencies/mgl/"`
 14. Change line 7 from `export MGL_ROOT=""` to `export MGL_ROOT="/opt/app/dependencies/mgl/"`
 15. Close and save "dependencies/mgl/install.sh"
 
 
-**1.5 Update the Dockerfile to include Autodock Vina and MGL Tools installations**
+### 1.5: Update the Dockerfile to include Autodock Vina and MGL Tools installation steps
 1. Open the Dockerfile and paste the following lines
-  ```
-  RUN /opt/app/dependencies/mgl/install.sh
+   ```
+   RUN /opt/app/dependencies/mgl/install.sh
 
-  ENV PATH="/opt/app/dependencies/:/opt/app/dependencies/mgl/:$PATH"
+   ENV PATH="/opt/app/dependencies/:/opt/app/dependencies/mgl/:$PATH"
 
-  RUN /opt/app/dependencies/adv/bin/vina --help
-  ```
+   RUN /opt/app/dependencies/adv/bin/vina --help
+   ```
 2. Save the changes to the `Dockerfile` and exit
 
 
-**1.6: Build the base container**
-1. Build the base container: `docker build -t adv-tutorial-base .`
+### 1.6: Build the base container
+
+   In 1.6, we will build a docker image using "docker build", which we will inherit from in the Section 2. 
+1. Build the base container
+   * command: `docker build -t adv-tutorial-base .`
 
 
 ## Section 2: Build the container with Autodock Vina Docking methods
 
-**2.1: Setup**
+> In this section, we will build our docking container with runnable docking code.
+
+### 2.1: Setup
 
 1. Create a directory called "adv-tutorial" in the examples directory
-  * command: `mkdir adv-tutorial`
+   * command: `mkdir adv-tutorial`
 2. Change directories to "adv-tutorial"
-  * command: `cd adv-tutorial`
+   * command: `cd adv-tutorial`
 
-**2.2: Add the docking code**
+### 2.2: Add the docking code
 
-In 2.2, we will incorporate the docking code into our container directory. When building your own container, this is where you would add in your methods. However, for the sake of simplicity, we will be using pre-written docking code.
+> In 2.2, we will incorporate the docking code into our container directory. When building your own container, this is where you would add in your methods. However, for the sake of simplicity, we will be using pre-written docking code. Please see [examples/ContainerRequirements.md](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/ContainerRequirements.md) for more information on the inputs and kwargs required of each main function.
 1. Copy the AutoDock class file from "examples/adv/autodock.py" to "adv-tutorial"
-  * command: `cp ../adv/autodock.py .`
+   * command: `cp ../adv/autodock.py .`
 2. Copy the AutoDock main file from "examples/adv/main.py" to "adv-tutorial"
-  * command: `cp ../adv/main.py .`
+   * command: `cp ../adv/main.py .`
 
-**2.3: Create a setup.py file**
+### 2.3: Create a setup.py file
 
-In 2.3, we will modify a setup.py file to  
+> In 2.3, we will customize a setup.py file to to match the python modules we have written.
 1. Create and open a file called "setup.py"
 2. Copy and paste the following into setup.py
     ```
@@ -198,7 +203,7 @@ In 2.3, we will modify a setup.py file to
         '''
     )
     ```
-2. Modify the "py_modules" list, by adding the two modules with our docking code from the previous subsection 2.2: "autodock" and "run_autodock"
+2. Modify the "py_modules" list, by adding the two modules with our docking code from the previous subsection ([2.2](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#22-add-the-docking-code)): "autodock" and "run_autodock"
     ```
     py_modules=[
         autodock,
@@ -220,48 +225,52 @@ In 2.3, we will modify a setup.py file to
     ```
 5. Save and close setup.py
 
-**2.4: Create a Dockerfile**
+### 2.4: Create a Dockerfile
+
+> In 2.4, we will create a Dockerfile which contains the instructions required to build the docking container, as well as the entry_point (see [2.3](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/README.md#23-create-a-setuppy-file)) which tells the container which file and function to run.
 1. Create and open a file called "Dockerfile"
 2. Copy and paste the following into Dockerfile
-  ```
-  FROM
+    ```
+    FROM
 
-  WORKDIR /opt/app/
+    WORKDIR /opt/app/
 
-  COPY
+    COPY
 
-  RUN pip install .
+    RUN pip install .
 
-  ENV PATH="/root/.local/bin:$PATH"
+    ENV PATH="/root/.local/bin:$PATH"
 
-  RUN ls -l /opt/app
+    RUN ls -l /opt/app
 
-  ENTRYPOINT []
-  ```
+    ENTRYPOINT []
+    ```
 
 2. Next to "FROM" add the name of the base build from Section 1
-  * `FROM adv-tutorial-base`
+   * `FROM adv-tutorial-base`
 3. Next to "COPY" add the names of all files necessary to run our docking program, including "setup.py", "autodock.py", and "main.py" as well as the container directory to copy them into "/opt/app" or "./"
-  * `COPY setup.py autodock.py main.py ./`
-4. Next to `ENTRYPOINT`, add the "entry_point" you declared in step 4 of the previous subsection inside the brackets, in quotations.
-  * `ENTRYPOINT ["run-autodock"]`
+   * `COPY setup.py autodock.py main.py ./`
+4. Next to "ENTRYPOINT", add the "entry_point" you declared in step 4 of the previous subsection ([2.3](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/README.md#23-create-a-setuppy-file)) inside the brackets, in quotations.
+   * `ENTRYPOINT ["run-autodock"]`
 
 
-**2.5: Build the docking container**
+### 2.5: Build the docking container
+
+> In 2.5, we will build a docker image that will execute our docking program when run.
 1. Build the container
-  * command: `docker build -t adv-tutorial .`
+   * command: `docker build -t adv-tutorial .`
 
 
 ## Section 3: Test/Run your container
-To run the container we will use the wrapper ever_given which mimics the infrastructure we will use to run your container on the SAMPL-league website.
+In this section, we will use the wrapper ever_given to run the docking container. ever_given mimics the infrastructure we will use to run your container on the SAMPL-league website, making it a great way to test that you container will run properly ahead of uploading to the website.
 1. Change directories into "examples":
-  * command: `cd examples`
+   * command: `cd examples`
 2. Run the container
-  * command: `python ever_given/run.py adv-tutorial --file-receptor data/receptor.pdb --file-hint data/hint.pdb --hint_radius 6 --hint_molinfo "E51" --smiles "CCCCNc1cc(cc(n1)OC)C(=O)N[C@@H](Cc2ccccc2)[C@H](C[C@@H](C)C(=O)NCCCC)O" --output-keys docked_ligand,receptor`
+   * command: `python ever_given/run.py adv-tutorial --file-receptor data/receptor.pdb --file-hint data/hint.pdb --hint_radius 6 --hint_molinfo "E51" --smiles "CCCCNc1cc(cc(n1)OC)C(=O)N[C@@H](Cc2ccccc2)[C@H](C[C@@H](C)C(=O)NCCCC)O" --output-keys docked_ligand,receptor`
 3. Examine your container outputs in the directory "examples/evergiven_output"
 
 
-# Helpful Hints
+# Other Important Information
 * For more detailed tutorials on how to use docker please see the following resources:
   * [Official Docker Documentation](https://docs.docker.com/get-started/)
   * [Brief Docker Tutorial (12m)](https://www.youtube.com/watch?v=YFl2mCHdv24)
