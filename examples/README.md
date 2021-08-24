@@ -1,16 +1,18 @@
 # Introduction to SAMPL Containerized Methods
 
-### Purpose:
+## Purpose:
 In [SAMPL4](https://link.springer.com/article/10.1007%2Fs10822-013-9702-2), we learned that human knowledge can be a key factor influencing the success of a computational drug discovery method. To work around this finding, we are creating an automated arm of SAMPL challenges to run methods head-to-head without human intervention. To accomplish this, we will use containerized [Docker](https://www.docker.com/resources/what-container) methods.
 
-The following tutorial is meant to teach the basics of building a simple docking pose prediction container using Python code and command line programs (specifically, Autodock Vina and MGL Tools).
+The following tutorial is meant to teach the basics of building a simple container to predict docking poses. Here, we use both Python code and command-line programs (specifically, Autodock Vina and MGL Tools).
 
+## Background and Prerequisites
 
 ### Important Note on "Docker" versus "Docking":
    Please note that "Docker" and "docking" are two separate things.
-* **"Docker"** is a program that allows you to containerize methods, essentially taking out human intervention from your containerized program.
+* **"Docker"** is a program that allows you to containerize methods, essentially allowing you to distribute your method or approach in a reusable way where it can be used reproducibly without human intervention
 * **"Docking"** describes predicting the structure of a complex, in this case a protein-ligand complex.
 
+This terminology is unfortunately not something we can change.
 
 ### Expected Background Knowledge
 * Basic knowledge of Python
@@ -23,6 +25,7 @@ The following tutorial is meant to teach the basics of building a simple docking
 * [Docker SDK for Python](https://pypi.org/project/docker/)
 * [Python 3](https://www.python.org/downloads/)
 
+## Getting started
 
 ### Brief Docker Usage Tips
 * To build an image, ensure you are in the directory with your Dockerfile and container code, then run `docker build -t <name>:<tag/version> .`
@@ -158,7 +161,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 1.6: Build the base container
 
-> In 1.6, we will build a docker image using "docker build", which we will inherit from in the Section 2. 
+> In 1.6, we will build a docker image using "docker build", which we will inherit from in the Section 2.
 
 1. Build the base container
    * command: `docker build -t adv-tutorial-base .`
@@ -185,7 +188,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 2.3: Create a setup.py file
 
-> In 2.3, we will customize a setup.py file to to match the python modules we have written. 
+> In 2.3, we will customize a setup.py file to to match the python modules we have written.
 1. Create and open a file called "setup.py"
 2. Copy and paste the following into setup.py
     ```
@@ -212,7 +215,7 @@ In this section, we will build a base container that has all necessary packages 
         run_autodock,
     ]
     ```
-3. Modify the "install_requires" list, adding "Click" a pip installable package we did not add to the previous base building
+3. Modify the "install_requires" list, adding "Click" a pip installable package we did not add to the previous base build
     ```
     install_requires=[
         Click,
