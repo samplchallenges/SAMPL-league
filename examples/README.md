@@ -280,4 +280,4 @@ In this section, we will use the wrapper ever_given to run the docking container
 * To upload your own container to docker.io create a [Docker Hub account](https://hub.docker.com/signup)
   * Please note that free Docker Hub accounts only receive 1 private repository.
   * If you have sensitive information inside your containers, please ensure you are using a private repository.
-* Eventually, upon building enough Docker images, you may begin to run out of memory. Please remember to regularly delete any Docker images you no longer need. (See Brief Docker Usage Tips: Bullet 3)
+* Eventually, upon building enough Docker images, you may begin to run out of memory. Please remember to regularly delete any Docker images you no longer need. (See [Brief Docker Usage Tips](https://github.com/samplchallenges/SAMPL-league/tree/containers/examples#brief-docker-usage-tips): Bullet 3)
