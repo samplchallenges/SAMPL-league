@@ -71,7 +71,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 1.2: Create a conda environment
 
-> In 1.2, we will run the "continuumio/miniconda3" container to dynamically create the conda environment we need.
+> In 1.2, we will run the "continuumio/miniconda3" container to dynamically create the conda environment we need. For more detailed instructions please see [CondaEnvInstructions.pdf](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/CondaEnvInstructions.pdf)
 1. Open a terminal
 2. Start the container and upon running this command, your command line prompt should change
    * command: `docker run -it --rm continuumio/miniconda3`
