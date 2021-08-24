@@ -39,9 +39,11 @@ receptor {path_to_receptor_file}
 ## Example Python Main Function Definition
 ```
 import click
+
 @click.command()
 @click.option("--receptor", required=True, type=click.Path(exists=True), help="path of receptor PDB to dock the ligand into")
-@click.option("--smiles", required=True, type=click.Path(exists=True), help="SMILES str of ligand to be docked. quote to prevent CLI errors \"CCC\"")
+@click.option("--smiles", required=False, type=click.Path(exists=True), help="file with SMILES strings of ligands to be docked")
+@click.option("--smiles_arg", required=False, help 
 
 @click.option("--hint",required=True,type=click.Path(exists=True),help="path of hint ligand complex for docking region hint")
 @click.option("--hint_molinfo",required=True,help="residue name of the ligand in the hint complex")
