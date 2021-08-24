@@ -116,7 +116,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 1.4: Add the Autodock Vina and MGL Tools executables
 
-> In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
+> In 1.4, we will incorporate the command line tools Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
 1. Create a directory called dependencies
    * command: `mkdir dependencies`
 2. Download Autodock Tools linux x86 "autodock_vina_1_1_2_linux_x86.tgz" from http://vina.scripps.edu/download.html
