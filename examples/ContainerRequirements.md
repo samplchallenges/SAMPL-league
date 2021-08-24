@@ -1,4 +1,4 @@
-# Container Requirements
+# Docking Container Requirements
 
 ## Input Requirements
 * `--receptor`: receptor `.pdb` file to dock the ligand into
