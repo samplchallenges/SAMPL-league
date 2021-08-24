@@ -53,16 +53,16 @@ import click
 
 def docking_main(receptor, smiles, smiles_argument, hint, hint_molinfo, hint_radius, output_dir):
         ''' docks the given smiles string into the receptor within the area specified by hint and hint-radius
-            INPUTS:    receptor:     file    receptor PDB path to dock ligand into
-                       smiles:       file    file of SMILES string of ligands to be docked (use either smiles or smiles_arg, not both)
-                       smiles_arg:   str     SMILES string of ligand to be docked, use quotes use quotes (use either smiles or smiles_arg, not both)
-                       hint:         file    hint PDB contains a receptor ligand complex to show binding site region
-                       hint_molinfo: str     resname of the ligand used in the hint PDB
-                       hint_radius:  float   radius around the hint ligand to consider in docking
-                       output_dir:   str     output director for receptor and docked_ligand
-            OUTPUTS:   prints        docked_ligand {path_to_docked_ligand_file}
-                       prints        receptor no_prediction
-                       writes file   docked ligand file as a .pdb .mol2 or .sdf
-                       writes file   receptor prepped and used by program in docking as .pdb
+            INPUTS:    receptor:        file    receptor PDB path to dock ligand into
+                       smiles:          file    file of SMILES string of ligands to be docked (use either smiles or smiles_arg, not both)
+                       smiles_arg:      str     SMILES string of ligand to be docked, use quotes use quotes (use either smiles or smiles_arg, not both)
+                       hint:            file    hint PDB contains a receptor ligand complex to show binding site region
+                       hint_molinfo:    str     resname of the ligand used in the hint PDB
+                       hint_radius:     float   radius around the hint ligand to consider in docking
+                       output_dir:      str     output director for receptor and docked_ligand
+            OUTPUTS:   prints           docked_ligand {path_to_docked_ligand_file}
+                       prints           receptor no_prediction
+                       writes file(s)   docked ligand file as a .pdb .mol2 or .sdf
+                       writes file(s)   receptor prepped and used by program in docking as .pdb
         '''
 ```
