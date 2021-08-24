@@ -95,7 +95,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 1.3: Create a Dockerfile
 
-> In 1.3, we will begin creating a Dockerfile which contains the instructions required to build the base container.
+> In 1.3, we will begin creating a Dockerfile which contains the instructions required to build the base container. For more information on how to visit a Dockerfile, please see the [official Docker documentation](https://docs.docker.com/get-started/02_our_app/#build-the-apps-container-image).
 1. Create and open a file called "Dockerfile"
 2. Copy the following lines into Dockerfile
    ```
@@ -119,7 +119,7 @@ In this section, we will build a base container that has all necessary packages 
 > In 1.4, we will incorporate Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
 1. Create a directory called dependencies
    * command: `mkdir dependencies`
-2. Download Autodock Tools linux x86 "autodock_vina_1_1_2_linux_x86.tgz" from [http://vina.scripps.edu/download.html]
+2. Download Autodock Tools linux x86 "autodock_vina_1_1_2_linux_x86.tgz" from http://vina.scripps.edu/download.html
 3. Untar "autodock_vina_1_1_2_linux_x86.tgz"
    * command: `tar -xvf dependencies/autodock_vina_1_1_2_linux_x86.tgz`
 4. Delete the .tgz file:
@@ -128,7 +128,7 @@ In this section, we will build a base container that has all necessary packages 
    * command: `mv autodock_vina_1_1_2_linux_x86 adv`
 6. Move the "adv" directory inside the "dependencies" directory
    * command `mv adv dependencies`
-7. Download MGL Tools linux x86 `mgltools_x86_64Linux2_1.5.6.tar.gz` from [http://mgltools.scripps.edu/downloads]
+7. Download MGL Tools linux x86 `mgltools_x86_64Linux2_1.5.6.tar.gz` from http://mgltools.scripps.edu/downloads
 8. Untar "mgltools_x86_64Linux2_1.5.6.tar.gz"
    * command `tar -xvf mgltools_x86_64Linux2_1.5.6.tar.gz`
 9. Delete the .tgz file:
@@ -157,7 +157,8 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 1.6: Build the base container
 
-   In 1.6, we will build a docker image using "docker build", which we will inherit from in the Section 2. 
+> In 1.6, we will build a docker image using "docker build", which we will inherit from in the Section 2. 
+> 
 1. Build the base container
    * command: `docker build -t adv-tutorial-base .`
 
@@ -183,7 +184,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 2.3: Create a setup.py file
 
-> In 2.3, we will customize a setup.py file to to match the python modules we have written.
+> In 2.3, we will customize a setup.py file to to match the python modules we have written. 
 1. Create and open a file called "setup.py"
 2. Copy and paste the following into setup.py
     ```
@@ -227,7 +228,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 2.4: Create a Dockerfile
 
-> In 2.4, we will create a Dockerfile which contains the instructions required to build the docking container, as well as the entry_point (see [2.3](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/README.md#23-create-a-setuppy-file)) which tells the container which file and function to run.
+> In 2.4, we will create a Dockerfile which contains the instructions required to build the docking container, as well as the entry_point (see [2.3](https://github.com/samplchallenges/SAMPL-league/blob/containers/examples/README.md#23-create-a-setuppy-file)) which tells the container which file and function to run. For more information on how to visit a Dockerfile, please see the [official Docker documentation](https://docs.docker.com/get-started/02_our_app/#build-the-apps-container-image).
 1. Create and open a file called "Dockerfile"
 2. Copy and paste the following into Dockerfile
     ```
@@ -256,7 +257,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 2.5: Build the docking container
 
-> In 2.5, we will build a docker image that will execute our docking program when run.
+> In 2.5, we will build a docker image that will execute our docking program when run. For more information about the `docker build`, please see the [official Docker documentation](https://docs.docker.com/engine/reference/commandline/build/).
 1. Build the container
    * command: `docker build -t adv-tutorial .`
 
