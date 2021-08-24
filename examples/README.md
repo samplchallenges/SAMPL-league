@@ -116,7 +116,7 @@ In this section, we will build a base container that has all necessary packages 
 
 ### 1.4: Add the Autodock Vina and MGL Tools executables
 
-> In 1.4, we will incorporate the command line tools Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system.
+> In 1.4, we will incorporate the command line tools Autodock Vina and MGL Tools into our base container. Please do not change which installer you download based on your native operating system. These installers will be used inside the docker container which uses a Linux x86 system. When building your own container, this is where you would add in any command line program files.
 1. Create a directory called dependencies
    * command: `mkdir dependencies`
 2. Download Autodock Tools linux x86 "autodock_vina_1_1_2_linux_x86.tgz" from http://vina.scripps.edu/download.html
@@ -144,6 +144,7 @@ In this section, we will build a base container that has all necessary packages 
 
 
 ### 1.5: Update the Dockerfile to include Autodock Vina and MGL Tools installation steps
+> In 1.6, we will add in the installation commands for Autodock Vina and MGL Tools to the Dockerfile. When building your own container, this is where you would add in any command line program installation steps.
 1. Open the Dockerfile and paste the following lines
    ```
    RUN /opt/app/dependencies/mgl/install.sh
@@ -158,7 +159,7 @@ In this section, we will build a base container that has all necessary packages 
 ### 1.6: Build the base container
 
 > In 1.6, we will build a docker image using "docker build", which we will inherit from in the Section 2. 
-> 
+
 1. Build the base container
    * command: `docker build -t adv-tutorial-base .`
 
