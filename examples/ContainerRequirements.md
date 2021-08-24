@@ -63,6 +63,6 @@ def run_autodock(receptor, smiles, smiles_argument, hint, hint_molinfo, hint_rad
             OUTPUTS:   prints        docked_ligand {path_to_docked_ligand_file}
                        prints        receptor no_prediction
                        writes file   docked ligand file as a .pdb .mol2 or .sdf
-                       writes file   receptor prepped and used by program in docking
+                       writes file   receptor prepped and used by program in docking as .pdb
         '''
 ```
