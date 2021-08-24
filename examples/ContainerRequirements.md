@@ -19,7 +19,7 @@
 **File Outputs**: Output the following files into the `output-dir`
 * **docked ligand file**: a `.mol2`, `.pdb` or `.sdf` of the docked ligand
   * path_to_docked_ligand_file = `{output-dir}/{docked_ligand_file}`
-* **receptor file**: a `.pdb` file of the receptor used or modified by your docking program
+* **receptor file**: a `.pdb` file of the receptor used or modified by your docking program, this is important for rmsd scoring purposes in case your complex changes frame of reference
   * path_to_receptor_file = `{output-dir}/{receptor_file}`
 
 
@@ -43,7 +43,7 @@ import click
 @click.command()
 @click.option("--receptor", required=True, type=click.Path(exists=True), help="path of receptor PDB to dock the ligand into")
 @click.option("--smiles", required=False, type=click.Path(exists=True), help="file with SMILES strings of ligands to be docked")
-@click.option("--smiles_arg", required=False, help 
+@click.option("--smiles_arg", required=False, help="SMILES string of a ligand within quotes to avoid command line parsing errors (i.e. \"CCC\")")
 
 @click.option("--hint",required=True,type=click.Path(exists=True),help="path of hint ligand complex for docking region hint")
 @click.option("--hint_molinfo",required=True,help="residue name of the ligand in the hint complex")
@@ -51,15 +51,18 @@ import click
 
 @click.option("--output-dir",help="Output directory for receptor and docked_ligand files")
 
-@click.option('--debug', is_flag=True,help="prints debug print statements when --debug flag is used")
-def run_autodock(receptor, smiles, hint, hint_molinfo, hint_radius, output_dir, debug):
+def run_autodock(receptor, smiles, smiles_argument, hint, hint_molinfo, hint_radius, output_dir):
         ''' docks the given smiles string into the receptor within the area specified by hint and hint-radius
             INPUTS:    receptor:     file    receptor PDB path to dock ligand into
-                       smiles:       str     SMILES string of ligand to be docked, use quotes 
+                       smiles:       file    file of SMILES string of ligands to be docked (use either smiles or smiles_arg, not both)
+                       smiles_arg:   str     SMILES string of ligand to be docked, use quotes use quotes (use either smiles or smiles_arg, not both)
                        hint:         file    hint PDB contains a receptor ligand complex to show binding site region
                        hint_molinfo: str     resname of the ligand used in the hint PDB
                        hint_radius:  float   radius around the hint ligand to consider in docking
                        output_dir:   str     output director for receptor and docked_ligand
-                       debug:        bool    bool used for degbug print statemetns
+             OUTPUTS:  prints        docked_ligand {path_to_docked_ligand_file}
+                       prints        receptor no_prediction
+                       writes file   docked ligand file as a .pdb .mol2 or .sdf
+                       writes file   receptor prepped and used by program in docking
         '''
 ```
