@@ -51,7 +51,7 @@ import click
 
 @click.option("--output-dir",help="Output directory for receptor and docked_ligand files")
 
-def main(receptor, smiles, smiles_argument, hint, hint_molinfo, hint_radius, output_dir):
+def docking_main(receptor, smiles, smiles_argument, hint, hint_molinfo, hint_radius, output_dir):
         ''' docks the given smiles string into the receptor within the area specified by hint and hint-radius
             INPUTS:    receptor:     file    receptor PDB path to dock ligand into
                        smiles:       file    file of SMILES string of ligands to be docked (use either smiles or smiles_arg, not both)
