@@ -11,7 +11,7 @@ SECRET_KEY = os.environ["SAMPL_SECRET_KEY"]
 POST_SERVER_ITEM_ACCESS_TOKEN = os.environ["POST_SERVER_ITEM_ACCESS_TOKEN"]
 ALLOWED_HOSTS = [
     "app.samplchallenges.org",
-    "samplmvp-env.eba-rhcwa63p.us-east-2.elasticbeanstalk.com",
+    "sampl.us-east-2.elasticbeanstalk.com",
 ]
 
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"

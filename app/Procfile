@@ -1,3 +1,4 @@
 web: gunicorn --bind :8000 --workers 3 --threads 2 sampl.wsgi:application
 scheduler: dask-scheduler --host localhost:8786
 worker: DJANGO_SETTINGS_MODULE=sampl.settings_prod dask-worker --preload daskworkerinit.py  localhost:8786
+jupyterlab: jupyter-lab --no-browser --port 8989 --ip localhost --ServerApp.token=''
