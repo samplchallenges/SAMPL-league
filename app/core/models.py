@@ -284,6 +284,11 @@ class Evaluation(Timestamped):
     class Meta:
         unique_together = ["submission_run", "input_element"]
 
+    def append(self, stdout, stderr):
+        self.log_stdout = models.F("log_stdout") + "\n" + stdout
+        self.log_stderr = models.F("log_stderr") + "\n" + stderr
+        self.save(update_fields=["log_stdout", "log_stderr"])
+        
     def __str__(self):
         return f"{self.submission_run}:, status {self.status}"
 

@@ -36,7 +36,7 @@ def run_and_score_submission(client, submission):
         delayed_conditional = check_and_score(run_id, prediction_ids)
 
     future = client.submit(delayed_conditional.compute)  # pylint:disable=no-member
-    print("Future key:", future.key)
+    logger.info("Future key: %s", future.key)
 
     dd.fire_and_forget(future)
     return future
@@ -49,10 +49,9 @@ def check_and_score(submission_run_id, prediction_ids):
     challenge = submission_run.submission.challenge
     submission_run.save()
 
-    print(
-        "Running check_and_score",
+    logger.info(
+        "Running check_and_score %s public? %s",
         submission_run_id,
-        "public?",
         submission_run.is_public,
     )
     scoring.score_submission(submission_run.submission.pk, submission_run_id)
@@ -146,10 +145,10 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
                     prediction = models.Prediction.load_output(
                         challenge, evaluation, output_type, value
                     )
-                    print(f"{prediction.__dict__}")
+                    logger.debug(f"{prediction.__dict__}")
                     prediction.save()
                 else:
-                    print(f"Ignoring key {key} with value {value}")
+                    logger.warn(f"Ignoring key {key} with value {value}")
         scoring.score_evaluation(
             challenge.scoremaker.container,
             evaluation,

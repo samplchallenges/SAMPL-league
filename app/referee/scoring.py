@@ -1,4 +1,5 @@
 import json
+import logging
 import os.path
 import tempfile
 
@@ -6,6 +7,9 @@ import ever_given.wrapper
 from django.db.models.fields.files import FieldFile
 
 from core import models
+
+
+logger = logging.getLogger(__name__)
 
 
 class AnswerPredictionPair:
@@ -59,7 +63,7 @@ def _build_kwargs(evaluation):
 def score_evaluation(container, evaluation, evaluation_score_types):
     kwargs, file_kwargs = _build_kwargs(evaluation)
     command = "score-evaluation"
-    print(container.uri, command)
+    logger.info("%s %s", container.uri, command)
     for key, score_value in ever_given.wrapper.run(
         container.uri, command, file_kwargs=file_kwargs, kwargs=kwargs
     ):

@@ -16,6 +16,11 @@ LOGGING = {
         "console": {
             "class": "logging.StreamHandler",
         },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": "sampl.log",
+        },
+            
     },
     "root": {
         "handlers": ["console"],
@@ -34,7 +39,7 @@ LOGGING = {
         },
         "referee": {
             "handlers": ["console"],
-            "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
+            "level": os.getenv("SAMPL_LOG_LEVEL", "DEBUG"),
             "propagate": False,
         },
         "ever_given": {
