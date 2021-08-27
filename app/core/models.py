@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
+from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -284,11 +285,21 @@ class Evaluation(Timestamped):
     class Meta:
         unique_together = ["submission_run", "input_element"]
 
-    def append(self, stdout, stderr):
-        self.log_stdout = models.F("log_stdout") + "\n" + stdout
-        self.log_stderr = models.F("log_stderr") + "\n" + stderr
-        self.save(update_fields=["log_stdout", "log_stderr"])
-        
+    def append(self, stdout=None, stderr=None):
+        if stdout is not None:
+            self.log_stdout = Concat(models.F("log_stdout"), models.Value("\n" + stdout))
+        if stderr is not None:
+            self.log_stderr = Concat(models.F("log_stderr"), models.Value("\n" + stderr))
+
+    def update_logs(self):
+        self.save(update_fields=("log_stdout", "log_stderr"))
+
+    def mark_started(self, kwargs, file_kwargs):
+        self.append(f"Input element: {self.input_element}\n"
+                    f"kwargs: {kwargs}\n"
+                    f"file_kwargs: {file_kwargs}\n")
+        self.update_logs()
+
     def __str__(self):
         return f"{self.submission_run}:, status {self.status}"
 

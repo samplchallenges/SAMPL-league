@@ -80,11 +80,13 @@ def run(container_uri, command="", *, file_kwargs, kwargs, output_dir=None, outp
 
     final_command = _prepare_commandline(command, final_kwargs)
 
-    result = run_container(
+    running_container = run_container(
         container_uri, final_command, input_dir_map, output_dir=output_dir
     )
-    yield from _parse_output(output_dir, result, output_file_keys).items()
+    for result in running_container.logs(stream=True):
+        yield from _parse_output(output_dir, result, output_file_keys).items()
 
+    running_container.remove()
 
 
 def run_container(container_uri, command, inputdir_map=None, output_dir=None):
@@ -101,12 +103,13 @@ def run_container(container_uri, command, inputdir_map=None, output_dir=None):
             'mode': 'rw'}
         command = f" --output-dir {GUEST_OUTPUT_DIR} {command}"
 
-    result = client.containers.run(
+    running_container = client.containers.run(
         container_uri,
         command,
         volumes=volumes,
         network_disabled=True,
         network_mode="none",
-        remove=True,
+        remove=False,
+        detach=True
     )
-    return result
+    return running_container

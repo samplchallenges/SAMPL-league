@@ -124,6 +124,7 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
     )
 
     kwargs, file_kwargs = element.all_values()
+    evaluation.mark_started(kwargs, file_kwargs)
 
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -132,31 +133,34 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
             if output_file_keys:
                 output_dir = dirpath / "output"
                 output_dir.mkdir()
-
-            for key, value in ever_given.wrapper.run(
+            parsed_results = ever_given.wrapper.run(
                 container.uri,
                 kwargs=kwargs,
                 file_kwargs=file_kwargs,
                 output_dir=output_dir,
                 output_file_keys=output_file_keys,
-            ):
+            )
+
+            for key, value in parsed_results:
                 output_type = challenge.output_type(key)
                 if output_type:
                     prediction = models.Prediction.load_output(
                         challenge, evaluation, output_type, value
                     )
-                    logger.debug(f"{prediction.__dict__}")
+                    evaluation.append(stdout=f"{prediction.__dict__}")
                     prediction.save()
                 else:
-                    logger.warn(f"Ignoring key {key} with value {value}")
+                    evaluation.append(stderr=f"Ignoring key {key} with value {value}")
+
         scoring.score_evaluation(
             challenge.scoremaker.container,
             evaluation,
             evaluation_score_types,
         )
         evaluation.status = models.Status.SUCCESS
-    except:
+    except Exception as exc:
         evaluation.status = models.Status.FAILURE
+        evaluation.append(stderr=f"Execution failure: {exc}")
         raise
     finally:
         evaluation.save()
