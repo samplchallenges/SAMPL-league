@@ -287,17 +287,23 @@ class Evaluation(Timestamped):
 
     def append(self, stdout=None, stderr=None):
         if stdout is not None:
-            self.log_stdout = Concat(models.F("log_stdout"), models.Value("\n" + stdout))
+            self.log_stdout = Concat(
+                models.F("log_stdout"), models.Value("\n" + stdout)
+            )
         if stderr is not None:
-            self.log_stderr = Concat(models.F("log_stderr"), models.Value("\n" + stderr))
+            self.log_stderr = Concat(
+                models.F("log_stderr"), models.Value("\n" + stderr)
+            )
 
     def update_logs(self):
         self.save(update_fields=("log_stdout", "log_stderr"))
 
     def mark_started(self, kwargs, file_kwargs):
-        self.append(f"Input element: {self.input_element}\n"
-                    f"kwargs: {kwargs}\n"
-                    f"file_kwargs: {file_kwargs}\n")
+        self.append(
+            f"Input element: {self.input_element}\n"
+            f"kwargs: {kwargs}\n"
+            f"file_kwargs: {file_kwargs}\n"
+        )
         self.update_logs()
 
     def __str__(self):

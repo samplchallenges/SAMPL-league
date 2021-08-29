@@ -1,6 +1,8 @@
 import copy
+import io
 from pathlib import Path
 import shlex
+import threading
 
 import docker
 
@@ -14,8 +16,12 @@ def _guest_input_path(filename):
 
 
 def _prepare_commandline(command, args_dict):
-    return command + " " + " ".join(
-        [f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()]
+    return (
+        command
+        + " "
+        + " ".join(
+            [f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()]
+        )
     )
 
 
@@ -62,7 +68,35 @@ def _convert_file_kwargs(file_kwargs):
     return dirpaths, final_file_kwargs
 
 
-def run(container_uri, command="", *, file_kwargs, kwargs, output_dir=None, output_file_keys=None):
+class PrintLogHandler:
+    def handle_stdout(self, log):
+        print("stdout", log)
+
+    def handle_stderr(self, log):
+        print("stderr", log)
+
+
+def _read_stdout(container, log_handler, output_buffer):
+    for log in container.logs(stdout=True, stderr=False, stream=True):
+        log_handler.handle_stdout(log)
+        output_buffer.write(log)
+
+
+def _read_stderr(container, log_handler):
+    for log in container.logs(stdout=False, stderr=True, stream=True):
+        log_handler.handle_stderr(log)
+
+
+def run(
+    container_uri,
+    command="",
+    *,
+    file_kwargs,
+    kwargs,
+    output_dir=None,
+    output_file_keys=None,
+    log_handler=None,
+):
     """
     kwargs will be passed to container as --key=value
     where value will be shell escaped
@@ -74,6 +108,9 @@ def run(container_uri, command="", *, file_kwargs, kwargs, output_dir=None, outp
     command is optional
     Iterate over key/values of results.
     """
+    if log_handler is None:
+        log_handler = PrintLogHandler()
+
     input_dir_map, final_file_kwargs = _convert_file_kwargs(file_kwargs)
     final_kwargs = copy.deepcopy(kwargs)
     final_kwargs.update(final_file_kwargs)
@@ -83,8 +120,24 @@ def run(container_uri, command="", *, file_kwargs, kwargs, output_dir=None, outp
     running_container = run_container(
         container_uri, final_command, input_dir_map, output_dir=output_dir
     )
-    for result in running_container.logs(stream=True):
-        yield from _parse_output(output_dir, result, output_file_keys).items()
+
+    output_buffer = io.BytesIO()
+    err_thread = threading.Thread(
+        target=_read_stdout,
+        name="stdout",
+        args=(running_container, log_handler, output_buffer),
+    )
+    out_thread = threading.Thread(
+        target=_read_stderr, name="stderr", args=(running_container, log_handler)
+    )
+    err_thread.start()
+    out_thread.start()
+
+    # TODO: timeouts here?
+    err_thread.join()
+    out_thread.join()
+    result = output_buffer.getvalue()
+    yield from _parse_output(output_dir, result, output_file_keys).items()
 
     running_container.remove()
 
@@ -93,14 +146,10 @@ def run_container(container_uri, command, inputdir_map=None, output_dir=None):
     client = docker.from_env()
     volumes = {}
     for inputdir, guest_input_dir in inputdir_map.items():
-        volumes[str(inputdir)] = {
-            'bind': str(guest_input_dir),
-            'mode': 'ro'}
+        volumes[str(inputdir)] = {"bind": str(guest_input_dir), "mode": "ro"}
     if output_dir:
         output_dir = Path(output_dir).resolve()
-        volumes[str(output_dir)] = {
-            'bind': str(GUEST_OUTPUT_DIR),
-            'mode': 'rw'}
+        volumes[str(output_dir)] = {"bind": str(GUEST_OUTPUT_DIR), "mode": "rw"}
         command = f" --output-dir {GUEST_OUTPUT_DIR} {command}"
 
     running_container = client.containers.run(
@@ -110,6 +159,6 @@ def run_container(container_uri, command, inputdir_map=None, output_dir=None):
         network_disabled=True,
         network_mode="none",
         remove=False,
-        detach=True
+        detach=True,
     )
     return running_container
