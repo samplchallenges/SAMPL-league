@@ -73,7 +73,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: sampl.settings_dev
 
       - name: Upload test coverage
-        uses: codecov/codecov-action@v2.0.2
+        uses: codecov/codecov-action@v2.0.3
         with:
           fail_ci_if_error: true
           directory: app/
