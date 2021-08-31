@@ -8,7 +8,6 @@ from django.db.models.fields.files import FieldFile
 
 from core import models
 
-
 logger = logging.getLogger(__name__)
 
 

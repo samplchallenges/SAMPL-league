@@ -1,11 +1,10 @@
 import copy
 import io
-from pathlib import Path
 import shlex
 import threading
+from pathlib import Path
 
 import docker
-
 
 GUEST_INPUT_DIR = Path("/mnt") / "inputs"
 GUEST_OUTPUT_DIR = Path("/mnt") / "outputs"
@@ -111,6 +110,11 @@ def run(
     if log_handler is None:
         log_handler = PrintLogHandler()
 
+    if not (
+        hasattr(log_handler, "handle_stdout") and hasattr(log_handler, "handle_stderr")
+    ):
+        raise TypeError("log_handler must have handle_stdout and handle_stderr methods")
+
     input_dir_map, final_file_kwargs = _convert_file_kwargs(file_kwargs)
     final_kwargs = copy.deepcopy(kwargs)
     final_kwargs.update(final_file_kwargs)
@@ -139,6 +143,9 @@ def run(
     result = output_buffer.getvalue()
     yield from _parse_output(output_dir, result, output_file_keys).items()
 
+    running_container.reload()
+    if running_container.status != "exited":
+        import pdb;pdb.set_trace()
     running_container.remove()
 
 

@@ -1,5 +1,6 @@
 import logging
 import os.path
+import time
 
 import django.contrib.auth.models as auth_models
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -273,6 +274,11 @@ class InputValue(ValueParentMixin):
             )
 
 
+def _timestamped_log(log):
+    return " ".join([time.strftime("[%c %Z]", time.gmtime()),
+                     log.decode("utf-8")])
+
+
 class Evaluation(Timestamped):
     submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
@@ -282,21 +288,28 @@ class Evaluation(Timestamped):
     log_stdout = models.TextField(blank=True)
     log_stderr = models.TextField(blank=True)
 
+    log_handler = None
+
     class Meta:
         unique_together = ["submission_run", "input_element"]
 
+    class LogHandler:
+        def __init__(self, evaluation):
+            self.evaluation = evaluation
+
+        def handle_stdout(self, log):
+            self.evaluation.append(stdout=_timestamped_log(log))
+            self.evaluation.save(update_fields=["log_stdout"])
+
+        def handle_stderr(self, log):
+            self.evaluation.append(stderr=_timestamped_log(log))
+            self.evaluation.save(update_fields=["log_stderr"])
+
     def append(self, stdout=None, stderr=None):
         if stdout is not None:
-            self.log_stdout = Concat(
-                models.F("log_stdout"), models.Value("\n" + stdout)
-            )
+            self.log_stdout = Concat(models.F("log_stdout"), models.Value(stdout))
         if stderr is not None:
-            self.log_stderr = Concat(
-                models.F("log_stderr"), models.Value("\n" + stderr)
-            )
-
-    def update_logs(self):
-        self.save(update_fields=("log_stdout", "log_stderr"))
+            self.log_stderr = Concat(models.F("log_stderr"), models.Value(stderr))
 
     def mark_started(self, kwargs, file_kwargs):
         self.append(

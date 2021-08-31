@@ -139,6 +139,7 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
                 file_kwargs=file_kwargs,
                 output_dir=output_dir,
                 output_file_keys=output_file_keys,
+                log_handler=models.Evaluation.LogHandler(evaluation),
             )
 
             for key, value in parsed_results:
