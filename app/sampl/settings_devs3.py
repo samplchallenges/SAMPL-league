@@ -20,7 +20,6 @@ LOGGING = {
             "class": "logging.FileHandler",
             "filename": "sampl.log",
         },
-            
     },
     "root": {
         "handlers": ["console"],

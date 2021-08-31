@@ -1,6 +1,7 @@
 import copy
 import io
 import shlex
+import sys
 import threading
 from pathlib import Path
 
@@ -126,12 +127,12 @@ def run(
     )
 
     output_buffer = io.BytesIO()
-    err_thread = threading.Thread(
+    out_thread = threading.Thread(
         target=_read_stdout,
         name="stdout",
         args=(running_container, log_handler, output_buffer),
     )
-    out_thread = threading.Thread(
+    err_thread = threading.Thread(
         target=_read_stderr, name="stderr", args=(running_container, log_handler)
     )
     err_thread.start()
@@ -145,7 +146,7 @@ def run(
 
     running_container.reload()
     if running_container.status != "exited":
-        import pdb;pdb.set_trace()
+        print(f"Container status is {running_container.status}", file=sys.stderr)
     running_container.remove()
 
 

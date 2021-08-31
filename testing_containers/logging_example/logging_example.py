@@ -61,7 +61,7 @@ def calc_coords(output_dir, molfile, smiles, smiles_arg):
 
     if molfile:
         mol = Chem.MolFromMolFile(molfile)
-        _mprintinfo(mol)
+        _printinfo(mol)
         return 0
     if not smiles:
         smiles = smiles_arg

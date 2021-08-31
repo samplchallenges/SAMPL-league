@@ -152,12 +152,16 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
                     prediction.save()
                 else:
                     evaluation.append(stderr=f"Ignoring key {key} with value {value}")
-
-        scoring.score_evaluation(
-            challenge.scoremaker.container,
-            evaluation,
-            evaluation_score_types,
-        )
+        try:
+            scoring.score_evaluation(
+                challenge.scoremaker.container,
+                evaluation,
+                evaluation_score_types,
+            )
+        except Exception as exc:
+            evaluation.append(stderr="Error scoring\n" f"{exc}")
+            evaluation.save(update_fields=["log_stderr"])
+            raise
         evaluation.status = models.Status.SUCCESS
     except Exception as exc:
         evaluation.status = models.Status.FAILURE

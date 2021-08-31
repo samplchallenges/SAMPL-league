@@ -38,13 +38,16 @@ def _build_kwargs(evaluation):
         input_element.answerkey_set.all()
     )
 
-    assert len(predictions_by_key) == len(
-        answer_keys
-    ), "Error: number of predictions doesn't match answer keys, cannot score"
+    assert len(predictions_by_key) == len(answer_keys), (
+        f"Error: number of predictions ({len(predictions_by_key)}) "
+        f"doesn't match answer keys ({len(answer_keys)}) , cannot score"
+    )
 
-    assert len(file_predictions_by_key) == len(
-        file_answer_keys
-    ), "Error: number of file predictions doesn't match answer keys, cannot score"
+    assert len(file_predictions_by_key) == len(file_answer_keys), (
+        f"Error: number of file predictions ({len(file_predictions_by_key)}) "
+        f"doesn't match answer keys ({len(file_answer_keys)}) , cannot score"
+    )
+
     score_args = {
         key: AnswerPredictionPair(answer_value, predictions_by_key[key])
         for key, answer_value in answer_keys.items()
@@ -62,9 +65,15 @@ def _build_kwargs(evaluation):
 def score_evaluation(container, evaluation, evaluation_score_types):
     kwargs, file_kwargs = _build_kwargs(evaluation)
     command = "score-evaluation"
-    logger.info("%s %s", container.uri, command)
+    evaluation.append(stdout=f"Scoring with {container.uri} {command}")
+    evaluation.save(update_fields=["log_stdout"])
+
     for key, score_value in ever_given.wrapper.run(
-        container.uri, command, file_kwargs=file_kwargs, kwargs=kwargs
+        container.uri,
+        command,
+        file_kwargs=file_kwargs,
+        kwargs=kwargs,
+        log_handler=models.Evaluation.LogHandler(evaluation),
     ):
         if key in evaluation_score_types:
             models.EvaluationScore.objects.create(

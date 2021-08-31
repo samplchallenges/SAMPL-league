@@ -22,6 +22,7 @@ class Status(models.TextChoices):
     FAILURE = "FAILURE"
     SUCCESS = "SUCCESS"
     PENDING = "PENDING"
+    RUNNING = "RUNNING"
 
 
 class Timestamped(models.Model):
@@ -275,8 +276,7 @@ class InputValue(ValueParentMixin):
 
 
 def _timestamped_log(log):
-    return " ".join([time.strftime("[%c %Z]", time.gmtime()),
-                     log.decode("utf-8")])
+    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
 
 
 class Evaluation(Timestamped):
@@ -295,15 +295,21 @@ class Evaluation(Timestamped):
 
     class LogHandler:
         def __init__(self, evaluation):
-            self.evaluation = evaluation
+            self.evaluation_id = evaluation.pk
 
         def handle_stdout(self, log):
-            self.evaluation.append(stdout=_timestamped_log(log))
-            self.evaluation.save(update_fields=["log_stdout"])
+            Evaluation.objects.filter(pk=self.evaluation_id).update(
+                log_stdout=Concat(
+                    models.F("log_stdout"), models.Value(_timestamped_log(log))
+                )
+            )
 
         def handle_stderr(self, log):
-            self.evaluation.append(stderr=_timestamped_log(log))
-            self.evaluation.save(update_fields=["log_stderr"])
+            Evaluation.objects.filter(pk=self.evaluation_id).update(
+                log_stderr=Concat(
+                    models.F("log_stderr"), models.Value(_timestamped_log(log))
+                )
+            )
 
     def append(self, stdout=None, stderr=None):
         if stdout is not None:
@@ -313,11 +319,13 @@ class Evaluation(Timestamped):
 
     def mark_started(self, kwargs, file_kwargs):
         self.append(
+            stdout="Started\n"
             f"Input element: {self.input_element}\n"
             f"kwargs: {kwargs}\n"
             f"file_kwargs: {file_kwargs}\n"
         )
-        self.update_logs()
+        self.status = Status.RUNNING
+        self.save()
 
     def __str__(self):
         return f"{self.submission_run}:, status {self.status}"
