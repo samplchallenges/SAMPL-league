@@ -62,6 +62,9 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
             .order_by("-updated_at")
             .first()
         )
+        completed, not_completed = context["public_run"].completion()
+        context["public_completed"] = completed
+        context["public_not_completed"] = not_completed
         context["private_run"] = (
             self.object.submissionrun_set.filter(is_public=False)
             .order_by("-updated_at")

@@ -177,6 +177,16 @@ class SubmissionRun(Timestamped):
         return f"{self.submission}:{self.digest}, status {self.status}"
 
 
+    def completion(self):
+        status_counts = {
+            row['status']: row['id__count']
+            for row in
+            self.evaluation_set.all().values('status').annotate(models.Count('id'))}
+        completed = status_counts.get(Status.SUCCESS, 0) + status_counts.get(Status.FAILURE, 0)
+        other = status_counts.get(Status.PENDING, 0) + status_counts.get(Status.RUNNING, 0)
+        return completed, other
+        
+    
 class InputElement(Timestamped):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
