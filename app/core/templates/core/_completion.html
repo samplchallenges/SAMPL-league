@@ -1,0 +1,3 @@
+<div class="progress">
+      <div class="progress-bar" role="progressbar" style="width: {% widthratio completion.completed_frac 1 100 %}%" aria-valuenow="{{ completion.completed }} " aria-valuemin="0" aria-valuemax="{{ completion.completed|add:completion.not_completed }}"></div>
+    </div>

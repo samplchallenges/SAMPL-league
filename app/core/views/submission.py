@@ -13,6 +13,8 @@ import referee.tasks
 from ..forms import ContainerForm, SubmissionForm
 from ..models import Submission
 
+# pylint: disable=too-many-ancestors
+
 
 class OwnerMatchMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
@@ -28,12 +30,9 @@ class OwnerMatchMixin(LoginRequiredMixin, UserPassesTestMixin):
         return obj.user == self.request.user
 
 
-# pylint: disable=too-many-ancestors
-
-
 class SubmissionDetail(OwnerMatchMixin, DetailView):
     model = Submission
-    # context_object_name = 'submission'
+
     DETAIL_FIELD_NAMES = (
         "ranked",
         "category",
@@ -62,14 +61,13 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
             .order_by("-updated_at")
             .first()
         )
-        completed, not_completed = context["public_run"].completion()
-        context["public_completed"] = completed
-        context["public_not_completed"] = not_completed
+        context["public_completion"] = context["public_run"].completion()
         context["private_run"] = (
             self.object.submissionrun_set.filter(is_public=False)
             .order_by("-updated_at")
             .first()
         )
+        context["private_completion"] = context["private_run"].completion()
         return context
 
 

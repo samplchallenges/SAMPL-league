@@ -18,64 +18,21 @@
 <div class="card">
   <div class="card-body">
     <h5 class="card-title">Public run</h5>
-    <br>Key: {{ public_run.digest }}
+    <!-- <br>Key: {{ public_run.digest }} -->
     <br>Status: {{ public_run.status }}
-    <br>Status: {{ public_status }}
-    <div class="progress">
-      <div class="progress-bar" role="progressbar" style="width: {{ public_completed * 100.0 / (public_completed + public_not_completed) }}%" aria-valuenow="{{ public_completed }} " aria-valuemin="0" aria-valuemax="{{ public_completed + public_not_completed }}"></div>
-    </div>
-  </div>
-</div>
-
-<div class="card-deck">
-  {% for evaluation in public_run.evaluation_set.all %}  
-  <div class="card">
-    <div class="card-body">
-      <h5 class="card-title">{{evaluation.input_element}}</h5>
-      <p class="card-text">
-        Predictions:
-        <dl>
-          {% for prediction in evaluation.prediction_set.all %}
-          <dt>{{ prediction.value_type.key }}</dt>
-            <dd> {{ prediction.value }}</dd>
-          {% endfor %}
-        </dl>
-    </p>
-    {% if evaluation.log_stderr %}
-    <p class="card-text">
-      <h6>Error Output</h6>
-      <pre>
-        {{ evaluation.log_stderr }}
-      </pre>
-    </p>
-    {% endif %}
-    {% if evaluation.log_stdout %}
-    <p class="card-text">
-      <h6>Logging Output</h6>
-      <pre>
-        {{ evaluation.log_stdout }}
-      </pre>
-    </p>
-    {% endif %}
-    </div>
-    <div class="card-footer"><h6>Scores</h6>
-      <dl>
-        {% for score in evaluation.scores.all %}
-        <dt>{{ score.score_type }}</dt>
-        <dd>{{ score.value }}</dd>
-        {% endfor %}
-      </dl>
-    </div>
-  </div>
+    {% include "core/_completion.html" with completion=public_completion only %}
+    <ul>
+  {% for evaluation in public_run.evaluation_set.all %}
+    <li> <a href="{% url 'evaluation-detail' evaluation.pk %}">{{ evaluation.input_element.name }}</a> ({{evaluation.status}})</li>
   {% endfor %}
+    <ul>
+  </div>
 </div>
 {% endif %}
 
 {% if private_run %}
-  Private run status: {{ private_run.status }}
-  <div class="progress">
-    <div class="progress-bar" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-</div>
+Private run status: {{ private_run.status }}
+{% include "core/_completion.html" with completion=private_completion only %}
 {% endif %}
 
 <div class="card">

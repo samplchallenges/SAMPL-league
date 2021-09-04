@@ -1,6 +1,7 @@
 import logging
 import os.path
 import time
+from collections import namedtuple
 
 import django.contrib.auth.models as auth_models
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -16,6 +17,9 @@ from django.utils.translation import gettext_lazy as _
 from . import configurator, filecache
 
 logger = logging.getLogger(__name__)
+
+
+Completion = namedtuple("Completion", ["completed", "not_completed", "completed_frac"])
 
 
 class Status(models.TextChoices):
@@ -176,17 +180,17 @@ class SubmissionRun(Timestamped):
     def __str__(self):
         return f"{self.submission}:{self.digest}, status {self.status}"
 
-
     def completion(self):
-        status_counts = {
-            row['status']: row['id__count']
-            for row in
-            self.evaluation_set.all().values('status').annotate(models.Count('id'))}
-        completed = status_counts.get(Status.SUCCESS, 0) + status_counts.get(Status.FAILURE, 0)
-        other = status_counts.get(Status.PENDING, 0) + status_counts.get(Status.RUNNING, 0)
-        return completed, other
-        
-    
+        completed = self.evaluation_set.filter(
+            status__in=(Status.SUCCESS, Status.FAILURE)
+        ).count()
+        num_element_ids = self.submission.challenge.inputelement_set.filter(
+            is_public=self.is_public
+        ).count()
+        completed_frac = completed / num_element_ids if num_element_ids else 0
+        return Completion(completed, num_element_ids, completed_frac)
+
+
 class InputElement(Timestamped):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
