@@ -11,7 +11,7 @@ import referee
 import referee.tasks
 
 from ..forms import ContainerForm, SubmissionForm
-from ..models import Submission
+from ..models import Submission, Challenge
 
 # pylint: disable=too-many-ancestors
 
@@ -61,13 +61,15 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
             .order_by("-updated_at")
             .first()
         )
-        context["public_completion"] = context["public_run"].completion()
+        if context["public_run"]:
+            context["public_completion"] = context["public_run"].completion()
         context["private_run"] = (
             self.object.submissionrun_set.filter(is_public=False)
             .order_by("-updated_at")
             .first()
         )
-        context["private_completion"] = context["private_run"].completion()
+        if context["private_run"]:
+            context["private_completion"] = context["private_run"].completion()
         return context
 
 
@@ -140,7 +142,11 @@ def edit_submission_view(request, pk=None, clone=False):
             container_form = ContainerForm(instance=submission.container)
             submission_form = SubmissionForm(instance=submission)
         else:
-            container_form = ContainerForm()
+            initial_values = {}
+            if "challenge_id" in request.GET:
+                initial_values["challenge"] = request.GET["challenge_id"]
+
+            container_form = ContainerForm(initial=initial_values)
             submission_form = SubmissionForm()
     else:
         return HttpResponseBadRequest()

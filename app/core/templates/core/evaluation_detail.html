@@ -1,9 +1,17 @@
 {% extends 'layout.html' %}
 {% block content %}
-<a href="{% url 'submission-detail' evaluation.submission_run.submission.pk %}">Back to submission detail</a>
-
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'challenge-detail' challenge.pk %}">Challenge: {{ challenge.name }}</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'submission-detail' submission.pk %}">Submission: {{ submission.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Evaluation: {{ evaluation.input_element.name }}</li> 
+  </ol>
+</nav>
+  
 <div class="card">
-  <div class="card-header">Status: {{ evaluation.status }}</div>
+  <div class="card-header">
+    {% include 'core/_status_refresh.html' with status=evaluation.status is_finished=evaluation.is_finished only %}
+  </div>
   <div class="card-body">
     <h5 class="card-title">{{evaluation.input_element.name}}</h5>
 

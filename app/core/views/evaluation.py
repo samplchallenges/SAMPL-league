@@ -16,6 +16,15 @@ class EvaluationUserTestMixin(LoginRequiredMixin, UserPassesTestMixin):
 class EvaluationDetail(EvaluationUserTestMixin, DetailView):
     model = Evaluation
 
+    def get_queryset(self):
+        return super().get_queryset().select_related("submission_run__submission__challenge")
+
+    def get_context_data(self, **kwargs):
+         context = super().get_context_data(**kwargs)
+         context["submission"] = context["evaluation"].submission_run.submission
+         context["challenge"] = context["submission"].challenge
+         return context
+
 
 class EvaluationLog(EvaluationUserTestMixin, DetailView):
     model = Evaluation

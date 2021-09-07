@@ -1,13 +1,21 @@
 {% extends 'layout.html' %}
 {% block content %}
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'challenge-detail' submission.challenge.pk %}">Challenge: {{ submission.challenge.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Submission: {{ submission.name }}</li>
+  </ol>
+</nav>
+
 <h1>{{ submission.name }}</h1>
 <a class="btn btn-secondary" href="{% url 'submission-clone' submission.pk %}">Use as template</a>
 {% if submission.draft_mode %}
-<div class="alert alert-secondary">
+<div class="alert alert-secondary mt-2">
   Draft mode <a class="btn btn-primary" href="{% url 'submission-update' submission.pk %}">Update</a>
 </div>
 {% endif %}
-<form method="post" action="{% url 'submission-submit' submission.pk %}">
+<form method="post" action="{% url 'submission-submit' submission.pk %}" class="mb-2">
   {% csrf_token %}
   <input type="hidden" name="submission_id" value="{{ submission.pk }}">
   <button type="submit" class="btn btn-primary">Run Submission</button>
@@ -15,12 +23,12 @@
 
 {% if public_run %}
 
-<div class="card">
+<div class="card my-2">
   <div class="card-body">
     <h5 class="card-title">Public run</h5>
     <!-- <br>Key: {{ public_run.digest }} -->
-    <br>Status: {{ public_run.status }}
-    {% include "core/_completion.html" with completion=public_completion only %}
+    <br>{% include 'core/_status_refresh.html' with status=public_run.status is_finished=public_run.is_finished only %}
+    {% include 'core/_completion.html' with completion=public_completion only %}
     <ul>
   {% for evaluation in public_run.evaluation_set.all %}
     <li> <a href="{% url 'evaluation-detail' evaluation.pk %}">{{ evaluation.input_element.name }}</a> ({{evaluation.status}})</li>
@@ -31,11 +39,16 @@
 {% endif %}
 
 {% if private_run %}
-Private run status: {{ private_run.status }}
-{% include "core/_completion.html" with completion=private_completion only %}
+<div class="card my-2">
+  <div class="card-body">
+    <h5 class="card-title">Private Run</h5>
+    {% include 'core/_status_refresh.html' with status=private_run.status is_finished=private_run.is_finished only %}
+    {% include "core/_completion.html" with completion=private_completion only %}
+  </div>
+</div>
 {% endif %}
 
-<div class="card">
+<div class="card mb-2">
   <div class="card-body">
     <h5 class="card-title">Container: {{ container.name }}</h5>
     <p class="card-text">Registry: {{ container.registry }}</p>
@@ -55,7 +68,7 @@ Private run status: {{ private_run.status }}
 </div>
 <h2>Submission details</h2>
 {% for field_name, field_value in submission_details %}
-<div class="card">
+<div class="card mb-2">
   <div class="card-body">
     <h5 class="card-title">{{ field_name }}</h5>
     <p class="card-text">{{ field_value }}</p>
@@ -63,7 +76,7 @@ Private run status: {{ private_run.status }}
 </div>
 {% endfor %}
 {% if missing_fields %}
-<div class="card">
+<div class="card mb-4">
   <div class="card-body">
     <h5 class="card-title">Missing values</h5>
 

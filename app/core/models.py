@@ -29,6 +29,11 @@ class Status(models.TextChoices):
     RUNNING = "RUNNING"
 
 
+class StatusMixin:
+    def is_finished(self):
+        return self.status in (Status.SUCCESS, Status.FAILURE)
+
+
 class Timestamped(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -164,7 +169,7 @@ class Submission(Timestamped):
         return self
 
 
-class SubmissionRun(Timestamped):
+class SubmissionRun(Timestamped, StatusMixin):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
     is_public = models.BooleanField(default=False)
@@ -286,7 +291,7 @@ def _timestamped_log(log):
     return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
 
 
-class Evaluation(Timestamped):
+class Evaluation(Timestamped, StatusMixin):
     submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
     status = models.CharField(
