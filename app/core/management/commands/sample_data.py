@@ -108,11 +108,11 @@ class Command(BaseCommand):
         foo_url = "https://foo.com"
         challenge, _ = models.Challenge.objects.get_or_create(
             name=options["name"],
-            defaults = {
+            defaults={
                 "start_at": timezone.now(),
                 "end_at": timezone.now(),
                 "repo_url": foo_url,
-            }
+            },
         )
 
         container = models.Container.objects.create(

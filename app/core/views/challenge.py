@@ -9,8 +9,11 @@ class ChallengeDetail(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["submissions"] = context["challenge"].submission_set.filter(user=self.request.user).all()
+        context["submissions"] = (
+            context["challenge"].submission_set.filter(user=self.request.user).all()
+        )
         return context
+
 
 class ChallengeList(ListView):
     model = Challenge
