@@ -46,11 +46,6 @@ def challenge_factory(db):
             start_at=start_at,
             end_at=end_at,
             repo_url=empty_url,
-            sample_data_url=empty_url,
-            sample_score_reference_url=empty_url,
-            secret_data_url=empty_url,
-            secret_score_reference_url=empty_url,
-            execution_options_json={},
         )
         challenge.save()
         return challenge

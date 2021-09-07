@@ -39,17 +39,10 @@ class Timestamped(models.Model):
 
 
 class Challenge(Timestamped):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
     repo_url = models.URLField()
-    # Data stored in S3 - privileges on S3 buckets will help
-    # prevent leakage of secret data
-    sample_data_url = models.URLField()
-    sample_score_reference_url = models.URLField()
-    secret_data_url = models.URLField()
-    secret_score_reference_url = models.URLField()
-    execution_options_json = models.JSONField()
 
     __output_types_dict = None
 
