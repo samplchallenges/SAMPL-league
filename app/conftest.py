@@ -59,7 +59,15 @@ def config_factory(challenge_factory, container_factory, db):
     Create a challenge and related objects for testing
     """
 
-    def maker(challenge_name, label, score_label, input_key, input_model, output_key, output_model):
+    def maker(
+        challenge_name,
+        label,
+        score_label,
+        input_key,
+        input_model,
+        output_key,
+        output_model,
+    ):
         challenge = challenge_factory(challenge_name)
         scoring_container = container_factory(challenge, score_label, tag="latest")
         models.ScoreMaker.objects.create(
