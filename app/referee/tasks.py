@@ -125,7 +125,8 @@ def run_element(submission_id, element_id, submission_run_id, is_public):
 
     kwargs, file_kwargs = element.all_values()
     evaluation.mark_started(kwargs, file_kwargs)
-
+    kwargs.update(submission.custom_args())
+    file_kwargs.update(submission.custom_file_args())
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
