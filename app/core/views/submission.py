@@ -11,7 +11,7 @@ import referee
 import referee.tasks
 
 from ..forms import ContainerForm, SubmissionForm
-from ..models import Challenge, Submission
+from ..models import Submission
 
 # pylint: disable=too-many-ancestors
 
