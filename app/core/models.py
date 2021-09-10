@@ -182,7 +182,7 @@ class Submission(Timestamped):
 def _submission_file_location(instance, filename):
     return os.path.join(
         "submission_args",
-        instance.submission.user.id,
+        instance.submission.user_id,
         instance.submission.id,
         instance.key,
     )

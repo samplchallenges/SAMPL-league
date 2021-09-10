@@ -104,3 +104,30 @@ def test_load_prediction_file(
             challenge, evaluation, coordsfile_type, output_path
         )
         assert mock_field_file_save.call_count == 1
+
+
+@pytest.fixture
+def custom_string_arg(draft_submission, db):
+    return models.SubmissionArg.objects.create(
+        submission=draft_submission, key="stringarg", value="hello world"
+    )
+
+
+@pytest.fixture
+def custom_file_arg(draft_submission, testing_data_path, db):
+    filepath = os.path.join(testing_data_path, "ChEBI_16716.mdl")
+    return models.SubmissionArg.objects.create(
+        submission=draft_submission,
+        key="filearg",
+        value=models.SubmissionArg.file_value.to_python(filepath),
+    )
+
+
+def test_submission_arg(draft_submission, custom_string_arg, custom_file_arg):
+    assert draft_submission.custom_args() == {"stringarg": "hello world"}
+
+    assert draft_submission.custom_file_args() == {
+        "filearg": "submission_args/{}/{}/filearg".format(
+            draft_submission.user_id, draft_submission.id
+        )
+    }
