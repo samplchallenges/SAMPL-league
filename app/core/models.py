@@ -1,6 +1,7 @@
 import logging
 import os.path
 import time
+from collections import namedtuple
 
 import django.contrib.auth.models as auth_models
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -18,11 +19,19 @@ from . import configurator, filecache
 logger = logging.getLogger(__name__)
 
 
+Completion = namedtuple("Completion", ["completed", "not_completed", "completed_frac"])
+
+
 class Status(models.TextChoices):
     FAILURE = "FAILURE"
     SUCCESS = "SUCCESS"
     PENDING = "PENDING"
     RUNNING = "RUNNING"
+
+
+class StatusMixin:
+    def is_finished(self):
+        return self.status in (Status.SUCCESS, Status.FAILURE)
 
 
 class Timestamped(models.Model):
@@ -35,17 +44,10 @@ class Timestamped(models.Model):
 
 
 class Challenge(Timestamped):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
     repo_url = models.URLField()
-    # Data stored in S3 - privileges on S3 buckets will help
-    # prevent leakage of secret data
-    sample_data_url = models.URLField()
-    sample_score_reference_url = models.URLField()
-    secret_data_url = models.URLField()
-    secret_score_reference_url = models.URLField()
-    execution_options_json = models.JSONField()
 
     __output_types_dict = None
 
@@ -167,7 +169,7 @@ class Submission(Timestamped):
         return self
 
 
-class SubmissionRun(Timestamped):
+class SubmissionRun(Timestamped, StatusMixin):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
     is_public = models.BooleanField(default=False)
@@ -175,6 +177,16 @@ class SubmissionRun(Timestamped):
 
     def __str__(self):
         return f"{self.submission}:{self.digest}, status {self.status}"
+
+    def completion(self):
+        completed = self.evaluation_set.filter(
+            status__in=(Status.SUCCESS, Status.FAILURE)
+        ).count()
+        num_element_ids = self.submission.challenge.inputelement_set.filter(
+            is_public=self.is_public
+        ).count()
+        completed_frac = completed / num_element_ids if num_element_ids else 0
+        return Completion(completed, num_element_ids, completed_frac)
 
 
 class InputElement(Timestamped):
@@ -279,7 +291,7 @@ def _timestamped_log(log):
     return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
 
 
-class Evaluation(Timestamped):
+class Evaluation(Timestamped, StatusMixin):
     submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
     status = models.CharField(

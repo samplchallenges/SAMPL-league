@@ -1,4 +1,26 @@
 {% extends 'layout.html' %}
 {% block content %}
-{{ object }}
+<div class="card">
+  <div class="card-header">Challenge</div>
+  <div class="card-body">
+    <h5 class="card-title">{{ challenge.name }}</h5>
+    <h6 class="card-subtitle mb-2 text-muted">More details at <a href="{{ challenge.repo_url }}">{{ challenge.repo_url }}</a></h6>
+    <p class="card-text">
+      Active from {{ challenge.start_at }} to {{ challenge.end_at }}
+    </p>
+
+    <p class="card-text">
+      <a class="btn btn-primary" role="button" href="{% url 'submission-add' %}?challenge_id={{ challenge.pk }}">New Submission</a>
+      {% if submissions %}
+      <h5>Your submissions</h5>
+      <ul>
+        {% for submission in submissions %}
+        <li> {% include 'core/_submission_list_elem.html' with submission=submission only %}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </p>
+
+  </div>
+</div>
 {% endblock %}

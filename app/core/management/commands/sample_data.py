@@ -106,29 +106,22 @@ class Command(BaseCommand):
             username="milo", email="braxton.robbason@gmail.com"
         )
         foo_url = "https://foo.com"
-        challenge = models.Challenge.objects.create(
+        challenge, _ = models.Challenge.objects.get_or_create(
             name=options["name"],
-            start_at=timezone.now(),
-            end_at=timezone.now(),
-            repo_url=foo_url,
-            sample_data_url=foo_url,
-            sample_score_reference_url=foo_url,
-            secret_data_url=foo_url,
-            secret_score_reference_url=foo_url,
-            execution_options_json={"foo": "bar"},
+            defaults={
+                "start_at": timezone.now(),
+                "end_at": timezone.now(),
+                "repo_url": foo_url,
+            },
         )
 
         container = models.Container.objects.create(
             name="crate",
             user=user,
             challenge=challenge,
-            # ghcr.io/robbason/calc-molwt:latest
             registry="ghcr.io",
             label="robbason/calc-coords",
             tag="latest",
-            # registry="docker.io",
-            # label="mmh42/calc-molwt",
-            # tag="0.1",
         )
 
         scoring_container = models.Container.objects.create(
