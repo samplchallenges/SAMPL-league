@@ -147,12 +147,14 @@ class Submission(Timestamped):
         return reverse("submission", kwargs={"pk": self.pk})
 
     def custom_args(self):
-        return {arg.key: arg.string_value for arg in self.args if arg.string_value}
+        return {
+            arg.key: arg.string_value for arg in self.args.all() if arg.string_value
+        }
 
     def custom_file_args(self):
         return {
             arg.key: filecache.ensure_local_copy(arg.file_value)
-            for arg in self.args
+            for arg in self.args.all()
             if arg.file_value
         }
 
@@ -182,8 +184,8 @@ class Submission(Timestamped):
 def _submission_file_location(instance, filename):
     return os.path.join(
         "submission_args",
-        instance.submission.user_id,
-        instance.submission.id,
+        str(instance.submission.user_id),
+        str(instance.submission.id),
         instance.key,
     )
 

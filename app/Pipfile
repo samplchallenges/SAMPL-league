@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "3.2.6"
+django = "*"
 psycopg2-binary = "*"
 django-crispy-forms = "*"
 django-storages = "*"
@@ -13,7 +13,7 @@ dask = "*"
 distributed = "*"
 docker = "*"
 six = "*"
-ever-given = "0.0.4"
+ever-given = "0.0.5"
 sampl = {path = "."}
 rollbar = "*"
 jupyterlab = "*"
@@ -31,4 +31,4 @@ pytest-cov = "*"
 pytest-xdist = {extras = ["psutil"], version = "*"}
 
 [requires]
-python_version = "3.8"
+python_version = "3"

@@ -7,6 +7,8 @@ import pytest
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 from django.db import models as django_models
 
 from core import models
@@ -109,17 +111,18 @@ def test_load_prediction_file(
 @pytest.fixture
 def custom_string_arg(draft_submission, db):
     return models.SubmissionArg.objects.create(
-        submission=draft_submission, key="stringarg", value="hello world"
+        submission=draft_submission, key="stringarg", string_value="hello world"
     )
 
 
 @pytest.fixture
 def custom_file_arg(draft_submission, testing_data_path, db):
-    filepath = os.path.join(testing_data_path, "ChEBI_16716.mdl")
     return models.SubmissionArg.objects.create(
         submission=draft_submission,
         key="filearg",
-        value=models.SubmissionArg.file_value.to_python(filepath),
+        file_value=SimpleUploadedFile(
+            "example.txt", b"these are the contents of the txt file"
+        ),
     )
 
 
@@ -127,7 +130,10 @@ def test_submission_arg(draft_submission, custom_string_arg, custom_file_arg):
     assert draft_submission.custom_args() == {"stringarg": "hello world"}
 
     assert draft_submission.custom_file_args() == {
-        "filearg": "submission_args/{}/{}/filearg".format(
-            draft_submission.user_id, draft_submission.id
+        "filearg": os.path.join(
+            settings.MEDIA_ROOT,
+            "submission_args/{}/{}/filearg".format(
+                draft_submission.user_id, draft_submission.id
+            ),
         )
     }
