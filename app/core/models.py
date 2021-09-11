@@ -27,6 +27,7 @@ class Status(models.TextChoices):
     SUCCESS = "SUCCESS"
     PENDING = "PENDING"
     RUNNING = "RUNNING"
+    CANCELLED = "CANCELLED"
 
 
 class StatusMixin:
