@@ -172,7 +172,7 @@ def molfile_type(challenge, db):
 
 @pytest.fixture
 def testing_data_path():
-    return os.path.join(os.path.dirname(__file__), "tests", "data")
+    return os.path.join(os.path.dirname(__file__), "core", "tests", "data")
 
 
 @pytest.fixture
