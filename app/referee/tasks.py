@@ -30,10 +30,10 @@ def run_and_score_submission(client, submission):
         element_ids = challenge.inputelement_set.filter(
             is_public=is_public
         ).values_list("id", flat=True)
-        run_id, prediction_ids = run_submission(
+        run_id, delayed_prediction_ids = build_submission_run(
             submission.pk, element_ids, delayed_conditional, is_public=is_public
         )
-        delayed_conditional = check_and_score(run_id, prediction_ids)
+        delayed_conditional = check_and_score(run_id, delayed_prediction_ids)
 
     future = client.submit(delayed_conditional.compute)  # pylint:disable=no-member
     logger.info("Future key: %s", future.key)
@@ -58,11 +58,7 @@ def check_and_score(submission_run_id, prediction_ids):
     return True
 
 
-@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def create_submission_run(submission_id, conditional, *, is_public):
-    # conditional will be a dask delayed; if it's false, the run_evaluation will no-op
-    if not conditional:
-        return
+def create_submission_run(submission_id, *, is_public):
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     if not container.digest:
@@ -81,11 +77,10 @@ def create_submission_run(submission_id, conditional, *, is_public):
     return submission_run.id
 
 
-def run_submission(submission_id, element_ids, conditional, is_public=True):
+def build_submission_run(submission_id, element_ids, conditional, is_public=True):
 
-    submission_run_id = create_submission_run(
-        submission_id, conditional, is_public=is_public
-    )
+    submission_run_id = create_submission_run(submission_id, is_public=is_public)
+
     evaluations = [
         models.Evaluation.objects.create(
             input_element_id=element_id, submission_run_id=submission_run_id
@@ -99,17 +94,23 @@ def run_submission(submission_id, element_ids, conditional, is_public=True):
                 submission_id,
                 evaluation.id,
                 submission_run_id,
+                conditional=conditional,
                 is_public=is_public,
             )
             for evaluation in evaluations
         ],
-        nout=len(element_ids),
+        nout=len(evaluations),
     )
     return (submission_run_id, delayed_evaluation_runs)
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def run_evaluation(submission_id, evaluation_id, submission_run_id, is_public):
+def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional, is_public):
+    if not conditional:
+        models.Evaluation.objects.filter(pk=evaluation_id).update(
+            status=models.Status.CANCELLED
+        )
+        return
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     challenge = submission.challenge

@@ -39,6 +39,7 @@ def _run_and_check_evaluation(submission_run, evaluation):
         evaluation.id,
         submission_run.id,
         True,
+        True,
     )
     delayed.compute(scheduler="synchronous")
     assert submission_run.evaluation_set.count() == 1
@@ -145,10 +146,14 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
         challenge, benzene_from_mol, coordsfile_type, "Conformer3D_CID_241.mdl"
     )
 
-    delayed = tasks.run_element(
+    evaluation = models.Evaluation.objects.create(
+        input_element=benzene_from_mol, submission_run=submission_run
+    )
+    delayed = tasks.run_evaluation(
         submission_run.submission.id,
-        benzene_from_mol.id,
+        evaluation.id,
         submission_run.id,
+        True,
         True,
     )
     delayed.compute(scheduler="synchronous")
