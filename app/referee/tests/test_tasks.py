@@ -1,3 +1,4 @@
+import re
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
@@ -31,11 +32,11 @@ def test_run_and_score_submission():
     assert result
 
 
-def test_run_element_mol(molfile_molw_config, benzene_from_mol):
-    submission_run = molfile_molw_config.submission_run
-    delayed = tasks.run_element(
+def _run_and_check_evaluation(submission_run, evaluation):
+
+    delayed = tasks.run_evaluation(
         submission_run.submission.id,
-        benzene_from_mol.id,
+        evaluation.id,
         submission_run.id,
         True,
     )
@@ -44,7 +45,37 @@ def test_run_element_mol(molfile_molw_config, benzene_from_mol):
     evaluation = submission_run.evaluation_set.get()
     assert evaluation.status == models.Status.SUCCESS
     prediction = evaluation.prediction_set.get()
+    return prediction
+
+
+def test_run_element_mol(molfile_molw_config, benzene_from_mol):
+    submission_run = molfile_molw_config.submission_run
+    evaluation = models.Evaluation.objects.create(
+        input_element=benzene_from_mol, submission_run=submission_run
+    )
+
+    prediction = _run_and_check_evaluation(submission_run, evaluation)
     assert pytest.approx(prediction.value, 78.046950192)
+
+
+def test_run_element_custom(
+    molfile_molw_config, benzene_from_mol, submission_arg_factory
+):
+    submission_run = molfile_molw_config.submission_run
+    submission = submission_run.submission
+    submission_arg_factory(submission, key="stringarg", string_value="hello world")
+    submission_arg_factory(
+        submission, key="filearg", file_name="example.txt", file_body="Some text"
+    )
+    evaluation = models.Evaluation.objects.create(
+        input_element=benzene_from_mol, submission_run=submission_run
+    )
+    with pytest.raises(AssertionError) as excinfo:
+        _run_and_check_evaluation(submission_run, evaluation)
+
+    assert "number of predictions (0)" in str(excinfo.value)
+    evaluation.refresh_from_db()
+    assert "Error: No such option" in evaluation.log_stderr
 
 
 @pytest.fixture

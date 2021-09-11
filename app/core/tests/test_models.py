@@ -7,8 +7,6 @@ import pytest
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import SimpleUploadedFile
-
 from django.db import models as django_models
 
 from core import models
@@ -109,20 +107,19 @@ def test_load_prediction_file(
 
 
 @pytest.fixture
-def custom_string_arg(draft_submission, db):
-    return models.SubmissionArg.objects.create(
-        submission=draft_submission, key="stringarg", string_value="hello world"
+def custom_string_arg(submission_arg_factory, draft_submission):
+    return submission_arg_factory(
+        draft_submission, key="stringarg", string_value="hello world"
     )
 
 
 @pytest.fixture
-def custom_file_arg(draft_submission, testing_data_path, db):
-    return models.SubmissionArg.objects.create(
-        submission=draft_submission,
+def custom_file_arg(submission_arg_factory, draft_submission):
+    return submission_arg_factory(
+        draft_submission,
         key="filearg",
-        file_value=SimpleUploadedFile(
-            "example.txt", b"these are the contents of the txt file"
-        ),
+        file_name="example.txt",
+        file_body="these are the contents of the txt file",
     )
 
 
