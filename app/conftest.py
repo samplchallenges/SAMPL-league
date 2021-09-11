@@ -7,6 +7,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.files import File
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core import models
 
@@ -133,6 +134,25 @@ def container(container_factory, challenge):
         label="robbason/calc-molwt",
         tag="latest",
     )
+
+
+@pytest.fixture
+def submission_arg_factory(db):
+    def submission_arg_maker(
+        submission, key, string_value=None, file_name=None, file_body=None
+    ):
+        if file_name:
+            file_value = SimpleUploadedFile(file_name, file_body.encode())
+        else:
+            file_value = None
+        return models.SubmissionArg.objects.create(
+            submission=submission,
+            key=key,
+            file_value=file_value,
+            string_value=string_value,
+        )
+
+    return submission_arg_maker
 
 
 @pytest.fixture
