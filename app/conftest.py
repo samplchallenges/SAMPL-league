@@ -46,11 +46,6 @@ def challenge_factory(db):
             start_at=start_at,
             end_at=end_at,
             repo_url=empty_url,
-            sample_data_url=empty_url,
-            sample_score_reference_url=empty_url,
-            secret_data_url=empty_url,
-            secret_score_reference_url=empty_url,
-            execution_options_json={},
         )
         challenge.save()
         return challenge
@@ -64,8 +59,16 @@ def config_factory(challenge_factory, container_factory, db):
     Create a challenge and related objects for testing
     """
 
-    def maker(label, score_label, input_key, input_model, output_key, output_model):
-        challenge = challenge_factory("standard")
+    def maker(
+        challenge_name,
+        label,
+        score_label,
+        input_key,
+        input_model,
+        output_key,
+        output_model,
+    ):
+        challenge = challenge_factory(challenge_name)
         scoring_container = container_factory(challenge, score_label, tag="latest")
         models.ScoreMaker.objects.create(
             challenge=challenge, container=scoring_container
@@ -250,6 +253,7 @@ def file_answer_key_factory(testing_data_path, db):
 @pytest.fixture
 def molfile_molw_config(config_factory):
     return config_factory(
+        "molfile_molw",
         "robbason/calc-molwt",
         "robbason/score-coords",
         "molfile",
@@ -263,6 +267,7 @@ def molfile_molw_config(config_factory):
 @pytest.fixture
 def smiles_molw_config(config_factory):
     return config_factory(
+        "smiles_molw",
         "robbason/calc-molwt",
         "robbason/score-coords",
         "smiles",

@@ -7,15 +7,15 @@
 </div>
 <form method="post" class="form" action="{{ form_action }}">
   {% csrf_token %}
-  <div class="border container">
+  <div class="border container mt-2">
     <h2>Container</h2>
     {{ container_form|crispy }}
   </div>
-  <div class="border container">
+  <div class="border container mt-2">
     <h2>Submission Details</h2>
     {{ submission_form|crispy }}
   </div>
   
-  <button type="submit" class="btn btn-primary">Save Submission</button>
+  <button type="submit" class="btn btn-primary my-2">Save Submission</button>
 </form>
 {% endblock %}

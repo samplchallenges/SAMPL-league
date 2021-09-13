@@ -144,3 +144,18 @@ def test_run_submission(client):
         assert result
 
     cluster.close()
+
+    evaluation = public_run.evaluation_set.first()
+
+    evaluation_url = reverse("evaluation-detail", kwargs={"pk": evaluation.pk})
+
+    response = client.get(evaluation_url)
+    assert response.context["evaluation"].pk == evaluation.pk
+
+    log_url = reverse("evaluation-log-out", kwargs={"pk": evaluation.pk})
+    response = client.get(log_url)
+    assert response.context["log"] == evaluation.log_stdout
+
+    errlog_url = reverse("evaluation-log-err", kwargs={"pk": evaluation.pk})
+    response = client.get(errlog_url)
+    assert response.context["log"] == evaluation.log_stderr

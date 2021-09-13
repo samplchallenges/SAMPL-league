@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
-          pipenv install --dev
+          pipenv install --dev --deploy
       - name: Run test suite
         run: |
           pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given
@@ -73,7 +73,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: sampl.settings_dev
 
       - name: Upload test coverage
-        uses: codecov/codecov-action@v2.0.2
+        uses: codecov/codecov-action@v2.0.3
         with:
           fail_ci_if_error: true
           directory: app/

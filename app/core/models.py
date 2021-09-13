@@ -1,5 +1,7 @@
 import logging
 import os.path
+import time
+from collections import namedtuple
 
 import django.contrib.auth.models as auth_models
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -7,6 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
+from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -16,10 +19,19 @@ from . import configurator, filecache
 logger = logging.getLogger(__name__)
 
 
+Completion = namedtuple("Completion", ["completed", "not_completed", "completed_frac"])
+
+
 class Status(models.TextChoices):
     FAILURE = "FAILURE"
     SUCCESS = "SUCCESS"
     PENDING = "PENDING"
+    RUNNING = "RUNNING"
+
+
+class StatusMixin:
+    def is_finished(self):
+        return self.status in (Status.SUCCESS, Status.FAILURE)
 
 
 class Timestamped(models.Model):
@@ -32,17 +44,10 @@ class Timestamped(models.Model):
 
 
 class Challenge(Timestamped):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
     repo_url = models.URLField()
-    # Data stored in S3 - privileges on S3 buckets will help
-    # prevent leakage of secret data
-    sample_data_url = models.URLField()
-    sample_score_reference_url = models.URLField()
-    secret_data_url = models.URLField()
-    secret_score_reference_url = models.URLField()
-    execution_options_json = models.JSONField()
 
     __output_types_dict = None
 
@@ -164,7 +169,7 @@ class Submission(Timestamped):
         return self
 
 
-class SubmissionRun(Timestamped):
+class SubmissionRun(Timestamped, StatusMixin):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
     is_public = models.BooleanField(default=False)
@@ -172,6 +177,16 @@ class SubmissionRun(Timestamped):
 
     def __str__(self):
         return f"{self.submission}:{self.digest}, status {self.status}"
+
+    def completion(self):
+        completed = self.evaluation_set.filter(
+            status__in=(Status.SUCCESS, Status.FAILURE)
+        ).count()
+        num_element_ids = self.submission.challenge.inputelement_set.filter(
+            is_public=self.is_public
+        ).count()
+        completed_frac = completed / num_element_ids if num_element_ids else 0
+        return Completion(completed, num_element_ids, completed_frac)
 
 
 class InputElement(Timestamped):
@@ -272,7 +287,11 @@ class InputValue(ValueParentMixin):
             )
 
 
-class Evaluation(Timestamped):
+def _timestamped_log(log):
+    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
+
+
+class Evaluation(Timestamped, StatusMixin):
     submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
     status = models.CharField(
@@ -281,8 +300,44 @@ class Evaluation(Timestamped):
     log_stdout = models.TextField(blank=True)
     log_stderr = models.TextField(blank=True)
 
+    log_handler = None
+
     class Meta:
         unique_together = ["submission_run", "input_element"]
+
+    class LogHandler:
+        def __init__(self, evaluation):
+            self.evaluation_id = evaluation.pk
+
+        def handle_stdout(self, log):
+            Evaluation.objects.filter(pk=self.evaluation_id).update(
+                log_stdout=Concat(
+                    models.F("log_stdout"), models.Value(_timestamped_log(log))
+                )
+            )
+
+        def handle_stderr(self, log):
+            Evaluation.objects.filter(pk=self.evaluation_id).update(
+                log_stderr=Concat(
+                    models.F("log_stderr"), models.Value(_timestamped_log(log))
+                )
+            )
+
+    def append(self, stdout=None, stderr=None):
+        if stdout is not None:
+            self.log_stdout = Concat(models.F("log_stdout"), models.Value(stdout))
+        if stderr is not None:
+            self.log_stderr = Concat(models.F("log_stderr"), models.Value(stderr))
+
+    def mark_started(self, kwargs, file_kwargs):
+        self.append(
+            stdout="Started\n"
+            f"Input element: {self.input_element}\n"
+            f"kwargs: {kwargs}\n"
+            f"file_kwargs: {file_kwargs}\n"
+        )
+        self.status = Status.RUNNING
+        self.save()
 
     def __str__(self):
         return f"{self.submission_run}:, status {self.status}"
