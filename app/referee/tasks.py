@@ -105,7 +105,9 @@ def build_submission_run(submission_id, element_ids, conditional, is_public=True
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional, is_public):
+def run_evaluation(
+    submission_id, evaluation_id, submission_run_id, conditional, is_public
+):
     if not conditional:
         models.Evaluation.objects.filter(pk=evaluation_id).update(
             status=models.Status.CANCELLED
