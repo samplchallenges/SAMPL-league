@@ -1,0 +1,13 @@
+{% load crispy_forms_tags %}
+{% load crispy_forms_utils %}
+
+
+<div>
+  {{ formset.management_form|crispy }}
+</div>
+{% include "bootstrap4/errors_formset.html" %}
+<table class="arg-field"><tr><td>Key</td><td>String Value</td><td>File Value</td></tr>
+  {% for form in formset %}
+  <tr>{% include "core/arg_form.html" %}</tr>
+  {% endfor %}
+</table>
