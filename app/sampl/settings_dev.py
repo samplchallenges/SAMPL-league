@@ -4,6 +4,9 @@ from .base_settings import *  # lgtm [py/polluting-import]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+# If in debug mode, have crispy-forms raise errors
+# https://django-crispy-forms.readthedocs.io/en/latest/crispy_tag_forms.html#make-crispy-forms-fail-loud
+CRISPY_FAIL_SILENTLY = not DEBUG
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "7&gz49!+qmxwltqo*!_g$n+i)%qcn9c^%2kbwzlnwiuofj29!%"
