@@ -2,6 +2,7 @@ import io
 import queue
 import threading
 
+
 def process_messages(running_container, log_handler):
     if log_handler is None:
         log_handler = PrintLogHandler()
@@ -26,7 +27,8 @@ def process_messages(running_container, log_handler):
     out_thread.start()
 
     while (err_thread.is_alive() or out_thread.is_alive()) or not (
-            err_message_queue.empty() and out_message_queue.empty()):
+        err_message_queue.empty() and out_message_queue.empty()
+    ):
         _handle(log_handler, err_message_queue, out_message_queue)
 
     return output_buffer.getvalue()
