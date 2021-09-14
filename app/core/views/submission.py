@@ -123,6 +123,7 @@ def edit_submission_view(request, pk=None, clone=False):
         container = submission.container if submission else None
         container_form = forms.ContainerForm(request.POST, instance=container)
         submission_form = forms.SubmissionForm(request.POST, instance=submission)
+        print(str(request.FILES))
         ArgFormSet = forms.submission_arg_formset()
         arg_formset = None
         if container_form.is_valid():
@@ -135,16 +136,20 @@ def edit_submission_view(request, pk=None, clone=False):
                 submission.challenge = container.challenge
                 submission.user = request.user
                 submission.save()
-                arg_formset = ArgFormSet(request.POST, instance=submission)
+                arg_formset = ArgFormSet(
+                    request.POST, request.FILES, instance=submission
+                )
                 if arg_formset.is_valid():
                     arg_instances = arg_formset.save(commit=False)
                     for instance in arg_instances:
                         instance.submission = submission
                         instance.save()
+                    for instance in arg_formset.deleted_objects:
+                        instance.delete()
                     return redirect("submission-detail", pk=submission.pk)
 
         if arg_formset is None:
-            arg_formset = ArgFormSet(request.POST, instance=submission)
+            arg_formset = ArgFormSet(request.POST, request.FILES, instance=submission)
     elif request.method == "GET":
         if pk:
             show_container = False

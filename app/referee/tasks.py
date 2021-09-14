@@ -11,6 +11,7 @@ from pathlib import Path
 import dask
 import dask.distributed as dd
 import ever_given.wrapper
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 
 from core import models
@@ -25,15 +26,20 @@ def run_and_score_submission(client, submission):
     Runs public and private, plus scoring
     """
     challenge = submission.challenge
-    delayed_conditional = True
+    delayed_conditional = dask.delayed(True)
     for is_public in (True, False):
         element_ids = challenge.inputelement_set.filter(
             is_public=is_public
         ).values_list("id", flat=True)
-        run_id, delayed_prediction_ids = build_submission_run(
+        run_id, delayed_evaluation_ids = build_submission_run(
             submission.pk, element_ids, delayed_conditional, is_public=is_public
         )
-        delayed_conditional = check_and_score(run_id, delayed_prediction_ids)
+        delayed_conditional = check_and_score(
+            run_id, delayed_conditional, delayed_evaluation_ids
+        )
+
+    if settings.VISUALIZE_DASK_GRAPH:
+        delayed_conditional.visualize(filename="task_graph.svg")
 
     future = client.submit(delayed_conditional.compute)  # pylint:disable=no-member
     logger.info("Future key: %s", future.key)
@@ -43,11 +49,15 @@ def run_and_score_submission(client, submission):
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def check_and_score(submission_run_id, prediction_ids):
+def check_and_score(submission_run_id, conditional, evaluation_ids):
+    if not conditional:
+        return conditional
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = models.Status.SUCCESS
     challenge = submission_run.submission.challenge
     submission_run.save()
+    if len(evaluation_ids) == 0:
+        return True
 
     logger.info(
         "Running check_and_score %s public? %s",
@@ -88,7 +98,7 @@ def build_submission_run(submission_id, element_ids, conditional, is_public=True
         for element_id in element_ids
     ]
 
-    delayed_evaluation_runs = dask.delayed(
+    delayed_evaluation_ids = dask.delayed(
         [
             run_evaluation(
                 submission_id,
@@ -99,9 +109,11 @@ def build_submission_run(submission_id, element_ids, conditional, is_public=True
             )
             for evaluation in evaluations
         ],
+        name=f"evaluation_list_{submission_run_id}_{is_public}",
+        pure=False,
         nout=len(evaluations),
     )
-    return (submission_run_id, delayed_evaluation_runs)
+    return (submission_run_id, delayed_evaluation_ids)
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
@@ -171,9 +183,11 @@ def run_evaluation(
             evaluation.save(update_fields=["log_stderr"])
             raise
         evaluation.status = models.Status.SUCCESS
+        return evaluation.id
     except Exception as exc:
         evaluation.status = models.Status.FAILURE
         evaluation.append(stderr=f"Execution failure: {exc}\n")
+        evaluation.save(update_fields=["log_stderr"])
         raise
     finally:
         evaluation.save()

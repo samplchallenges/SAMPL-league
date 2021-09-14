@@ -1,9 +1,8 @@
+from crispy_forms import layout
+from crispy_forms.helper import FormHelper
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
-
-from crispy_forms.helper import FormHelper
-from crispy_forms import layout
 
 from .models import Container, Submission, SubmissionArg
 
@@ -60,15 +59,29 @@ class SubmissionArgFileForm(forms.ModelForm):
 
 
 def submission_arg_string_formset():
-    return inlineformset_factory(Submission, SubmissionArg, form=SubmissionArgStringForm, fields=("key", "string_value"), extra=1)
+    return inlineformset_factory(
+        Submission,
+        SubmissionArg,
+        form=SubmissionArgStringForm,
+        fields=("key", "string_value"),
+        extra=1,
+    )
 
 
 def submission_arg_file_formset():
-    return inlineformset_factory(Submission, SubmissionArg, form=SubmissionArgFileForm, fields=("key", "file_value"), extra=1)
+    return inlineformset_factory(
+        Submission,
+        SubmissionArg,
+        form=SubmissionArgFileForm,
+        fields=("key", "file_value"),
+        extra=1,
+    )
 
 
 def submission_arg_formset():
-    return inlineformset_factory(Submission, SubmissionArg, fields=("key", "string_value", "file_value"), extra=1)
+    return inlineformset_factory(
+        Submission, SubmissionArg, fields=("key", "file_value"), extra=1
+    )
 
 
 class ArgFormHelper(FormHelper):
@@ -79,7 +92,8 @@ class ArgFormHelper(FormHelper):
         self.field_template = "core/arg_field.html"
         self.template = "core/arg_formset.html"
 
-#class StringArgFormHelper(ArgFormHelper):
+
+# class StringArgFormHelper(ArgFormHelper):
 #    def __init__(self, *args, **kwargs):
 #        super().__init__(*args, **kwargs)
 #        self.layout = layout.Layout(
