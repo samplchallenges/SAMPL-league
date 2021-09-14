@@ -7,6 +7,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_ROOT = BASE_DIR / "media"
 # Custom settings for SAMPL
+VISUALIZE_DASK_GRAPH = False
 DASK_SCHEDULER_URL = "localhost:8786"
 ENABLE_REGISTRATION = False  # Disables self-registration
 # End of custom settings for SAMPL

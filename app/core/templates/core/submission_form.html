@@ -7,7 +7,7 @@
   {{ submission_form|as_crispy_errors }}
   {{ arg_formset|as_crispy_errors }}
 </div>
-<form method="post" class="form" action="{{ form_action }}">
+<form method="post" class="form" action="{{ form_action }}" enctype="multipart/form-data">
   {% csrf_token %}
   <div id="accordion">
     {% include "core/_collapsible_form.html" with label="container" form=container_form show=show_container only %}

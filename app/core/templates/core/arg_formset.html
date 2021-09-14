@@ -6,7 +6,7 @@
   {{ formset.management_form|crispy }}
 </div>
 {% include "bootstrap4/errors_formset.html" %}
-<table class="arg-field"><tr><td>Key</td><td>String Value</td><td>File Value</td></tr>
+<table class="arg-field table table-striped"><tr><td>Key</td><!--<td>String Value</td>--><td>File Value</td><td>Delete?</td></tr>
   {% for form in formset %}
   <tr>{% include "core/arg_form.html" %}</tr>
   {% endfor %}
