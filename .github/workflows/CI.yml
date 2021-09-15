@@ -77,13 +77,3 @@ jobs:
         with:
           fail_ci_if_error: true
           directory: app/
-
-      - name: Run linter
-        run: |
-          pipenv run pylint tests/ referee/ core/ sampl/ ../ever_given/ever_given/
-        env:
-          DJANGO_SETTINGS_MODULE: sampl.settings_dev
-      - name: Run formatting checks
-        run: |
-          pipenv run black --check --diff .
-          pipenv run isort --check --diff core/ referee/ sampl/ tests/  conftest.py
