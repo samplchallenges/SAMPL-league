@@ -1,0 +1,29 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+files: ^app/
+exclude: ^app/core/
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.2.0
+  hooks:
+  - id: trailing-whitespace
+  - id: end-of-file-fixer
+  - id: check-yaml
+  - id: check-added-large-files
+  - id: check-ast
+- repo: https://github.com/psf/black
+  rev: 21.9b0
+  hooks:
+  - id: black
+    args: [--config=app/pyproject.toml]
+- repo: https://github.com/pycqa/isort
+  rev: 5.8.0
+  hooks:
+  - id: isort
+    name: isort (python)
+    args: [--settings-file=app/pyproject.toml]
+- repo: https://github.com/pycqa/pylint
+  rev: v2.10.2
+  hooks:
+  - id: pylint
+    args: [--rcfile=app/pyproject.toml]
