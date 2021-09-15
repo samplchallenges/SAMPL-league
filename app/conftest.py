@@ -6,7 +6,6 @@ import dask.distributed as dd
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.core.files import File
 
 from core import models
 

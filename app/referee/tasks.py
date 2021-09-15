@@ -1,17 +1,10 @@
-import json
 import logging
-import math
-import os
-import shlex
-import shutil
 import tempfile
-from collections import namedtuple
 from pathlib import Path
 
 import dask
 import dask.distributed as dd
 import ever_given.wrapper
-from django.contrib.contenttypes.models import ContentType
 
 from core import models
 

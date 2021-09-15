@@ -1,10 +1,8 @@
 import json
 import logging
-import os.path
 import tempfile
 
 import ever_given.wrapper
-from django.db.models.fields.files import FieldFile
 
 from core import models
 
