@@ -13,6 +13,9 @@
   </div>
   <div class="collapse {% if show %}show{% endif %}" id="{{ label }}Block" aria-labelled-by="{{ label }}Header" data-parent="#accordion">
     <div class="card-body">
+      {% if card_contents %}
+      {% include card_contents %}
+      {% endif %}
       {% if formset %}
       {% crispy formset helper %}
       {% else %}

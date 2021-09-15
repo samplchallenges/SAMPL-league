@@ -15,7 +15,7 @@
   Draft mode <a class="btn btn-primary" href="{% url 'submission-update' submission.pk %}">Update</a>
 </div>
 {% endif %}
-<form method="post" action="{% url 'submission-submit' submission.pk %}" class="mb-2">
+<form method="post" action="{% url 'submission-submit' submission.pk %}" class="my-2">
   {% csrf_token %}
   <input type="hidden" name="submission_id" value="{{ submission.pk }}">
   <button type="submit" class="btn btn-primary">Run Submission</button>
@@ -66,6 +66,21 @@
     </p>
   </div>
 </div>
+{% if custom_args %}
+<div class="card mb-2">
+  <div class="card-body">
+    <h5 class="card-title">Special Arguments</h5>
+    {% for arg in custom_args %}
+    <p class="card-text">
+      {{ arg.key }}: {{ arg.string_value }}
+      {% if arg.file_value %}
+      <a href="{% url 'download-arg' arg.pk %}">{{ arg.filename }}</a>
+      {% endif %}
+    </p>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 <h2>Submission details</h2>
 {% for field_name, field_value in submission_details %}
 <div class="card mb-2">

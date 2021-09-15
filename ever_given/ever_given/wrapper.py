@@ -16,7 +16,7 @@ def _guest_input_path(filename):
     return GUEST_INPUT_DIR / Path(filename).name
 
 
-def _prepare_commandline(command, args_dict):
+def prepare_commandline(command, args_dict):
     return (
         command
         + " "
@@ -95,7 +95,7 @@ def run(
     final_kwargs = copy.deepcopy(kwargs)
     final_kwargs.update(final_file_kwargs)
 
-    final_command = _prepare_commandline(command, final_kwargs)
+    final_command = prepare_commandline(command, final_kwargs)
 
     running_container = run_container(
         container_uri, final_command, input_dir_map, output_dir=output_dir

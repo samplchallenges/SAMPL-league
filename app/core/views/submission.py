@@ -47,6 +47,7 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["container"] = self.object.container
+        context["custom_args"] = self.object.args.all()
         context["submission_details"] = [
             (field_name, getattr(self.object, field_name))
             for field_name in self.DETAIL_FIELD_NAMES
@@ -117,13 +118,13 @@ def clone_submission_view(request, pk):
 def edit_submission_view(request, pk=None, clone=False):
     form_action = ""
     show_container = True
+    show_args = False
     if request.method == "POST":
         # TODO: transaction?
         submission = Submission.objects.get(pk=pk, user=request.user) if pk else None
         container = submission.container if submission else None
         container_form = forms.ContainerForm(request.POST, instance=container)
         submission_form = forms.SubmissionForm(request.POST, instance=submission)
-        print(str(request.FILES))
         ArgFormSet = forms.submission_arg_formset()
         arg_formset = None
         if container_form.is_valid():
@@ -147,6 +148,8 @@ def edit_submission_view(request, pk=None, clone=False):
                     for instance in arg_formset.deleted_objects:
                         instance.delete()
                     return redirect("submission-detail", pk=submission.pk)
+                else:
+                    show_args = True
 
         if arg_formset is None:
             arg_formset = ArgFormSet(request.POST, request.FILES, instance=submission)
@@ -175,6 +178,7 @@ def edit_submission_view(request, pk=None, clone=False):
     context = {
         "container_form": container_form,
         "show_container": show_container,
+        "show_args": show_args,
         "submission_form": submission_form,
         "arg_formset": arg_formset,
         "arg_helper": forms.ArgFormHelper(),

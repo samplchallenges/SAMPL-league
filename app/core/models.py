@@ -188,6 +188,7 @@ def _submission_file_location(instance, filename):
         str(instance.submission.user_id),
         str(instance.submission.id),
         instance.key,
+        filename,
     )
 
 
@@ -209,7 +210,10 @@ class SubmissionArg(Timestamped):
             self.string_value and self.file_value
         ):
             error = "Exactly one of string_value or file_value must be set"
-            raise ValidationError({"string_value": error, "file_value": error})
+            raise ValidationError(error)
+
+    def filename(self):
+        return os.path.basename(self.file_value.name)
 
 
 class SubmissionRun(Timestamped, StatusMixin):
