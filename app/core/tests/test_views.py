@@ -5,10 +5,12 @@ import pytest
 from django.core.management import call_command
 from django.db import transaction
 from django.forms.fields import CharField
+from django.http.response import FileResponse
 from django.urls import reverse
 
 from core.forms import ContainerForm, SubmissionForm
 from core.models import Submission
+from core.views import file_downloads
 from core.views.submission import edit_submission_view
 
 
@@ -161,3 +163,20 @@ def test_run_submission(client):
     errlog_url = reverse("evaluation-log-err", kwargs={"pk": evaluation.pk})
     response = client.get(errlog_url)
     assert response.context["log"] == evaluation.log_stderr
+
+
+def test_download_submission_arg_file(client, user, draft_submission, custom_file_arg):
+    client.force_login(user)
+    response = client.get(f"/download_arg/{custom_file_arg.id}/")
+    assert response.status_code == 200
+
+
+def test_download_input_file(client, user, benzene_from_mol):
+    client.force_login(user)
+    input_value = benzene_from_mol.inputvalue_set.first()
+    response = client.get(f"/download_input/{input_value.pk}/")
+    assert response.status_code == 200
+    assert isinstance(response, FileResponse)
+    assert (
+        response.headers["Content-Disposition"] == 'inline; filename="ChEBI_16716.mdl"'
+    )
