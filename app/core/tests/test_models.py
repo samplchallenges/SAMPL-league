@@ -106,30 +106,13 @@ def test_load_prediction_file(
         assert mock_field_file_save.call_count == 1
 
 
-@pytest.fixture
-def custom_string_arg(submission_arg_factory, draft_submission):
-    return submission_arg_factory(
-        draft_submission, key="stringarg", string_value="hello world"
-    )
-
-
-@pytest.fixture
-def custom_file_arg(submission_arg_factory, draft_submission):
-    return submission_arg_factory(
-        draft_submission,
-        key="filearg",
-        file_name="example.txt",
-        file_body="these are the contents of the txt file",
-    )
-
-
 def test_submission_arg(draft_submission, custom_string_arg, custom_file_arg):
     assert draft_submission.custom_args() == {"stringarg": "hello world"}
 
     assert draft_submission.custom_file_args() == {
         "filearg": os.path.join(
             settings.MEDIA_ROOT,
-            "submission_args/{}/{}/filearg".format(
+            "submission_args/{}/{}/filearg/example.txt".format(
                 draft_submission.user_id, draft_submission.id
             ),
         )

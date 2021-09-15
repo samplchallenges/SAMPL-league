@@ -364,3 +364,20 @@ def input_elements(smiles_molw_config, db):
         )
         elems.append(elem)
     return elems
+
+
+@pytest.fixture
+def custom_string_arg(submission_arg_factory, draft_submission):
+    return submission_arg_factory(
+        draft_submission, key="stringarg", string_value="hello world"
+    )
+
+
+@pytest.fixture
+def custom_file_arg(submission_arg_factory, draft_submission):
+    return submission_arg_factory(
+        draft_submission,
+        key="filearg",
+        file_name="example.txt",
+        file_body="these are the contents of the txt file",
+    )
