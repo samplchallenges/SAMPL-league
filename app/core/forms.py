@@ -91,11 +91,3 @@ class ArgFormHelper(FormHelper):
         self.form_tag = False
         self.field_template = "core/arg_field.html"
         self.template = "core/arg_formset.html"
-
-
-# class StringArgFormHelper(ArgFormHelper):
-#    def __init__(self, *args, **kwargs):
-#        super().__init__(*args, **kwargs)
-#        self.layout = layout.Layout(
-#            layout.Field('key'),
-#            layout.Field('string_value'

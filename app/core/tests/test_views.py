@@ -36,10 +36,11 @@ def test_create_submission(client, user, challenge):
         "container-registry": "local",
         "container-label": "package2",
         "submission-name": "draft submission 2",
+        "args-TOTAL_FORMS": 0,
+        "args-INITIAL_FORMS": 0,
     }
     client.force_login(user)
     response = client.post("/submission/add/", form_data)
-
     assert response.status_code == 302
     response = client.get(response.url)
     submission = response.context["submission"]
@@ -71,6 +72,7 @@ def test_update_submission(client, user, draft_submission):
     form_data.update(
         {skey(key): value for key, value in submission_form.initial.items() if value}
     )
+    form_data.update({"args-TOTAL_FORMS": 0, "args-INITIAL_FORMS": 0})
     response = client.post(f"/submission/{draft_submission.pk}/edit/", form_data)
     assert response.status_code == 200
     assert response.context["submission_form"].is_valid()

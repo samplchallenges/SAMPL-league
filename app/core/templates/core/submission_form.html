@@ -11,7 +11,7 @@
   {% csrf_token %}
   <div id="accordion">
     {% include "core/_collapsible_form.html" with label="container" form=container_form show=show_container only %}
-    {% include "core/_collapsible_form.html" with label="args" title="Special Arguments" formset=arg_formset helper=arg_helper show=False only %}
+    {% include "core/_collapsible_form.html" with label="args" title="Special Arguments" formset=arg_formset helper=arg_helper show=show_args card_contents="core/_arg_helptext.html" only %}
     {% include "core/_collapsible_form.html" with label="submission" title="Submission Details" form=submission_form show=True only %}
   </div>
   <button type="submit" class="btn btn-primary my-2">Save Submission</button>
