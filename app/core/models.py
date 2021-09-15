@@ -521,7 +521,7 @@ class FloatValue(GenericValue):
 
 
 def _upload_location(instance, filename):
-    now = timezone.now()
+    timezone.now()
     challenge = instance.challenge
     evaluation = instance.evaluation
     if evaluation:

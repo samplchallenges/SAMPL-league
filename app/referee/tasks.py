@@ -39,7 +39,7 @@ def run_and_score_submission(client, submission):
 def check_and_score(submission_run_id, prediction_ids):
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = models.Status.SUCCESS
-    challenge = submission_run.submission.challenge
+    submission_run.submission.challenge
     submission_run.save()
 
     logger.info(
