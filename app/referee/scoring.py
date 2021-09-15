@@ -82,10 +82,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
 
 
 def score_submission_run(container, submission_run, score_types):
-    score_types[models.ScoreType.Level.EVALUATION]
     submission_run_score_types = score_types[models.ScoreType.Level.SUBMISSION_RUN]
-
-    submission_run.submission.challenge
 
     evaluations = submission_run.evaluation_set.all()
 

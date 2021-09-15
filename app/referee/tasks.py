@@ -36,10 +36,9 @@ def run_and_score_submission(client, submission):
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def check_and_score(submission_run_id, prediction_ids):
+def check_and_score(submission_run_id, prediction_ids):  # pylint: disable=W0613
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = models.Status.SUCCESS
-    submission_run.submission.challenge
     submission_run.save()
 
     logger.info(

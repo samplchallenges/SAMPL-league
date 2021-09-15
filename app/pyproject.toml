@@ -3,10 +3,15 @@ DJANGO_SETTINGS_MODULE = "sampl.settings_dev"
 addopts = "-vv"
 
 [tool.pylint.messages_control]
-disable = "C0330, C0326"
+disable = "R, C, E, W1618, W0511"
 
 [tool.pylint.format]
 max-line-length = "88"
+
+[tool.pylint.master]
+ignore = "conftest.py"
+ignore-paths = ["^app/tests/.*$",
+               "^app/referee/tests/.*$"]
 
 [tool.isort]
 profile = "black"
