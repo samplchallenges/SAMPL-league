@@ -10,8 +10,8 @@ then
 	# bootstrap superuser
 	python manage.py mysuperuser;
 	# fill site with some toy data
-	python manage.py sample_data;
-	# collect static
+	python manage.py sample_data --delete;
+	# collect static 
 	python manage.py collectstatic --noinput;
 	}
 else

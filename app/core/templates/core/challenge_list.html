@@ -1,6 +1,16 @@
 {% extends 'layout.html' %}
 {% block content %}
-{% for object in object_list %}
-<div>Challenge: <a href="{% url 'challenge-detail' pk=object.pk %}">{{ object }}</a></div>
-{% endfor %}
+<h1>Challenges</h1>
+<table class="table table-striped">
+  <thead><tr><th>Name</th><th>Start Date</th><th>End Date</th></tr></thead>
+  <tbody>
+    {% for challenge in challenge_list %}
+    <tr>
+      <td><a href="{% url 'challenge-detail' pk=challenge.pk %}">{{ challenge }}</a></td>
+      <td>{{ challenge.start_at }}</td>
+      <td>{{ challenge.end_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% endblock %}
