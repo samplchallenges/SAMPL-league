@@ -3,6 +3,9 @@ import os
 
 from .base_settings import *  # lgtm [py/polluting-import]
 
+# Set dask URL for aws
+DASK_SCHEDULER_URL = "172.31.39.184:8786"
+
 # We only need rollbar in production
 MIDDLEWARE.append("rollbar.contrib.django.middleware.RollbarNotifierMiddleware")
 

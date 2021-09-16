@@ -4,18 +4,20 @@
 <table class="table">
   <thead>
     <tr>
+      <th scope="col">Challenge</th>
       <th scope="col">Name</th>
       <th scope="col">Container</th>
     </tr>
   </thead>
 <tbody>
-  {% for object in object_list %}
-<tr>
+  {% for submission in submission_list %}
+  <tr>
+    <td><a href="{% url 'challenge-detail' pk=submission.challenge.pk %}">{{ submission.challenge }}</a></td>
   <td>
-    <a href="{% url 'submission-detail' object.pk %}">{{ object.name }}</a>
+    {% include 'core/_submission_list_elem.html' with submission=submission only %}
   </td>
   <td>
-    {{ object.container.name }}
+    {{ submission.container.name }}
   </td>
 </tr>
 {% endfor %}
