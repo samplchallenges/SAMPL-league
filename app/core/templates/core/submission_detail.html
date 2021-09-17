@@ -72,7 +72,7 @@
     <h5 class="card-title">Special Arguments</h5>
     {% for arg in custom_args %}
     <p class="card-text">
-      {{ arg.key }}: {{ arg.string_value }}
+      {{ arg.key }}: {% if arg.string_value %} {{ arg.string_value }} {% endif %}
       {% if arg.file_value %}
       <a href="{% url 'download-arg' arg.pk %}">{{ arg.filename }}</a>
       {% endif %}

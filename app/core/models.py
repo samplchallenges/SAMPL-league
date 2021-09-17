@@ -77,6 +77,32 @@ class Challenge(Timestamped):
             self.__load_output_types()
         return self.__output_types_dict.get(key)
 
+    def validate_configuration(self, is_public=None):
+        """
+        Generates messages for frontend display
+        """
+        messages = []
+        value_types = {
+            value_type.key: value_type
+            for value_type in self.valuetype_set.filter(is_input_flag=True).all()
+        }
+        element_base = self.inputelement_set
+        if is_public is not None:
+            element_base = element_base.filter(is_public=is_public)
+        elements = element_base.prefetch_related(
+            "inputvalue_set", "inputvalue_set__value_type"
+        ).all()
+
+        for element in elements:
+            element_value_keys = {
+                value.value_type.key for value in element.inputvalue_set.all()
+            }
+            for k, v in value_types.items():
+                if k not in element_value_keys:
+                    messages.append(f"Missing {k} from {element.name}")
+
+        return messages
+
 
 class Container(Timestamped):
     name = models.CharField(max_length=255)

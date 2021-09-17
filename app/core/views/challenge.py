@@ -8,14 +8,11 @@ from django.views.generic.list import ListView
 from ..models import Challenge, FileValue
 
 
-def _input_elements(challenge):
+def _input_elements(challenge, input_types):
     elements = (
         challenge.inputelement_set.filter(is_public=True)
         .prefetch_related("inputvalue_set", "inputvalue_set__value_type")
         .all()
-    )
-    input_types = (
-        challenge.valuetype_set.filter(is_input_flag=True).order_by("key").all()
     )
     element_attributes = []
 
@@ -34,7 +31,7 @@ def _input_elements(challenge):
                 )
             else:
                 value = input_value.value
-        element_attribute.append(value)
+            element_attribute.append(value)
 
         kwargs, file_kwargs = element.all_values()
         args_dict = kwargs
@@ -42,7 +39,7 @@ def _input_elements(challenge):
             args_dict[k] = os.path.basename(v)
         element_attribute.append(ever_given.wrapper.prepare_commandline("", args_dict))
         element_attributes.append(element_attribute)
-    return element_attributes, input_types
+    return element_attributes
 
 
 class ChallengeDetail(DetailView):
@@ -51,13 +48,23 @@ class ChallengeDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         challenge = context["challenge"]
-        context["submissions"] = challenge.submission_set.filter(
-            user=self.request.user
-        ).all()
+        if self.request.user.is_authenticated:
+            context["submissions"] = challenge.submission_set.filter(
+                user=self.request.user
+            ).all()
         context["output_types"] = challenge.valuetype_set.filter(
             is_input_flag=False
         ).order_by("key")
-        context["elements"], context["input_types"] = _input_elements(challenge)
+
+        context["input_types"] = (
+            challenge.valuetype_set.filter(is_input_flag=True).order_by("key").all()
+        )
+
+        try:
+            context["elements"] = _input_elements(challenge, context["input_types"])
+        except KeyError:
+            context["errors"] = challenge.validate_configuration(is_public=True)
+
         return context
 
 

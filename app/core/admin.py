@@ -137,13 +137,26 @@ class InputElementAdmin(TimestampedAdmin):
     list_filter = ("challenge",)
 
 
+class ValueContentTypeAdmin(TimestampedAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "content_type":
+            allowed_models = (
+                content_type.id
+                for content_type in ContentType.objects.get_for_models(
+                    *models.Solution._value_models
+                ).values()
+            )
+            kwargs["queryset"] = ContentType.objects.filter(id__in=allowed_models)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
 @register(models.ValueType)
-class ValueTypeAdmin(TimestampedAdmin):
+class ValueTypeAdmin(ValueContentTypeAdmin):
     list_display = ("key", "challenge", "description", "content_type", "is_input_flag")
     list_filter = ("challenge",)
 
 
-class ValueParentAdminMixin(TimestampedAdmin):
+class ValueParentAdminMixin(ValueContentTypeAdmin):
     readonly_fields = (
         "value_type_challenge",
         "input_element_challenge",
@@ -163,17 +176,6 @@ class ValueParentAdminMixin(TimestampedAdmin):
 
     def object_link(self, instance):
         return _admin_link(instance.value_object)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "content_type":
-            allowed_models = (
-                content_type.id
-                for content_type in ContentType.objects.get_for_models(
-                    *models.Solution._value_models
-                ).values()
-            )
-            kwargs["queryset"] = ContentType.objects.filter(id__in=allowed_models)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @register(models.InputValue)

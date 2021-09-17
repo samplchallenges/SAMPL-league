@@ -50,6 +50,18 @@
       </table>
     </p>
     {% endif %}
+    {% if errors %}
+    <p class="card-text">
+      <div class="alert alert-danger">
+        <h5>Error: Challenge configuration issues</h5>
+        <ul>
+          {% for error in errors %}
+          <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </p>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

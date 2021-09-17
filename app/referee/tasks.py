@@ -50,12 +50,18 @@ def run_and_score_submission(client, submission):
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def check_and_score(submission_run_id, conditional, evaluation_ids):
+    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
+    statuses = set(submission_run.evaluation_set.values_list("status", flat=True))
+    if conditional and statuses == {models.Status.SUCCESS}:
+        submission_run.status = models.Status.SUCCESS
+    else:
+        logger.info("Statuses: %s", statuses)
+        submission_run.status = models.Status.FAILURE
+    submission_run.save()
     if not conditional:
         return conditional
-    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
-    submission_run.status = models.Status.SUCCESS
     challenge = submission_run.submission.challenge
-    submission_run.save()
+
     if len(evaluation_ids) == 0:
         return True
 
@@ -188,6 +194,5 @@ def run_evaluation(
         evaluation.status = models.Status.FAILURE
         evaluation.append(stderr=f"Execution failure: {exc}\n")
         evaluation.save(update_fields=["log_stderr"])
-        raise
     finally:
         evaluation.save()
