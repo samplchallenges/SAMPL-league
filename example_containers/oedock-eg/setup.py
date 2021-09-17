@@ -8,7 +8,7 @@ setup(
         "ligand", 
         "receptor",
         "docking",
-	"oe_io"
+	"oe_io",
     ],
     install_requires=[
         'Click',

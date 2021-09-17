@@ -7,7 +7,6 @@ def write_OEMol(outstream: str, oformat: "oechem.OEFormat", mol: oechem.OEGraphM
 	    ----------
 	    outstream: str
 	               String representing the path of the outstream
-
 	    Returns:
 	    --------
 	    ofs: oechem.oemolostream 

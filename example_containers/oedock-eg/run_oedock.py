@@ -3,6 +3,7 @@ import os
 import os.path
 import shutil
 import tempfile
+import sys
 
 # imports for python packages
 from openeye import oechem, oedocking
@@ -29,9 +30,21 @@ SCORE_KEY = "score"
 @click.option("--hint",help="PDB of ligand docked into receptor to improve docking. Must be used without --boxcoords --boxsize and --center.")
 @click.option("--hint_molinfo")
 @click.option("--hint_radius")
+@click.option("--license")
 @click.option("--output-dir")
-def oedock(smiles, receptor, hint, hint_molinfo, hint_radius, output_dir) -> None:
-	print("beginning", flush=True)
+def oedock(smiles, receptor, hint, hint_molinfo, hint_radius, license, output_dir) -> None:
+	
+	if not os.path.exists(license):
+		print("license file not found", file=sys.stderr, flush=True)
+		return
+	license_name = os.path.basename(license)
+	shutil.copyfile(license, f"/opt/app/{license_name}")
+
+	from openeye import oechem, oedocking
+	import openeye.oequacpac as oequacpac
+	import openeye.oeomega as oeomega
+
+	print("logging beginning", flush=True)
 	tempdir = tempfile.mkdtemp() 
 
 	# make a ligand from smiles string and write to oeb
@@ -42,7 +55,7 @@ def oedock(smiles, receptor, hint, hint_molinfo, hint_radius, output_dir) -> Non
 	lig.write(ligand_oeb_file, oechem.OEFormat_OEB)
 
 
-	print("making receptor from pdb", flush=True)
+	print("logging making receptor from pdb", flush=True)
 	# make receptor from pdb and write to oeb
 	boxcoords = None
 	receptor_oeb_file = os.path.join(tempdir,"receptor.oeb")
@@ -61,9 +74,9 @@ def oedock(smiles, receptor, hint, hint_molinfo, hint_radius, output_dir) -> Non
 	dock.initialize()
 
 	num_poses = 1
-	print("docking ligand", flush=True)
+	print("logging docking ligand", flush=True)
 	dock.dock(ligand_oeb_file,num_poses)
-	print("docked ligand", flush=True)
+	print("logging ligand was docked", flush=True)
 
 
 	docked_lig_pdb_file = f"{output_dir}/docked_ligand.pdb"
@@ -74,7 +87,7 @@ def oedock(smiles, receptor, hint, hint_molinfo, hint_radius, output_dir) -> Non
 
 	print(f"{LIGAND_KEY} {docked_lig_pdb_file}")
 	print(f"{RECEPTOR_KEY} {docked_rec_pdb_file}")
-	print(f"{SCORE_KEY} {score}")
+	#print(f"{SCORE_KEY} {score}")
 
 
 	shutil.rmtree(tempdir)
