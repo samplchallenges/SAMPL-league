@@ -9,7 +9,6 @@ from .views.submission import (
     SubmissionDelete,
     SubmissionDetail,
     SubmissionList,
-    clone_submission_view,
     edit_submission_view,
     submit_submission_view,
 )

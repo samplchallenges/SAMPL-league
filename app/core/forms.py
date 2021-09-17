@@ -58,26 +58,6 @@ class SubmissionArgFileForm(forms.ModelForm):
         fields = ["key", "file_value"]
 
 
-def submission_arg_string_formset():
-    return inlineformset_factory(
-        Submission,
-        SubmissionArg,
-        form=SubmissionArgStringForm,
-        fields=("key", "string_value"),
-        extra=1,
-    )
-
-
-def submission_arg_file_formset():
-    return inlineformset_factory(
-        Submission,
-        SubmissionArg,
-        form=SubmissionArgFileForm,
-        fields=("key", "file_value"),
-        extra=1,
-    )
-
-
 def submission_arg_formset():
     return inlineformset_factory(
         Submission, SubmissionArg, fields=("key", "file_value"), extra=1

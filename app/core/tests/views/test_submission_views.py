@@ -15,6 +15,16 @@ from core.views.submission import edit_submission_view
 
 
 @pytest.mark.django_db
+def test_list_submissions(client, user, other_user, draft_submission):
+    client.force_login(other_user)
+    response = client.get("/submission/")
+    assertNotContains(response, draft_submission.name)
+    client.force_login(user)
+    response = client.get("/submission/")
+    assertContains(response, draft_submission.name)
+
+
+@pytest.mark.django_db
 def test_load_submission_form(rf, user, draft_submission):
     request = rf.get("/core/submission/add/")
     request.user = user
@@ -23,11 +33,34 @@ def test_load_submission_form(rf, user, draft_submission):
 
 
 @pytest.mark.django_db
-def test_get_submission(rf, user, draft_submission):
-    request = rf.get(f"/core/submission/{draft_submission.pk}/")
-    request.user = user
-    response = edit_submission_view(request)
+def test_get_submission(client, user, other_user, draft_submission):
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/")
     assert response.status_code == 200
+    assert response.context["submission"].draft_mode == True
+    client.force_login(other_user)
+    response = client.get(f"/submission/{draft_submission.pk}/")
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_edit_submission(client, user, draft_submission):
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    submission_form = response.context["submission_form"]
+    assert draft_submission.pk == submission_form.instance.pk
+
+
+@pytest.mark.django_db
+def test_clone_submission(client, user, draft_submission):
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/clone/")
+    assert response.status_code == 200
+
+    submission_form = response.context["submission_form"]
+
+    assert submission_form.instance.id is None
+    assert submission_form.instance.name == "Draft Submission"
 
 
 @pytest.mark.django_db
