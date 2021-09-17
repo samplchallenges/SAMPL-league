@@ -1,6 +1,5 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.forms import formset_factory
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
@@ -102,16 +101,6 @@ def submit_submission_view(request, pk):
     future = referee.tasks.run_and_score_submission(dask_client, submission)
     ignore_future(future)
     return redirect("submission-detail", pk=submission.pk)
-
-
-@login_required
-def clone_submission_view(request, pk):
-    if request.method == "GET":
-        submission = Submission.objects.get(pk=pk, user=request.user).clone()
-        submission.save()
-        return redirect("submission-update", pk=submission.pk)
-
-    return HttpResponseBadRequest()
 
 
 @login_required

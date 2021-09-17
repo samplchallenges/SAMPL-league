@@ -25,10 +25,21 @@ def dask_client():
 
 
 @pytest.fixture
-def user(db):
+def users(db):
     User = get_user_model()
     user, _ = User.objects.get_or_create(username="hello")
-    return user
+    other_user, _ = User.objects.get_or_create(username="other")
+    return user, other_user
+
+
+@pytest.fixture
+def user(users):
+    return users[0]
+
+
+@pytest.fixture
+def other_user(users):
+    return users[1]
 
 
 @pytest.fixture
@@ -215,12 +226,15 @@ def elem_factory(testing_data_path, db):
 @pytest.fixture
 def submission_factory(db):
     def submission_maker(container):
-        return models.Submission.objects.create(
+        submission = models.Submission(
             name="Draft Submission",
             user=container.user,
             container=container,
             challenge=container.challenge,
         )
+        submission.full_clean()
+        submission.save()
+        return submission
 
     return submission_maker
 
