@@ -1,5 +1,6 @@
 from django.urls import include, path
 
+from .views import file_downloads
 from .views.challenge import ChallengeDetail, ChallengeList
 from .views.evaluation import EvaluationDetail, EvaluationLog
 from .views.profile import ProfileView, register
@@ -8,7 +9,6 @@ from .views.submission import (
     SubmissionDelete,
     SubmissionDetail,
     SubmissionList,
-    clone_submission_view,
     edit_submission_view,
     submit_submission_view,
 )
@@ -20,6 +20,16 @@ urlpatterns = [
     path("profile/add/", register, name="profile-register"),
     path("challenge/", ChallengeList.as_view(), name="challenge-list"),
     path("challenge/<int:pk>/", ChallengeDetail.as_view(), name="challenge-detail"),
+    path(
+        "download_input/<int:pk>/",
+        file_downloads.download_input_file,
+        name="download-input",
+    ),
+    path(
+        "download_arg/<int:pk>/",
+        file_downloads.download_submission_arg_file,
+        name="download-arg",
+    ),
     path("submission/", SubmissionList.as_view(), name="submission-list"),
     path("submission/<int:pk>/", SubmissionDetail.as_view(), name="submission-detail"),
     path(

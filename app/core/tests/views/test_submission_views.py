@@ -5,11 +5,25 @@ import pytest
 from django.core.management import call_command
 from django.db import transaction
 from django.forms.fields import CharField
+from django.http.response import FileResponse
 from django.urls import reverse
 
 from core.forms import ContainerForm, SubmissionForm
 from core.models import Submission
+from core.views import file_downloads
 from core.views.submission import edit_submission_view
+
+
+@pytest.mark.django_db
+def test_list_submissions(client, user, other_user, draft_submission):
+    client.force_login(user)
+    response = client.get("/submission/")
+    assert response.status_code == 200
+    assert draft_submission.name in response.content.decode()
+    client.force_login(other_user)
+    response = client.get("/submission/")
+    assert response.status_code == 200
+    assert draft_submission.name not in response.content.decode()
 
 
 @pytest.mark.django_db
@@ -21,11 +35,34 @@ def test_load_submission_form(rf, user, draft_submission):
 
 
 @pytest.mark.django_db
-def test_get_submission(rf, user, draft_submission):
-    request = rf.get(f"/core/submission/{draft_submission.pk}/")
-    request.user = user
-    response = edit_submission_view(request)
+def test_get_submission(client, user, other_user, draft_submission):
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/")
     assert response.status_code == 200
+    assert response.context["submission"].draft_mode == True
+    client.force_login(other_user)
+    response = client.get(f"/submission/{draft_submission.pk}/")
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_edit_submission(client, user, draft_submission):
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    submission_form = response.context["submission_form"]
+    assert draft_submission.pk == submission_form.instance.pk
+
+
+@pytest.mark.django_db
+def test_clone_submission(client, user, draft_submission):
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/clone/")
+    assert response.status_code == 200
+
+    submission_form = response.context["submission_form"]
+
+    assert submission_form.instance.id is None
+    assert submission_form.instance.name == "Draft Submission"
 
 
 @pytest.mark.django_db
@@ -36,10 +73,11 @@ def test_create_submission(client, user, challenge):
         "container-registry": "local",
         "container-label": "package2",
         "submission-name": "draft submission 2",
+        "args-TOTAL_FORMS": 0,
+        "args-INITIAL_FORMS": 0,
     }
     client.force_login(user)
     response = client.post("/submission/add/", form_data)
-
     assert response.status_code == 302
     response = client.get(response.url)
     submission = response.context["submission"]
@@ -71,6 +109,7 @@ def test_update_submission(client, user, draft_submission):
     form_data.update(
         {skey(key): value for key, value in submission_form.initial.items() if value}
     )
+    form_data.update({"args-TOTAL_FORMS": 0, "args-INITIAL_FORMS": 0})
     response = client.post(f"/submission/{draft_submission.pk}/edit/", form_data)
     assert response.status_code == 200
     assert response.context["submission_form"].is_valid()
@@ -85,7 +124,7 @@ def test_update_submission(client, user, draft_submission):
     )
     response = client.get(response.url)
     submission = response.context["submission"]
-    assert not submission.draft_mode
+    assert submission.draft_mode
 
 
 @pytest.mark.django_db(transaction=True)
@@ -159,3 +198,20 @@ def test_run_submission(client):
     errlog_url = reverse("evaluation-log-err", kwargs={"pk": evaluation.pk})
     response = client.get(errlog_url)
     assert response.context["log"] == evaluation.log_stderr
+
+
+def test_download_submission_arg_file(client, user, draft_submission, custom_file_arg):
+    client.force_login(user)
+    response = client.get(f"/download_arg/{custom_file_arg.id}/")
+    assert response.status_code == 200
+
+
+def test_download_input_file(client, user, benzene_from_mol):
+    client.force_login(user)
+    input_value = benzene_from_mol.inputvalue_set.first()
+    response = client.get(f"/download_input/{input_value.pk}/")
+    assert response.status_code == 200
+    assert isinstance(response, FileResponse)
+    assert (
+        response.headers["Content-Disposition"] == 'inline; filename="ChEBI_16716.mdl"'
+    )

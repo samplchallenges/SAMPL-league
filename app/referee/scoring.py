@@ -40,12 +40,12 @@ def _build_kwargs(evaluation):
 
     assert len(predictions_by_key) == len(answer_keys), (
         f"Error: number of predictions ({len(predictions_by_key)}) "
-        f"doesn't match answer keys ({len(answer_keys)}) , cannot score"
+        f"doesn't match answer keys ({len(answer_keys)}) , cannot score\n"
     )
 
     assert len(file_predictions_by_key) == len(file_answer_keys), (
         f"Error: number of file predictions ({len(file_predictions_by_key)}) "
-        f"doesn't match answer keys ({len(file_answer_keys)}) , cannot score"
+        f"doesn't match answer keys ({len(file_answer_keys)}) , cannot score\n"
     )
 
     score_args = {
@@ -65,7 +65,7 @@ def _build_kwargs(evaluation):
 def score_evaluation(container, evaluation, evaluation_score_types):
     kwargs, file_kwargs = _build_kwargs(evaluation)
     command = "score-evaluation"
-    evaluation.append(stdout=f"Scoring with {container.uri} {command}")
+    evaluation.append(stdout=f"Scoring with {container.uri} {command}\n")
     evaluation.save(update_fields=["log_stdout"])
 
     for key, score_value in ever_given.wrapper.run(

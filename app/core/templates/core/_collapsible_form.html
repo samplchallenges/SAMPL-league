@@ -1,0 +1,26 @@
+{% load crispy_forms_tags %}
+
+<div class="card" id="{{ label }}Card">
+  <div class="card-header" id="{{ label }}Header">
+    <h5 class="mb-0">
+      <a class="btn btn-link" data-toggle="collapse" data-toggle="#{{ label }}Block" href="#{{ label }}Block" role="button" aria-expanded="{% if show %}true{% else %}false{% endif %}" aria-controls="{{ label }}Block">
+        {% if title %}
+        {{ title }}
+        {% else %}
+        {{ label|title }}
+        {% endif %}
+    </a></h5>
+  </div>
+  <div class="collapse {% if show %}show{% endif %}" id="{{ label }}Block" aria-labelled-by="{{ label }}Header" data-parent="#accordion">
+    <div class="card-body">
+      {% if card_contents %}
+      {% include card_contents %}
+      {% endif %}
+      {% if formset %}
+      {% crispy formset helper %}
+      {% else %}
+      {{ form|crispy }}
+      {% endif %}
+    </div>
+  </div>
+</div> <!-- /{{ label }}Card" -->

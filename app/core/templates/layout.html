@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -6,9 +7,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
     {% block head %}{% endblock %}
     <title>{% block title %}SAMPL Submission{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'core/style.css' %}">
   </head>
   <body>
-    
+
     <div class="container">
       {% block nav %}{% include "navbar.html" %}{% endblock %}
       {% block content %}{% endblock %}

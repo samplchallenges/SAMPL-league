@@ -104,3 +104,16 @@ def test_load_prediction_file(
             challenge, evaluation, coordsfile_type, output_path
         )
         assert mock_field_file_save.call_count == 1
+
+
+def test_submission_arg(draft_submission, custom_string_arg, custom_file_arg):
+    assert draft_submission.custom_args() == {"stringarg": "hello world"}
+
+    assert draft_submission.custom_file_args() == {
+        "filearg": os.path.join(
+            settings.MEDIA_ROOT,
+            "submission_args/{}/{}/filearg/example.txt".format(
+                draft_submission.user_id, draft_submission.id
+            ),
+        )
+    }

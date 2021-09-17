@@ -1,0 +1,11 @@
+{% load crispy_forms_field %}
+
+{% if field.is_hidden %}
+{{ field }}
+{% else %}
+<td>
+  {% crispy_field field %}
+
+  {% include 'bootstrap4/layout/help_text_and_errors.html' %}
+</td>
+{% endif %}

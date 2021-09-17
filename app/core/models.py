@@ -27,6 +27,7 @@ class Status(models.TextChoices):
     SUCCESS = "SUCCESS"
     PENDING = "PENDING"
     RUNNING = "RUNNING"
+    CANCELLED = "CANCELLED"
 
 
 class StatusMixin:
@@ -146,6 +147,18 @@ class Submission(Timestamped):
     def get_absolute_url(self):
         return reverse("submission", kwargs={"pk": self.pk})
 
+    def custom_args(self):
+        return {
+            arg.key: arg.string_value for arg in self.args.all() if arg.string_value
+        }
+
+    def custom_file_args(self):
+        return {
+            arg.key: filecache.ensure_local_copy(arg.file_value)
+            for arg in self.args.all()
+            if arg.file_value
+        }
+
     def clean(self):
         super().clean()
         if not self.draft_mode:
@@ -167,6 +180,40 @@ class Submission(Timestamped):
         self.pk = None
         self._state.adding = True
         return self
+
+
+def _submission_file_location(instance, filename):
+    return os.path.join(
+        "submission_args",
+        str(instance.submission.user_id),
+        str(instance.submission.id),
+        instance.key,
+        filename,
+    )
+
+
+class SubmissionArg(Timestamped):
+    submission = models.ForeignKey(
+        Submission, on_delete=models.CASCADE, related_name="args"
+    )
+    key = models.SlugField(db_index=False)
+    string_value = models.TextField(blank=True, null=True)
+    file_value = models.FileField(
+        blank=True, null=True, upload_to=_submission_file_location
+    )
+
+    class Meta:
+        unique_together = ["submission", "key"]
+
+    def clean(self):
+        if not (self.string_value or self.file_value) or (
+            self.string_value and self.file_value
+        ):
+            error = "Exactly one of string_value or file_value must be set"
+            raise ValidationError(error)
+
+    def filename(self):
+        return os.path.basename(self.file_value.name)
 
 
 class SubmissionRun(Timestamped, StatusMixin):

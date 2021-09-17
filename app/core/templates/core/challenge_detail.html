@@ -10,6 +10,14 @@
     </p>
 
     <p class="card-text">
+      Containers will be invoked with the following arguments:
+      <ul>
+        {% for input_type in input_types %}
+        <li><code>--{{ input_type.key }}</code>, <i>{{ input_type.description }}</i>, a {{ input_type.content_type.name }}</li>
+        {% endfor %}
+      </ul>
+    </p>
+    <p class="card-text">
       <a class="btn btn-primary" role="button" href="{% url 'submission-add' %}?challenge_id={{ challenge.pk }}">New Submission</a>
       {% if submissions %}
       <h5>Your submissions</h5>
@@ -21,6 +29,27 @@
       {% endif %}
     </p>
 
+    {% if elements %}
+    <p class="card-text">
+      <h5>Public Input Data</h5>
+      <table class="table table-striped">
+        <thead><tr><td>Name</td>
+            {% for input_type in input_types %}
+            <td>{{ input_type.key }}</td>
+            {% endfor %}
+        <td>Container arguments</td></tr></thead>
+        <tbody>
+          {% for element in elements %}
+          <tr>
+            {% for value in element %}
+            <td>{{ value }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </p>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

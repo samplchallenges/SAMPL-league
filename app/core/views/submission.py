@@ -10,7 +10,7 @@ from django.views.generic.list import ListView
 import referee
 import referee.tasks
 
-from ..forms import ContainerForm, SubmissionForm
+from .. import forms
 from ..models import Submission
 
 # pylint: disable=too-many-ancestors
@@ -46,6 +46,7 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["container"] = self.object.container
+        context["custom_args"] = self.object.args.all()
         context["submission_details"] = [
             (field_name, getattr(self.object, field_name))
             for field_name in self.DETAIL_FIELD_NAMES
@@ -103,24 +104,18 @@ def submit_submission_view(request, pk):
 
 
 @login_required
-def clone_submission_view(request, pk):
-    if request.method == "GET":
-        submission = Submission.objects.get(pk=pk, user=request.user).clone()
-        submission.save()
-        return redirect("submission-update", pk=submission.pk)
-
-    return HttpResponseBadRequest()
-
-
-@login_required
 def edit_submission_view(request, pk=None, clone=False):
     form_action = ""
+    show_container = True
+    show_args = False
     if request.method == "POST":
         # TODO: transaction?
         submission = Submission.objects.get(pk=pk, user=request.user) if pk else None
         container = submission.container if submission else None
-        container_form = ContainerForm(request.POST, instance=container)
-        submission_form = SubmissionForm(request.POST, instance=submission)
+        container_form = forms.ContainerForm(request.POST, instance=container)
+        submission_form = forms.SubmissionForm(request.POST, instance=submission)
+        ArgFormSet = forms.submission_arg_formset()
+        arg_formset = None
         if container_form.is_valid():
             container = container_form.save(commit=False)
             container.user = request.user
@@ -131,28 +126,51 @@ def edit_submission_view(request, pk=None, clone=False):
                 submission.challenge = container.challenge
                 submission.user = request.user
                 submission.save()
-                return redirect("submission-detail", pk=submission.pk)
+                arg_formset = ArgFormSet(
+                    request.POST, request.FILES, instance=submission
+                )
+                if arg_formset.is_valid():
+                    arg_instances = arg_formset.save(commit=False)
+                    for instance in arg_instances:
+                        instance.submission = submission
+                        instance.save()
+                    for instance in arg_formset.deleted_objects:
+                        instance.delete()
+                    return redirect("submission-detail", pk=submission.pk)
+                else:
+                    show_args = True
+
+        if arg_formset is None:
+            arg_formset = ArgFormSet(request.POST, request.FILES, instance=submission)
     elif request.method == "GET":
         if pk:
+            show_container = False
             submission = Submission.objects.get(pk=pk)
             if clone:
                 submission.pk = None
                 submission.container.pk = None
                 form_action = reverse_lazy("submission-add")
-            container_form = ContainerForm(instance=submission.container)
-            submission_form = SubmissionForm(instance=submission)
+            container_form = forms.ContainerForm(instance=submission.container)
+            submission_form = forms.SubmissionForm(instance=submission)
+            arg_formset = forms.submission_arg_formset()(instance=submission)
+
         else:
             initial_values = {}
             if "challenge_id" in request.GET:
                 initial_values["challenge"] = request.GET["challenge_id"]
 
-            container_form = ContainerForm(initial=initial_values)
-            submission_form = SubmissionForm()
+            container_form = forms.ContainerForm(initial=initial_values)
+            submission_form = forms.SubmissionForm()
+            arg_formset = forms.submission_arg_formset()()
     else:
         return HttpResponseBadRequest()
     context = {
         "container_form": container_form,
+        "show_container": show_container,
+        "show_args": show_args,
         "submission_form": submission_form,
+        "arg_formset": arg_formset,
+        "arg_helper": forms.ArgFormHelper(),
         "form_action": form_action,
     }
     return render(request, "core/submission_form.html", context)

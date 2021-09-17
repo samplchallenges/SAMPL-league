@@ -7,6 +7,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.files import File
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core import models
 
@@ -24,10 +25,21 @@ def dask_client():
 
 
 @pytest.fixture
-def user(db):
+def users(db):
     User = get_user_model()
     user, _ = User.objects.get_or_create(username="hello")
-    return user
+    other_user, _ = User.objects.get_or_create(username="other")
+    return user, other_user
+
+
+@pytest.fixture
+def user(users):
+    return users[0]
+
+
+@pytest.fixture
+def other_user(users):
+    return users[1]
 
 
 @pytest.fixture
@@ -136,6 +148,25 @@ def container(container_factory, challenge):
 
 
 @pytest.fixture
+def submission_arg_factory(db):
+    def submission_arg_maker(
+        submission, key, string_value=None, file_name=None, file_body=None
+    ):
+        if file_name:
+            file_value = SimpleUploadedFile(file_name, file_body.encode())
+        else:
+            file_value = None
+        return models.SubmissionArg.objects.create(
+            submission=submission,
+            key=key,
+            file_value=file_value,
+            string_value=string_value,
+        )
+
+    return submission_arg_maker
+
+
+@pytest.fixture
 def scoring_container(challenge, user, db):
     return models.Container.objects.create(
         name="subtraction container",
@@ -172,7 +203,7 @@ def molfile_type(challenge, db):
 
 @pytest.fixture
 def testing_data_path():
-    return os.path.join(os.path.dirname(__file__), "tests", "data")
+    return os.path.join(os.path.dirname(__file__), "core", "tests", "data")
 
 
 @pytest.fixture
@@ -195,12 +226,15 @@ def elem_factory(testing_data_path, db):
 @pytest.fixture
 def submission_factory(db):
     def submission_maker(container):
-        return models.Submission.objects.create(
+        submission = models.Submission(
             name="Draft Submission",
             user=container.user,
             container=container,
             challenge=container.challenge,
         )
+        submission.full_clean()
+        submission.save()
+        return submission
 
     return submission_maker
 
@@ -344,3 +378,20 @@ def input_elements(smiles_molw_config, db):
         )
         elems.append(elem)
     return elems
+
+
+@pytest.fixture
+def custom_string_arg(submission_arg_factory, draft_submission):
+    return submission_arg_factory(
+        draft_submission, key="stringarg", string_value="hello world"
+    )
+
+
+@pytest.fixture
+def custom_file_arg(submission_arg_factory, draft_submission):
+    return submission_arg_factory(
+        draft_submission,
+        key="filearg",
+        file_name="example.txt",
+        file_body="these are the contents of the txt file",
+    )
