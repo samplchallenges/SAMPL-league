@@ -33,8 +33,9 @@ SCORE_KEY = "score"
 @click.option("--license")
 @click.option("--output-dir")
 def oedock(smiles, receptor, hint, hint_molinfo, hint_radius, license, output_dir) -> None:
-	
-	if not os.path.exists(license):
+
+	print("license: ", license) 	
+	if license == None or not os.path.exists(license):
 		print("license file not found", file=sys.stderr, flush=True)
 		return
 	license_name = os.path.basename(license)
