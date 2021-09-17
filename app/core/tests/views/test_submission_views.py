@@ -16,12 +16,14 @@ from core.views.submission import edit_submission_view
 
 @pytest.mark.django_db
 def test_list_submissions(client, user, other_user, draft_submission):
-    client.force_login(other_user)
-    response = client.get("/submission/")
-    assertNotContains(response, draft_submission.name)
     client.force_login(user)
     response = client.get("/submission/")
-    assertContains(response, draft_submission.name)
+    assert response.status_code == 200
+    assert draft_submission.name in response.content.decode()
+    client.force_login(other_user)
+    response = client.get("/submission/")
+    assert response.status_code == 200
+    assert draft_submission.name not in response.content.decode()
 
 
 @pytest.mark.django_db
@@ -122,7 +124,7 @@ def test_update_submission(client, user, draft_submission):
     )
     response = client.get(response.url)
     submission = response.context["submission"]
-    assert not submission.draft_mode
+    assert submission.draft_mode
 
 
 @pytest.mark.django_db(transaction=True)
