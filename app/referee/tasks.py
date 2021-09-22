@@ -47,7 +47,6 @@ def check_and_score(submission_run_id, conditional, evaluation_ids):
         return conditional
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = models.Status.SUCCESS
-    submission_run.submission.challenge
     submission_run.save()
     if len(evaluation_ids) == 0:
         return True
@@ -98,7 +97,6 @@ def build_submission_run(submission_id, element_ids, conditional, is_public=True
                 evaluation.id,
                 submission_run_id,
                 conditional=conditional,
-                is_public=is_public,
             )
             for evaluation in evaluations
         ],
@@ -110,9 +108,7 @@ def build_submission_run(submission_id, element_ids, conditional, is_public=True
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def run_evaluation(
-    submission_id, evaluation_id, submission_run_id, conditional, is_public
-):
+def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
     if not conditional:
         models.Evaluation.objects.filter(pk=evaluation_id).update(
             status=models.Status.CANCELLED
