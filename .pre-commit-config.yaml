@@ -3,6 +3,11 @@
 files: ^app/
 exclude: (^app/core/migrations/|^app/tests/data/|^app/core/management/commands/data/)
 repos:
+- repo: meta
+  hooks:
+  - id: check-hooks-apply
+  - id: check-useless-excludes
+  - id: identity
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v3.2.0
   hooks:
