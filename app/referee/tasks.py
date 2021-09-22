@@ -1,18 +1,11 @@
-import json
 import logging
-import math
-import os
-import shlex
-import shutil
 import tempfile
-from collections import namedtuple
 from pathlib import Path
 
 import dask
 import dask.distributed as dd
 import ever_given.wrapper
 from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
 
 from core import models
 
@@ -54,7 +47,7 @@ def check_and_score(submission_run_id, conditional, evaluation_ids):
         return conditional
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = models.Status.SUCCESS
-    challenge = submission_run.submission.challenge
+    submission_run.submission.challenge
     submission_run.save()
     if len(evaluation_ids) == 0:
         return True

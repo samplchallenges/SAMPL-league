@@ -1,8 +1,6 @@
 import pytest
 from pytest_django.asserts import assertContains
 
-from core.views import challenge
-
 
 @pytest.mark.django_db
 def test_challenge_detail(client, user, benzene_from_mol):
