@@ -20,15 +20,15 @@ repos:
   rev: 21.9b0
   hooks:
   - id: black
-    args: [--config=app/pyproject.toml]
+    args: [--config=app/pyproject-ci.toml]
 - repo: https://github.com/pycqa/isort
   rev: 5.8.0
   hooks:
   - id: isort
     name: isort (python)
-    args: [--settings-file=app/pyproject.toml]
+    args: [--settings-file=app/pyproject-ci.toml]
 - repo: https://github.com/pycqa/pylint
   rev: v2.10.2
   hooks:
   - id: pylint
-    args: [--rcfile=app/pyproject.toml]
+    args: [--rcfile=app/pyproject-ci.toml]
