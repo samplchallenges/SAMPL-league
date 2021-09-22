@@ -1,3 +1,4 @@
+# pylint: skip-file
 import os
 
 from .base_settings import *  # lgtm [py/polluting-import]
