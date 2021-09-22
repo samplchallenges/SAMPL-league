@@ -36,7 +36,6 @@ def _run_and_check_evaluation(submission_run, evaluation):
         evaluation.id,
         submission_run.id,
         True,
-        True,
     )
     delayed.compute(scheduler="synchronous")
     assert submission_run.evaluation_set.count() == 1
@@ -150,7 +149,6 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
         submission_run.submission.id,
         evaluation.id,
         submission_run.id,
-        True,
         True,
     )
     delayed.compute(scheduler="synchronous")
