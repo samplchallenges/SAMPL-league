@@ -26,7 +26,9 @@ def test_list_submissions(client, user, other_user, draft_submission):
 
 
 @pytest.mark.django_db
-def test_load_submission_form(rf, user, draft_submission):
+def test_load_submission_form(
+    rf, user, draft_submission  # pylint:disable=unused-argument
+):
     request = rf.get("/core/submission/add/")
     request.user = user
     response = edit_submission_view(request)
@@ -199,7 +201,9 @@ def test_run_submission(client):
     assert response.context["log"] == evaluation.log_stderr
 
 
-def test_download_submission_arg_file(client, user, draft_submission, custom_file_arg):
+def test_download_submission_arg_file(
+    client, user, draft_submission, custom_file_arg  # pylint:disable=unused-argument
+):
     client.force_login(user)
     response = client.get(f"/download_arg/{custom_file_arg.id}/")
     assert response.status_code == 200
