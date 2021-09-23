@@ -10,7 +10,7 @@ from ..forms import RegisterForm
 class ProfileView(TemplateView):
     template_name = "profile.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs):  # pylint:disable=useless-super-delegation
         super().get_context_data(**kwargs)
 
 
