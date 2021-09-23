@@ -18,12 +18,12 @@ def test_value_registration():
     with pytest.raises(ValidationError):
 
         @models.register_value_model
-        class InvalidValueModel(models.GenericValue):
+        class InvalidValueModel(models.GenericValue):  # pylint: disable=unused-variable
             class Meta:
                 app_label = "core.apps.CoreConfig"
 
     @models.register_value_model
-    class CharValueModel(models.GenericValue):
+    class CharValueModel(models.GenericValue):  # pylint: disable=unused-variable
         value = django_models.CharField(max_length=100)
 
         class Meta:
@@ -38,14 +38,14 @@ def test_container(scoring_container):
     assert scoring_container.uri == "ghcr.io/robbason/score-coords"
 
 
-def test_file_value(input_elements, molfile_type):
+def test_file_value(input_elements, molfile_type):  # pylint: disable=unused-argument
     elem = input_elements[0]
     challenge = elem.challenge
     hellofile = "hello.txt"
 
     with tempfile.TemporaryDirectory() as tmpdir:
         hellopath = os.path.join(tmpdir, hellofile)
-        with open(hellopath, "w") as fp:
+        with open(hellopath, "w", encoding="utf-8") as fp:
             fp.write("Hello world")
             fp.flush()
         file_value = models.FileValue.from_string(hellopath, challenge=challenge)
@@ -93,20 +93,24 @@ def test_load_prediction_file(
 
     mock_field_file_save = Mock()
 
-    def mock_save_side_effect(name, content, **kwargs):
+    def mock_save_side_effect(
+        name, content, **kwargs
+    ):  # pylint: disable=unused-argument
         assert name == filename
 
     mock_field_file_save.side_effect = mock_save_side_effect
 
     with patch("django.db.models.fields.files.FieldFile.save", mock_field_file_save):
 
-        prediction = models.Prediction.load_output(
+        models.Prediction.load_output(
             challenge, evaluation, coordsfile_type, output_path
         )
         assert mock_field_file_save.call_count == 1
 
 
-def test_submission_arg(draft_submission, custom_string_arg, custom_file_arg):
+def test_submission_arg(
+    draft_submission, custom_string_arg, custom_file_arg
+):  # pylint: disable=unused-argument
     assert draft_submission.custom_args() == {"stringarg": "hello world"}
 
     assert draft_submission.custom_file_args() == {
