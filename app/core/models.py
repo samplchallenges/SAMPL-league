@@ -61,7 +61,7 @@ class Challenge(Timestamped):
             output_type.key: output_type for output_type in output_types.all()
         }
         file_content_type = ContentType.objects.get_for_model(FileValue)
-        self.__output_file_keys = set(
+        self.__output_file_keys = set(  # pylint:disable=attribute-defined-outside-init
             key
             for key, output_type in self.__output_types_dict.items()
             if output_type.content_type == file_content_type
@@ -176,8 +176,8 @@ class Submission(Timestamped):
         Return a new submission using this as a template.
         Set draft mode and clear 'Name' field.
         """
-        self.id = None
-        self.pk = None
+        self.id = None  # pylint:disable=attribute-defined-outside-init
+        self.pk = None  # pylint:disable=attribute-defined-outside-init
         self._state.adding = True
         return self
 
@@ -498,7 +498,9 @@ class Prediction(Solution):
         value_object.save()
         prediction.value_object = value_object
         assert prediction.value_object is not None, "after save"
-        logger.debug(f"Prediction: {prediction.value_object.__dict__}")
+        logger.debug(  # pylint: disable=logging-fstring-interpolation
+            f"Prediction: {prediction.value_object.__dict__}"
+        )
 
         return prediction
 
@@ -565,7 +567,10 @@ def register_value_model(ValueModel):
     for cls in VALUE_PARENT_CLASSES:
         if not issubclass(cls, ValueParentMixin):
             raise ValidationError(_(f"{cls} must extend ValueParentMixin"))
-        cls._value_models = (*cls._value_models, ValueModel)
+        cls._value_models = (  # pylint: disable=protected-access
+            *cls._value_models,  # pylint: disable=protected-access
+            ValueModel,
+        )
     return ValueModel
 
 
@@ -595,7 +600,9 @@ class FileValue(GenericValue):
     value = models.FileField(upload_to=_upload_location)
 
     @classmethod
-    def from_string(cls, filepath, *, challenge, evaluation=None):
+    def from_string(
+        cls, filepath, *, challenge, evaluation=None
+    ):  # pylint:disable=arguments-renamed,arguments-differ
         cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
         filename = os.path.basename(filepath)
         instance = cls(value=filename, **cls_kwargs)
