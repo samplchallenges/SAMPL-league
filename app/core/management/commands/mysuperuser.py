@@ -9,7 +9,7 @@ PASSWORD = os.environ["SUPER_USER_PASS"]
 
 
 class Command(BaseCommand):
-    def handle(self):
+    def handle(self, *args, **options):  # pylint:disable=unused-argument
         User = get_user_model()
         # https://docs.djangoproject.com/en/3.2/topics/auth/customizing/#django.contrib.auth.get_user_model
         if not User.objects.filter(username=USER_NAME).exists():
