@@ -1,3 +1,4 @@
+# pylint: skip-file
 import pytest
 
 from core.forms import ContainerForm, SubmissionForm

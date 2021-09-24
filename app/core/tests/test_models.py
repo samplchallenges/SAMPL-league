@@ -1,3 +1,4 @@
+# pylint: skip-file
 import os.path
 import tempfile
 from pathlib import Path
