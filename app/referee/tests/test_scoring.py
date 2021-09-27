@@ -1,4 +1,3 @@
-# pylint: skip-file
 import pytest
 
 from core import models

@@ -1,3 +1,4 @@
+# pylint:disable=unused-argument
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
@@ -27,7 +28,7 @@ def test_list_submissions(client, user, other_user, draft_submission):
 
 @pytest.mark.django_db
 def test_load_submission_form(
-    rf, user, draft_submission  # pylint:disable=unused-argument
+    rf, user, draft_submission
 ):
     request = rf.get("/core/submission/add/")
     request.user = user
@@ -201,9 +202,7 @@ def test_run_submission(client):
     assert response.context["log"] == evaluation.log_stderr
 
 
-def test_download_submission_arg_file(
-    client, user, draft_submission, custom_file_arg  # pylint:disable=unused-argument
-):
+def test_download_submission_arg_file(client, user, draft_submission, custom_file_arg):
     client.force_login(user)
     response = client.get(f"/download_arg/{custom_file_arg.id}/")
     assert response.status_code == 200

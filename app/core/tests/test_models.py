@@ -1,4 +1,4 @@
-# pylint: skip-file
+# pylint: disable=unused-argument, unused-variable
 import os.path
 import tempfile
 from pathlib import Path

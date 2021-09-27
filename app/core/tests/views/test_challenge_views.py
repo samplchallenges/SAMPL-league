@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument, unused-variable
 import pytest
 from pytest_django.asserts import assertContains
 
@@ -11,9 +12,7 @@ def test_challenge_detail(client, user, benzene_from_mol):
 
 
 @pytest.mark.django_db
-def test_challenge_list(
-    client, user, benzene_from_mol  # pylint:disable=unused-argument
-):
+def test_challenge_list(client, user, benzene_from_mol):
     client.force_login(user)
     response = client.get("/challenge/")
     assertContains(response, "molfile_molw")
