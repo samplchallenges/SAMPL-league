@@ -27,9 +27,7 @@ def test_list_submissions(client, user, other_user, draft_submission):
 
 
 @pytest.mark.django_db
-def test_load_submission_form(
-    rf, user, draft_submission
-):
+def test_load_submission_form(rf, user, draft_submission):
     request = rf.get("/core/submission/add/")
     request.user = user
     response = edit_submission_view(request)
