@@ -1,6 +1,3 @@
-import re
-from unittest.mock import Mock, patch
-
 import dask.distributed as dd
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -8,7 +5,7 @@ from django.core.management import call_command
 from django.db import transaction
 
 from core import models
-from referee import scoring, tasks
+from referee import tasks
 
 
 @pytest.mark.django_db(transaction=True)
@@ -38,7 +35,6 @@ def _run_and_check_evaluation(submission_run, evaluation):
         submission_run.submission.id,
         evaluation.id,
         submission_run.id,
-        True,
         True,
     )
     delayed.compute(scheduler="synchronous")
@@ -153,7 +149,6 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
         submission_run.submission.id,
         evaluation.id,
         submission_run.id,
-        True,
         True,
     )
     delayed.compute(scheduler="synchronous")

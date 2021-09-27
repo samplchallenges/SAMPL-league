@@ -1,10 +1,8 @@
 import json
 import logging
-import os.path
 import tempfile
 
 import ever_given.wrapper
-from django.db.models.fields.files import FieldFile
 
 from core import models
 
@@ -84,10 +82,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
 
 
 def score_submission_run(container, submission_run, score_types):
-    evaluation_score_types = score_types[models.ScoreType.Level.EVALUATION]
     submission_run_score_types = score_types[models.ScoreType.Level.SUBMISSION_RUN]
-
-    challenge = submission_run.submission.challenge
 
     evaluations = submission_run.evaluation_set.all()
 
@@ -99,7 +94,7 @@ def score_submission_run(container, submission_run, score_types):
         json.dump(run_scores_dicts, fp)
         fp.flush()
 
-        command = f"score-submissionrun"
+        command = "score-submissionrun"
         for key, value in ever_given.wrapper.run(
             container.uri, command, file_kwargs={"scores": fp.name}, kwargs={}
         ):

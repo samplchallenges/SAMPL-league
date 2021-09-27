@@ -12,7 +12,9 @@ HREF_TEMPLATE = '<a href="{}">{}</a> {}'
 
 def _admin_url(obj):
     return reverse(
-        admin_urls.admin_urlname(obj._meta, "change"),
+        admin_urls.admin_urlname(
+            obj._meta, "change"  #  pylint: disable=protected-access
+        ),
         args=[obj.pk],
     )
 
@@ -169,7 +171,7 @@ class ValueParentAdminMixin(TimestampedAdmin):
             allowed_models = (
                 content_type.id
                 for content_type in ContentType.objects.get_for_models(
-                    *models.Solution._value_models
+                    *models.Solution._value_models  #  pylint: disable=protected-access
                 ).values()
             )
             kwargs["queryset"] = ContentType.objects.filter(id__in=allowed_models)
@@ -242,7 +244,10 @@ class PredictionAdmin(TimestampedAdmin):
     def value(self, instance):
         if instance.value_object:
             url = reverse(
-                admin_urls.admin_urlname(instance.value_object._meta, "change"),
+                admin_urls.admin_urlname(
+                    instance.value_object._meta,  #  pylint: disable=protected-access
+                    "change",
+                ),
                 args=[instance.object_id],
             )
             print(url)

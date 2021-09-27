@@ -12,7 +12,7 @@ def _respond_local_file(value):
 
 
 @login_required
-def download_input_file(request, pk):
+def download_input_file(request, pk):  #  pylint: disable=unused-argument
     input_value = InputValue.objects.get(
         input_element__is_public=True,
         value_type__content_type__model="filevalue",

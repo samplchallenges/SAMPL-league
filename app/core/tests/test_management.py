@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument, unused-variable
 from io import StringIO
 
 import pytest

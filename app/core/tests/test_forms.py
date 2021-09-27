@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument, unused-variable
 import pytest
 
 from core.forms import ContainerForm, SubmissionForm

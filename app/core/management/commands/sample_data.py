@@ -92,7 +92,7 @@ class Command(BaseCommand):
             "--delete", action="store_true", help="Delete old challenges with this name"
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # pylint:disable=unused-argument
         if options["delete"]:
             self.stdout.write("Deleting old challenges", ending="")
             for challenge in models.Challenge.objects.filter(name=options["name"]):
@@ -133,7 +133,7 @@ class Command(BaseCommand):
             tag="latest",
         )
 
-        scoremaker = models.ScoreMaker.objects.create(
+        models.ScoreMaker.objects.create(
             challenge=challenge, container=scoring_container
         )
 
@@ -152,7 +152,7 @@ class Command(BaseCommand):
             name="Milo's submission",
         )
 
-        first_run = models.SubmissionRun.objects.create(
+        models.SubmissionRun.objects.create(
             submission=submission,
             digest="cafecafef00d",
             is_public=True,

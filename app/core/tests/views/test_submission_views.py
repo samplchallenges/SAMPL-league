@@ -1,3 +1,4 @@
+# pylint:disable=unused-argument
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
@@ -10,7 +11,6 @@ from django.urls import reverse
 
 from core.forms import ContainerForm, SubmissionForm
 from core.models import Submission
-from core.views import file_downloads
 from core.views.submission import edit_submission_view
 
 

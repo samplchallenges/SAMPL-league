@@ -45,5 +45,5 @@ class EvaluationLog(EvaluationUserTestMixin, DetailView):
         elif self.logtype == "out":
             context["log"] = self.object.log_stdout
         else:
-            raise ValueError("Invalid logtype: %s", self.logtype)
+            raise ValueError(f"Invalid logtype: {self.logtype}")
         return context
