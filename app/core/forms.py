@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
 
-from .models import Container, Submission, SubmissionArg
+from .models import Container, ContainerArg, Submission
 
 
 class RegisterForm(UserCreationForm):
@@ -41,25 +41,9 @@ class SubmissionForm(forms.ModelForm):
         }
 
 
-class SubmissionArgStringForm(forms.ModelForm):
-    prefix = "arg_string"
-
-    class Meta:
-        model = SubmissionArg
-        fields = ["key", "string_value"]
-
-
-class SubmissionArgFileForm(forms.ModelForm):
-    prefix = "arg_file"
-
-    class Meta:
-        model = SubmissionArg
-        fields = ["key", "file_value"]
-
-
-def submission_arg_formset():
+def container_arg_formset():
     return inlineformset_factory(
-        Submission, SubmissionArg, fields=("key", "file_value"), extra=1
+        Container, ContainerArg, fields=("key", "file_value"), extra=1
     )
 
 

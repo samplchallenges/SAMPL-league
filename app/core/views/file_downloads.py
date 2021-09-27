@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import FileResponse
 
 from .. import filecache
-from ..models import InputValue, SubmissionArg
+from ..models import ContainerArg, InputValue
 
 
 def _respond_local_file(value):
@@ -23,7 +23,7 @@ def download_input_file(request, pk):  #  pylint: disable=unused-argument
 
 
 @login_required
-def download_submission_arg_file(request, pk):
-    submission_arg = SubmissionArg.objects.get(submission__user=request.user, pk=pk)
+def download_container_arg_file(request, pk):
+    container_arg = ContainerArg.objects.get(container__user=request.user, pk=pk)
 
-    return _respond_local_file(submission_arg.file_value)
+    return _respond_local_file(container_arg.file_value)

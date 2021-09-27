@@ -114,7 +114,7 @@ def edit_submission_view(request, pk=None, clone=False):
         container = submission.container if submission else None
         container_form = forms.ContainerForm(request.POST, instance=container)
         submission_form = forms.SubmissionForm(request.POST, instance=submission)
-        ArgFormSet = forms.submission_arg_formset()
+        ArgFormSet = forms.container_arg_formset()
         arg_formset = None
         if container_form.is_valid():
             container = container_form.save(commit=False)
@@ -127,12 +127,12 @@ def edit_submission_view(request, pk=None, clone=False):
                 submission.user = request.user
                 submission.save()
                 arg_formset = ArgFormSet(
-                    request.POST, request.FILES, instance=submission
+                    request.POST, request.FILES, instance=container
                 )
                 if arg_formset.is_valid():
                     arg_instances = arg_formset.save(commit=False)
                     for instance in arg_instances:
-                        instance.submission = submission
+                        instance.container = container
                         instance.save()
                     for instance in arg_formset.deleted_objects:
                         instance.delete()
@@ -141,7 +141,7 @@ def edit_submission_view(request, pk=None, clone=False):
                     show_args = True
 
         if arg_formset is None:
-            arg_formset = ArgFormSet(request.POST, request.FILES, instance=submission)
+            arg_formset = ArgFormSet(request.POST, request.FILES, instance=container)
     elif request.method == "GET":
         if pk:
             show_container = False
@@ -152,7 +152,7 @@ def edit_submission_view(request, pk=None, clone=False):
                 form_action = reverse_lazy("submission-add")
             container_form = forms.ContainerForm(instance=submission.container)
             submission_form = forms.SubmissionForm(instance=submission)
-            arg_formset = forms.submission_arg_formset()(instance=submission)
+            arg_formset = forms.container_arg_formset()(instance=container)
 
         else:
             initial_values = {}
@@ -161,7 +161,7 @@ def edit_submission_view(request, pk=None, clone=False):
 
             container_form = forms.ContainerForm(initial=initial_values)
             submission_form = forms.SubmissionForm()
-            arg_formset = forms.submission_arg_formset()()
+            arg_formset = forms.container_arg_formset()()
     else:
         return HttpResponseBadRequest()
     context = {

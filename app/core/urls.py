@@ -27,7 +27,7 @@ urlpatterns = [
     ),
     path(
         "download_arg/<int:pk>/",
-        file_downloads.download_submission_arg_file,
+        file_downloads.download_container_arg_file,
         name="download-arg",
     ),
     path("submission/", SubmissionList.as_view(), name="submission-list"),

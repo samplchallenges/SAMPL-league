@@ -200,7 +200,7 @@ def test_run_submission(client):
     assert response.context["log"] == evaluation.log_stderr
 
 
-def test_download_submission_arg_file(client, user, draft_submission, custom_file_arg):
+def test_download_container_arg_file(client, user, draft_submission, custom_file_arg):
     client.force_login(user)
     response = client.get(f"/download_arg/{custom_file_arg.id}/")
     assert response.status_code == 200

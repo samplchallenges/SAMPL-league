@@ -132,8 +132,8 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
 
     kwargs, file_kwargs = element.all_values()
     evaluation.mark_started(kwargs, file_kwargs)
-    kwargs.update(submission.custom_args())
-    file_kwargs.update(submission.custom_file_args())
+    kwargs.update(container.custom_args())
+    file_kwargs.update(container.custom_file_args())
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
