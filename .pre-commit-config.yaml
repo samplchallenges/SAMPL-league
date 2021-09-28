@@ -1,5 +1,8 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+ci:
+  autoupdate_schedule: quarterly
+
 files: (^app/|.pre-commit-config.yaml)
 exclude: (^app/core/migrations/|/tests/data/|/management/commands/data/)
 repos:
@@ -32,3 +35,8 @@ repos:
   hooks:
   - id: pylint
     args: [--rcfile=app/pyproject-ci.toml]
+- repo: https://github.com/asottile/pyupgrade
+  rev: 'v2.24.0'
+  hooks:
+  - id: pyupgrade
+    args: [--py38-plus]
