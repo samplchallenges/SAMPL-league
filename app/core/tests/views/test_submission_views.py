@@ -213,5 +213,6 @@ def test_download_input_file(client, user, benzene_from_mol):
     response = client.get(f"/download_input/{input_value.pk}/")
     assert response.status_code == 200
     assert isinstance(response, FileResponse)
-    assert re.match('inline; filename="ChEBI_16716_.+.mdl"',
-                    response.headers["Content-Disposition"])
+    assert re.match(
+        'inline; filename="ChEBI_16716_.+.mdl"', response.headers["Content-Disposition"]
+    )
