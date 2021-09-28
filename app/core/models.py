@@ -61,11 +61,11 @@ class Challenge(Timestamped):
             output_type.key: output_type for output_type in output_types.all()
         }
         file_content_type = ContentType.objects.get_for_model(FileValue)
-        self.__output_file_keys = set(  # pylint:disable=attribute-defined-outside-init
+        self.__output_file_keys = {  # pylint:disable=attribute-defined-outside-init
             key
             for key, output_type in self.__output_types_dict.items()
             if output_type.content_type == file_content_type
-        )
+        }
 
     def output_file_keys(self):
         if self.__output_types_dict is None:
