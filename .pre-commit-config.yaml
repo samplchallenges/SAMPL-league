@@ -9,7 +9,7 @@ repos:
   - id: check-useless-excludes
   - id: identity
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v3.2.0
+  rev: v4.0.1
   hooks:
   - id: trailing-whitespace
   - id: end-of-file-fixer
@@ -22,13 +22,13 @@ repos:
   - id: black
     args: [--config=app/pyproject-ci.toml]
 - repo: https://github.com/pycqa/isort
-  rev: 5.8.0
+  rev: 5.9.3
   hooks:
   - id: isort
     name: isort (python)
     args: [--settings-file=app/pyproject-ci.toml]
 - repo: https://github.com/pycqa/pylint
-  rev: v2.10.2
+  rev: v2.11.1
   hooks:
   - id: pylint
     args: [--rcfile=app/pyproject-ci.toml]
