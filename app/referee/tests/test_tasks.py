@@ -56,13 +56,14 @@ def test_run_element_mol(molfile_molw_config, benzene_from_mol):
 
 
 def test_run_element_custom(
-    molfile_molw_config, benzene_from_mol, submission_arg_factory
+    molfile_molw_config, benzene_from_mol, container_arg_factory
 ):
     submission_run = molfile_molw_config.submission_run
     submission = submission_run.submission
-    submission_arg_factory(submission, key="stringarg", string_value="hello world")
-    submission_arg_factory(
-        submission, key="filearg", file_name="example.txt", file_body="Some text"
+    container = submission.container
+    container_arg_factory(container, key="stringarg", string_value="hello world")
+    container_arg_factory(
+        container, key="filearg", file_name="example.txt", file_body="Some text"
     )
     evaluation = models.Evaluation.objects.create(
         input_element=benzene_from_mol, submission_run=submission_run
