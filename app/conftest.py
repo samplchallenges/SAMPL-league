@@ -147,22 +147,22 @@ def container(container_factory, challenge):
 
 
 @pytest.fixture
-def submission_arg_factory(db):
-    def submission_arg_maker(
-        submission, key, string_value=None, file_name=None, file_body=None
+def container_arg_factory(db):
+    def container_arg_maker(
+        container, key, string_value=None, file_name=None, file_body=None
     ):
         if file_name:
             file_value = SimpleUploadedFile(file_name, file_body.encode())
         else:
             file_value = None
-        return models.SubmissionArg.objects.create(
-            submission=submission,
+        return models.ContainerArg.objects.create(
+            container=container,
             key=key,
             file_value=file_value,
             string_value=string_value,
         )
 
-    return submission_arg_maker
+    return container_arg_maker
 
 
 @pytest.fixture
@@ -380,16 +380,16 @@ def input_elements(smiles_molw_config, db):
 
 
 @pytest.fixture
-def custom_string_arg(submission_arg_factory, draft_submission):
-    return submission_arg_factory(
-        draft_submission, key="stringarg", string_value="hello world"
+def custom_string_arg(container_arg_factory, draft_submission):
+    return container_arg_factory(
+        draft_submission.container, key="stringarg", string_value="hello world"
     )
 
 
 @pytest.fixture
-def custom_file_arg(submission_arg_factory, draft_submission):
-    return submission_arg_factory(
-        draft_submission,
+def custom_file_arg(container_arg_factory, draft_submission):
+    return container_arg_factory(
+        draft_submission.container,
         key="filearg",
         file_name="example.txt",
         file_body="these are the contents of the txt file",

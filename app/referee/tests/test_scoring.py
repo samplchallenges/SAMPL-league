@@ -1,6 +1,11 @@
-import pytest
+import os.path
+import tempfile
+from unittest.mock import Mock, patch
 
-from core import models
+import pytest
+from django.core.files import File
+
+from core import filecache, models
 from referee import scoring
 
 
@@ -21,8 +26,6 @@ def test_score_submission(
     assert models.SubmissionRunScore.objects.count() == 1
     submission_run_score = models.SubmissionRunScore.objects.get(score_type=score_type)
     assert submission_run_score.value == pytest.approx(3.0)
-
-    # assert models.Prediction.objects.count() == 2
     assert models.EvaluationScore.objects.count() == 2
 
     evaluation = evaluations[0]
@@ -31,6 +34,65 @@ def test_score_submission(
     assert score.value == pytest.approx(3.0)
 
 
-#    fake_run.assert_called_with(
-#        "docker.io/mmh42/calc-subtract:0.1", '[{"diff": 3.0}, {"diff": 3.0}]'
-#    )
+def _save_file_arg(container, key, file_body):
+    # custom_file_args has the file contents as value
+    arg = models.ContainerArg(container=container, key=key)
+    arg.save()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        hellopath = os.path.join(tmpdir, "hello.txt")
+        with open(hellopath, "w", encoding="utf-8") as fp:
+            fp.write(file_body)
+        with open(hellopath, "rb") as fp:
+            arg.file_value.save(key, File(fp))
+    arg.save()
+    return arg
+
+
+@pytest.mark.parametrize(
+    ["custom_string_args", "custom_file_args"],
+    [[{}, {}], [{"foo": "bar"}, {}], [{}, {"license": "Hello world"}]],
+)
+def test_score_evaluation_args(
+    smiles_molw_config, evaluations, custom_string_args, custom_file_args
+):
+    submission_run = smiles_molw_config.submission_run
+    challenge = submission_run.submission.challenge
+    scoring_container = challenge.scoremaker.container
+
+    for k, v in custom_string_args.items():
+        models.ContainerArg.objects.create(
+            container=scoring_container, key=k, string_value=v
+        )
+
+    custom_file_args_full = {}
+    for k, v in custom_file_args.items():
+        file_arg = _save_file_arg(scoring_container, k, v)
+        custom_file_args_full[k] = filecache.ensure_local_copy(file_arg.file_value)
+
+    fake_run = Mock(return_value=[])
+
+    evaluation = evaluations[0]
+    assert evaluation.input_element.is_public
+    evaluation_score_types = {
+        score_type.key: score_type
+        for score_type in challenge.scoretype_set.filter(
+            level=models.ScoreType.Level.EVALUATION
+        )
+    }
+
+    with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:
+        mock_wrapper.run = fake_run
+        scoring.score_evaluation(scoring_container, evaluation, evaluation_score_types)
+
+        expected_args = ("ghcr.io/robbason/score-coords:latest", "score-evaluation")
+        expected_kwargs = {"molWeight_answerkey": 72.0, "molWeight_prediction": 97.08}
+        expected_kwargs.update(custom_string_args)
+        expected_file_kwargs = custom_file_args_full
+        call_args = fake_run.call_args
+        assert call_args is not None
+        args = call_args.args
+        assert args == expected_args
+        kwargs = call_args.kwargs["kwargs"]
+        assert kwargs == expected_kwargs
+        file_kwargs = call_args.kwargs["file_kwargs"]
+        assert file_kwargs == expected_file_kwargs

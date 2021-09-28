@@ -1,4 +1,5 @@
 # pylint:disable=unused-argument
+import re
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
@@ -200,7 +201,7 @@ def test_run_submission(client):
     assert response.context["log"] == evaluation.log_stderr
 
 
-def test_download_submission_arg_file(client, user, draft_submission, custom_file_arg):
+def test_download_container_arg_file(client, user, draft_submission, custom_file_arg):
     client.force_login(user)
     response = client.get(f"/download_arg/{custom_file_arg.id}/")
     assert response.status_code == 200
@@ -212,6 +213,6 @@ def test_download_input_file(client, user, benzene_from_mol):
     response = client.get(f"/download_input/{input_value.pk}/")
     assert response.status_code == 200
     assert isinstance(response, FileResponse)
-    assert (
-        response.headers["Content-Disposition"] == 'inline; filename="ChEBI_16716.mdl"'
+    assert re.match(
+        'inline; filename="ChEBI_16716.*.mdl"', response.headers["Content-Disposition"]
     )

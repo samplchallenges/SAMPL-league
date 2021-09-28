@@ -19,12 +19,12 @@ def test_value_registration():
     with pytest.raises(ValidationError):
 
         @models.register_value_model
-        class InvalidValueModel(models.GenericValue):  # pylint: disable=unused-variable
+        class InvalidValueModel(models.GenericValue):
             class Meta:
                 app_label = "core.apps.CoreConfig"
 
     @models.register_value_model
-    class CharValueModel(models.GenericValue):  # pylint: disable=unused-variable
+    class CharValueModel(models.GenericValue):
         value = django_models.CharField(max_length=100)
 
         class Meta:
@@ -39,7 +39,7 @@ def test_container(scoring_container):
     assert scoring_container.uri == "ghcr.io/robbason/score-coords"
 
 
-def test_file_value(input_elements, molfile_type):  # pylint: disable=unused-argument
+def test_file_value(input_elements, molfile_type):
     elem = input_elements[0]
     challenge = elem.challenge
     hellofile = "hello.txt"
@@ -94,9 +94,7 @@ def test_load_prediction_file(
 
     mock_field_file_save = Mock()
 
-    def mock_save_side_effect(
-        name, content, **kwargs
-    ):  # pylint: disable=unused-argument
+    def mock_save_side_effect(name, content, **kwargs):
         assert name == filename
 
     mock_field_file_save.side_effect = mock_save_side_effect
@@ -109,16 +107,15 @@ def test_load_prediction_file(
         assert mock_field_file_save.call_count == 1
 
 
-def test_submission_arg(
-    draft_submission, custom_string_arg, custom_file_arg
-):  # pylint: disable=unused-argument
-    assert draft_submission.custom_args() == {"stringarg": "hello world"}
+def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):
+    container = draft_submission.container
+    assert container.custom_args() == {"stringarg": "hello world"}
 
-    assert draft_submission.custom_file_args() == {
+    assert container.custom_file_args() == {
         "filearg": os.path.join(
             settings.MEDIA_ROOT,
-            "submission_args/{}/{}/filearg/example.txt".format(
-                draft_submission.user_id, draft_submission.id
+            "container_args/{}/{}/filearg/example.txt".format(
+                container.user_id, container.id
             ),
         )
     }

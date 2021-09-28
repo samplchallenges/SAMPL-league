@@ -20,6 +20,7 @@ def evaluations(smiles_molw_config, input_elements):
             prediction = models.Prediction.load_output(
                 challenge, evaluation, molw_type, value
             )
+            prediction.save()
 
     return evaluations_list
 

@@ -66,6 +66,11 @@ class ContainerAdmin(TimestampedAdmin):
         return _admin_links(instance.submission_set.all())
 
 
+@register(models.ContainerArg)
+class ContainerArgAdmin(TimestampedAdmin):
+    list_display = ("key", "container")
+
+
 @register(models.ScoreMaker)
 class ScoreMakerAdmin(TimestampedAdmin):
     list_display = ("challenge", "container")

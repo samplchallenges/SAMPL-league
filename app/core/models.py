@@ -95,6 +95,18 @@ class Container(Timestamped):
         suffix = f":{self.tag}" if self.tag else ""
         return f"{self.registry}/{self.label}{suffix}"
 
+    def custom_args(self):
+        return {
+            arg.key: arg.string_value for arg in self.args.all() if arg.string_value
+        }
+
+    def custom_file_args(self):
+        return {
+            arg.key: filecache.ensure_local_copy(arg.file_value)
+            for arg in self.args.all()
+            if arg.file_value
+        }
+
 
 class ScoreMaker(Timestamped):
     """
@@ -147,18 +159,6 @@ class Submission(Timestamped):
     def get_absolute_url(self):
         return reverse("submission", kwargs={"pk": self.pk})
 
-    def custom_args(self):
-        return {
-            arg.key: arg.string_value for arg in self.args.all() if arg.string_value
-        }
-
-    def custom_file_args(self):
-        return {
-            arg.key: filecache.ensure_local_copy(arg.file_value)
-            for arg in self.args.all()
-            if arg.file_value
-        }
-
     def clean(self):
         super().clean()
         if not self.draft_mode:
@@ -182,28 +182,28 @@ class Submission(Timestamped):
         return self
 
 
-def _submission_file_location(instance, filename):
+def _container_file_location(instance, filename):
     return os.path.join(
-        "submission_args",
-        str(instance.submission.user_id),
-        str(instance.submission.id),
+        "container_args",
+        str(instance.container.user_id),
+        str(instance.container.id),
         instance.key,
         filename,
     )
 
 
-class SubmissionArg(Timestamped):
-    submission = models.ForeignKey(
-        Submission, on_delete=models.CASCADE, related_name="args"
+class ContainerArg(Timestamped):
+    container = models.ForeignKey(
+        Container, on_delete=models.CASCADE, related_name="args"
     )
     key = models.SlugField(db_index=False)
     string_value = models.TextField(blank=True, null=True)
     file_value = models.FileField(
-        blank=True, null=True, upload_to=_submission_file_location
+        blank=True, null=True, upload_to=_container_file_location
     )
 
     class Meta:
-        unique_together = ["submission", "key"]
+        unique_together = ["container", "key"]
 
     def clean(self):
         if not (self.string_value or self.file_value) or (
@@ -498,9 +498,6 @@ class Prediction(Solution):
         value_object.save()
         prediction.value_object = value_object
         assert prediction.value_object is not None, "after save"
-        logger.debug(  # pylint: disable=logging-fstring-interpolation
-            f"Prediction: {prediction.value_object.__dict__}"
-        )
 
         return prediction
 

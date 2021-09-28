@@ -65,6 +65,8 @@ def score_evaluation(container, evaluation, evaluation_score_types):
     command = "score-evaluation"
     evaluation.append(stdout=f"Scoring with {container.uri} {command}\n")
     evaluation.save(update_fields=["log_stdout"])
+    kwargs.update(container.custom_args())
+    file_kwargs.update(container.custom_file_args())
 
     for key, score_value in ever_given.wrapper.run(
         container.uri,
@@ -90,13 +92,17 @@ def score_submission_run(container, submission_run, score_types):
         {score.score_type.key: score.value for score in evaluation.scores.all()}
         for evaluation in evaluations
     ]
+
     with tempfile.NamedTemporaryFile(suffix=".json", mode="w") as fp:
         json.dump(run_scores_dicts, fp)
         fp.flush()
-
+        kwargs = {}
+        file_kwargs = {"scores": fp.name}
+        kwargs.update(container.custom_args())
+        file_kwargs.update(container.custom_file_args())
         command = "score-submissionrun"
         for key, value in ever_given.wrapper.run(
-            container.uri, command, file_kwargs={"scores": fp.name}, kwargs={}
+            container.uri, command, file_kwargs=file_kwargs, kwargs=kwargs
         ):
             if key in submission_run_score_types:
                 models.SubmissionRunScore.objects.create(
