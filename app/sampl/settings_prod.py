@@ -40,7 +40,7 @@ ROLLBAR = {
     "access_token": POST_SERVER_ITEM_ACCESS_TOKEN,
     "environment": "production",
     "branch": "main",
-    "root": BASE_DIR,
+    "root": str(BASE_DIR),
 }
 
 LOGGING = {
