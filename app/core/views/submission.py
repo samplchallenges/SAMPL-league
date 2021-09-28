@@ -46,7 +46,7 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["container"] = self.object.container
-        context["custom_args"] = self.object.args.all()
+        context["custom_args"] = self.object.container.args.all()
         context["submission_details"] = [
             (field_name, getattr(self.object, field_name))
             for field_name in self.DETAIL_FIELD_NAMES
@@ -146,11 +146,12 @@ def edit_submission_view(request, pk=None, clone=False):
         if pk:
             show_container = False
             submission = Submission.objects.get(pk=pk)
+            container = submission.container
             if clone:
                 submission.pk = None
-                submission.container.pk = None
+                container.pk = None
                 form_action = reverse_lazy("submission-add")
-            container_form = forms.ContainerForm(instance=submission.container)
+            container_form = forms.ContainerForm(instance=container)
             submission_form = forms.SubmissionForm(instance=submission)
             arg_formset = forms.container_arg_formset()(instance=container)
 
