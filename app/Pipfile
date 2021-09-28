@@ -14,7 +14,7 @@ distributed = "*"
 docker = "*"
 six = "*"
 ever-given = "0.0.5"
-sampl = {path = "."}
+sampl = {path = ".", editable = true}
 rollbar = "*"
 jupyterlab = "*"
 
