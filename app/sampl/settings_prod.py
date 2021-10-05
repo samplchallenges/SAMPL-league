@@ -5,7 +5,6 @@ from .base_settings import *  # lgtm [py/polluting-import]
 
 BASE_DIR = Path("/opt/app/sampl")
 MEDIA_ROOT = BASE_DIR / "media"
-MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 # Set dask URL for aws
 DASK_SCHEDULER_URL = "172.31.39.184:8786"
