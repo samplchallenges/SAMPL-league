@@ -27,7 +27,9 @@ def run_and_score_submission(client, submission):
         run_id, evaluation_statuses = build_submission_run(
             submission.pk, element_ids, delayed_conditional, is_public=is_public
         )
-        delayed_conditional = check_and_score(run_id, evaluation_statuses)
+        delayed_conditional = check_and_score(
+            run_id, delayed_conditional, evaluation_statuses
+        )
 
     if settings.VISUALIZE_DASK_GRAPH:
         delayed_conditional.visualize(filename="task_graph.svg")
@@ -40,9 +42,11 @@ def run_and_score_submission(client, submission):
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def check_and_score(submission_run_id, evaluation_statuses):
+def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses):
     uniq_statuses = set(evaluation_statuses)
-    if {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
+    if not delayed_conditional:
+        status = models.Status.CANCELLED
+    elif {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
         logger.error(
             "Evaluations should have all completed, but have statuses %s!",
             evaluation_statuses,
