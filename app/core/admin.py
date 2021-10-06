@@ -216,7 +216,7 @@ class InputValueAdmin(ValueParentAdminMixin):
 
 @register(models.Evaluation)
 class EvaluationAdmin(TimestampedAdmin):
-    list_display = ("pk", "submission_run")
+    list_display = ("pk", "submission_run", "status")
     readonly_fields = (
         "submission_run",
         "predictions",
