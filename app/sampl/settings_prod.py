@@ -7,7 +7,11 @@ BASE_DIR = Path("/opt/app/sampl")
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Set dask URL for aws
-DASK_SCHEDULER_URL = "172.31.39.184:8786"
+#DASK_SCHEDULER_URL = "172.31.39.184:8786"
+
+DASK_SCHEDULER_HOST = os.environ.get("DASK_SCHEDULER_HOST", "127.0.0.1")
+DASK_SCHEDULER_URL = ":".join(DASK_SCHEDULER_HOST, "8786")
+
 
 # We only need rollbar in production
 MIDDLEWARE.append("rollbar.contrib.django.middleware.RollbarNotifierMiddleware")
