@@ -57,18 +57,10 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
             for field_name in self.DETAIL_FIELD_NAMES
             if not getattr(self.object, field_name)
         ]
-        context["public_run"] = (
-            self.object.submissionrun_set.filter(is_public=True)
-            .order_by("-updated_at")
-            .first()
-        )
+        context["public_run"] = self.object.last_public_run()
         if context["public_run"]:
             context["public_completion"] = context["public_run"].completion()
-        context["private_run"] = (
-            self.object.submissionrun_set.filter(is_public=False)
-            .order_by("-updated_at")
-            .first()
-        )
+        context["private_run"] = self.object.last_private_run()
         if context["private_run"]:
             context["private_completion"] = context["private_run"].completion()
         return context

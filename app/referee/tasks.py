@@ -24,12 +24,10 @@ def run_and_score_submission(client, submission):
         element_ids = challenge.inputelement_set.filter(
             is_public=is_public
         ).values_list("id", flat=True)
-        run_id, delayed_evaluation_ids = build_submission_run(
+        run_id, evaluation_statuses = build_submission_run(
             submission.pk, element_ids, delayed_conditional, is_public=is_public
         )
-        delayed_conditional = check_and_score(
-            run_id, delayed_conditional, delayed_evaluation_ids
-        )
+        delayed_conditional = check_and_score(run_id, evaluation_statuses)
 
     if settings.VISUALIZE_DASK_GRAPH:
         delayed_conditional.visualize(filename="task_graph.svg")
@@ -42,15 +40,32 @@ def run_and_score_submission(client, submission):
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def check_and_score(submission_run_id, conditional, evaluation_ids):
-    if not conditional:
-        return conditional
-    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
-    submission_run.status = models.Status.SUCCESS
-    submission_run.save()
-    if len(evaluation_ids) == 0:
-        return True
+def check_and_score(submission_run_id, evaluation_statuses):
+    uniq_statuses = set(evaluation_statuses)
+    if {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
+        logger.error(
+            "Evaluations should have all completed, but have statuses %s!",
+            evaluation_statuses,
+        )
+        status = models.Status.FAILURE
+    elif {models.Status.CANCELLED} == uniq_statuses:
+        status = models.Status.CANCELLED
+    elif {models.Status.FAILURE, models.Status.CANCELLED} & uniq_statuses:
+        status = models.Status.FAILURE
+    else:
+        status = models.Status.SUCCESS
 
+    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
+    submission_run.status = status
+    submission_run.save()
+    if status != models.Status.SUCCESS:
+        logger.warn(
+            "Submission run failed (public? %s), %s: %s",
+            submission_run.is_public,
+            submission_run,
+            status,
+        )
+        return False
     logger.info(
         "Running check_and_score %s public? %s",
         submission_run_id,
@@ -90,21 +105,16 @@ def build_submission_run(submission_id, element_ids, conditional, is_public=True
         for element_id in element_ids
     ]
 
-    delayed_evaluation_ids = dask.delayed(
-        [
-            run_evaluation(
-                submission_id,
-                evaluation.id,
-                submission_run_id,
-                conditional=conditional,
-            )
-            for evaluation in evaluations
-        ],
-        name=f"evaluation_list_{submission_run_id}_{is_public}",
-        pure=False,
-        nout=len(evaluations),
-    )
-    return (submission_run_id, delayed_evaluation_ids)
+    evaluation_statuses = [
+        run_evaluation(
+            submission_id,
+            evaluation.id,
+            submission_run_id,
+            conditional=conditional,
+        )
+        for evaluation in evaluations
+    ]
+    return (submission_run_id, evaluation_statuses)
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
@@ -113,7 +123,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
         models.Evaluation.objects.filter(pk=evaluation_id).update(
             status=models.Status.CANCELLED
         )
-        return
+        return models.Status.CANCELLED
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     challenge = submission.challenge
@@ -172,11 +182,11 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation.save(update_fields=["log_stderr"])
             raise
         evaluation.status = models.Status.SUCCESS
-        return evaluation.id
+        return evaluation.status
     except Exception as exc:
         evaluation.status = models.Status.FAILURE
         evaluation.append(stderr=f"Execution failure: {exc}\n")
         evaluation.save(update_fields=["log_stderr"])
-        raise
+        return evaluation.status
     finally:
         evaluation.save()

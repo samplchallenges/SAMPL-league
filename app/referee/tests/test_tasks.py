@@ -71,7 +71,7 @@ def test_run_element_custom(
     with pytest.raises(AssertionError) as excinfo:
         _run_and_check_evaluation(submission_run, evaluation)
 
-    assert "number of predictions (0)" in str(excinfo.value)
+    assert "FAILURE" in str(excinfo.value)
     evaluation.refresh_from_db()
     assert "Error: No such option" in evaluation.log_stderr
 

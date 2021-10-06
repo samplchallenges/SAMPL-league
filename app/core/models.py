@@ -181,6 +181,20 @@ class Submission(Timestamped):
         self._state.adding = True
         return self
 
+    def last_run(self, is_public):
+        # TODO: this is inefficient the way it's used in submission_list
+        return (
+            self.submissionrun_set.filter(is_public=is_public)
+            .order_by("-updated_at")
+            .first()
+        )
+
+    def last_public_run(self):
+        return self.last_run(is_public=True)
+
+    def last_private_run(self):
+        return self.last_run(is_public=False)
+
 
 def _container_file_location(instance, filename):
     return os.path.join(
