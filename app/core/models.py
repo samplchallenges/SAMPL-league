@@ -49,6 +49,7 @@ class Challenge(Timestamped):
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
     repo_url = models.URLField()
+    active = models.BooleanField(default=True)
 
     __output_types_dict = None
 

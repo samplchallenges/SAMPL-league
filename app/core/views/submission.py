@@ -42,6 +42,7 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
         "computing_and_hardware",
         "software",
         "method",
+        "notes"
     )
 
     def get_context_data(self, **kwargs):
