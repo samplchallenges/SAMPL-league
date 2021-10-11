@@ -6,6 +6,7 @@ from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
+from django.utils import timezone
 
 import referee
 import referee.tasks
@@ -106,8 +107,19 @@ def edit_submission_view(request, pk=None, clone=False):
         container = submission.container if submission else None
         container_form = forms.ContainerForm(request.POST, instance=container)
         submission_form = forms.SubmissionForm(request.POST, instance=submission)
+        submission_notes_form = forms.SubmissionNotesForm(request.POST)
         ArgFormSet = forms.container_arg_formset()
         arg_formset = None
+
+        endtime = submission.challenge.end_at
+        if timezone.now() > endtime:
+
+            if submission_notes_form.is_valid():
+                submission.notes = submission_notes_form.cleaned_data["notes"]
+                submission.save(update_fields=["notes"])
+
+            return redirect("submission-detail", pk=submission.pk)
+
         if container_form.is_valid():
             container = container_form.save(commit=False)
             container.user = request.user
@@ -117,6 +129,8 @@ def edit_submission_view(request, pk=None, clone=False):
                 submission.container = container
                 submission.challenge = container.challenge
                 submission.user = request.user
+                if submission_notes_form.is_valid():
+                    submission.notes = submission_notes_form.cleaned_data["notes"]
                 submission.save()
                 arg_formset = ArgFormSet(
                     request.POST, request.FILES, instance=container
@@ -145,6 +159,7 @@ def edit_submission_view(request, pk=None, clone=False):
                 form_action = reverse_lazy("submission-add")
             container_form = forms.ContainerForm(instance=container)
             submission_form = forms.SubmissionForm(instance=submission)
+            submission_notes_form = forms.SubmissionNotesForm(initial={"notes": submission.notes})
             arg_formset = forms.container_arg_formset()(instance=container)
 
         else:
@@ -154,6 +169,7 @@ def edit_submission_view(request, pk=None, clone=False):
 
             container_form = forms.ContainerForm(initial=initial_values)
             submission_form = forms.SubmissionForm()
+            submission_notes_form = forms.SubmissionNotesForm()
             arg_formset = forms.container_arg_formset()()
     else:
         return HttpResponseBadRequest()
@@ -162,8 +178,31 @@ def edit_submission_view(request, pk=None, clone=False):
         "show_container": show_container,
         "show_args": show_args,
         "submission_form": submission_form,
+        "submission_notes_form": submission_notes_form,
         "arg_formset": arg_formset,
         "arg_helper": forms.ArgFormHelper(),
         "form_action": form_action,
     }
+
+    # add check in case submission is not created
+    try:
+        endtime = submission.challenge.end_at
+    except UnboundLocalError:
+        endtime = None
+
+    if endtime and timezone.now() > endtime:
+        for field in submission_form.fields.keys():
+            if field != "notes":
+                submission_form.fields[field].disabled = True
+                print(submission_form.fields[field].__dict__)
+
+        for field in container_form.fields.keys():
+            container_form.fields[field].disabled = True
+
+        for form in arg_formset.forms:
+            # the line below causes the data to be deleted
+            form.fields["key"].required = False
+            form.fields["key"].disabled = True
+            form.fields["file_value"].disabled = True
+            form.fields["DELETE"].disabled = True
     return render(request, "core/submission_form.html", context)

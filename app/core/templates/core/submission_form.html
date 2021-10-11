@@ -6,6 +6,7 @@
   {{ container_form|as_crispy_errors }}
   {{ submission_form|as_crispy_errors }}
   {{ arg_formset|as_crispy_errors }}
+  {{ submission_notes_form|as_crispy_errors }}
 </div>
 <form method="post" class="form" action="{{ form_action }}" enctype="multipart/form-data">
   {% csrf_token %}
@@ -13,6 +14,7 @@
     {% include "core/_collapsible_form.html" with label="container" form=container_form show=show_container only %}
     {% include "core/_collapsible_form.html" with label="args" title="Special Arguments" formset=arg_formset helper=arg_helper show=show_args card_contents="core/_arg_helptext.html" only %}
     {% include "core/_collapsible_form.html" with label="submission" title="Submission Details" form=submission_form show=True only %}
+    {% include "core/_collapsible_form.html" with label="notes" title="Submission Notes" form=submission_notes_form show=True only %}
   </div>
   <button type="submit" class="btn btn-primary my-2">Save Submission</button>
 </form>
