@@ -63,7 +63,7 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
     submission_run.status = status
     submission_run.save()
     if status != models.Status.SUCCESS:
-        logger.warn(
+        logger.warning(
             "Submission run failed (public? %s), %s: %s",
             submission_run.is_public,
             submission_run,
@@ -181,13 +181,13 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                 evaluation,
                 evaluation_score_types,
             )
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             evaluation.append(stderr=f"Error scoring\n{exc}")
             evaluation.save(update_fields=["log_stderr"])
             raise
         evaluation.status = models.Status.SUCCESS
         return evaluation.status
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         evaluation.status = models.Status.FAILURE
         evaluation.append(stderr=f"Execution failure: {exc}\n")
         evaluation.save(update_fields=["log_stderr"])

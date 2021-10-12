@@ -1,7 +1,6 @@
 """
 Django settings for SAMPL project.
 """
-from pathlib import Path
 
 # Custom settings for SAMPL
 VISUALIZE_DASK_GRAPH = False
