@@ -52,13 +52,6 @@ class ChallengeDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         challenge = context["challenge"]
-        if challenge.end_at <= timezone.now():
-            challenge.active = False
-            print(f"challenge.active = {challenge.active}, should be False")
-        else:
-            challenge.active = True
-            print(f"challenge.active = {challenge.active}, should be True")
-
         context["submissions"] = challenge.submission_set.filter(
             user=self.request.user
         ).all()

@@ -2,8 +2,8 @@ from crispy_forms.helper import FormHelper
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
-
-from .models import Container, ContainerArg, Submission
+from django.utils import timezone
+from .models import Container, ContainerArg, Submission, Challenge
 
 
 class RegisterForm(UserCreationForm):
@@ -13,6 +13,7 @@ class RegisterForm(UserCreationForm):
 
 class ContainerForm(forms.ModelForm):
     prefix = "container"
+    challenge = forms.ModelChoiceField(queryset=Challenge.objects.exclude(end_at__lt=timezone.now()),empty_label="--")
 
     class Meta:
         model = Container
