@@ -131,6 +131,7 @@ def edit_submission_view(request, pk=None, clone=False):
 
         if container_form.is_valid():
             if container_form.cleaned_data["challenge"].is_active(): # if challenge is still active, save all the user input
+                print(container_form.__dict__)
                 container = container_form.save(commit=False)
                 container.user = request.user
                 container.save()
@@ -187,7 +188,7 @@ def edit_submission_view(request, pk=None, clone=False):
             submission_notes_form = forms.SubmissionNotesForm()
             arg_formset = forms.container_arg_formset()()
 
-        if not submission.challenge.is_active():
+        if pk and not submission.challenge.is_active():
             for field in submission_form.fields.keys():
                 if field != "notes":
                     submission_form.fields[field].disabled = True

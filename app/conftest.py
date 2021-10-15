@@ -1,12 +1,13 @@
 import os
 from collections import namedtuple
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import dask.distributed as dd
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 
 from core import models
 
@@ -50,8 +51,8 @@ def challenge(challenge_factory, db):
 def challenge_factory(db):
     def maker(name):
         empty_url = "http://github.com"
-        start_at = datetime(2020, 1, 1, hour=1, tzinfo=timezone.utc)
-        end_at = datetime(2020, 9, 1, hour=1, tzinfo=timezone.utc)
+        start_at = timezone.now()
+        end_at = start_at + timedelta(hours=3)
         challenge = models.Challenge(
             name=name,
             start_at=start_at,
@@ -120,7 +121,6 @@ def config_factory(challenge_factory, container_factory, db):
         return TestConfig(challenge, input_type, output_type, submission_run)
 
     return maker
-
 
 @pytest.fixture
 def container_factory(user, db):

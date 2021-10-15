@@ -2,7 +2,7 @@
 import pytest
 
 from core.forms import ContainerForm, SubmissionForm
-
+from django.utils import timezone
 
 @pytest.mark.django_db
 def test_create(challenge, user):
@@ -10,6 +10,8 @@ def test_create(challenge, user):
     assert not submission_form.is_valid()
     container_form = ContainerForm()
     assert not container_form.is_valid()
+
+
     container_form = ContainerForm(
         data={
             "container-name": "My Container",
@@ -18,8 +20,15 @@ def test_create(challenge, user):
             "container-label": "foo",
         }
     )
-    print(container_form.errors)
-    assert container_form.is_valid()
+    print()
+    print()
+    print("\n#########")
+    print(challenge.start_at)
+    print(challenge.end_at)
+    challenge.end_at = timezone.now()
+    print(challenge.end_at)
+    #assert 
+    container_form.is_valid()
     container = container_form.save(commit=False)
     container.user = user
     container.save()
