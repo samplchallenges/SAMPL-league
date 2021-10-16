@@ -29,7 +29,7 @@ def test_list_submissions(client, user, other_user, draft_submission):
 
 @pytest.mark.django_db
 def test_load_submission_form(rf, user, draft_submission):
-    request = rf.get("/core/submission/add/")
+    request = rf.get(f"/core/submission/add/?challenge_id={draft_submission.challenge.pk}")
     request.user = user
     response = edit_submission_view(request)
     assert response.status_code == 200
@@ -86,6 +86,7 @@ def test_create_submission(client, user, challenge):
     assert submission.name == form_data["submission-name"]
 
 
+
 @pytest.mark.django_db
 def test_update_submission(client, user, draft_submission):
     client.force_login(user)
@@ -126,6 +127,18 @@ def test_update_submission(client, user, draft_submission):
     response = client.get(response.url)
     submission = response.context["submission"]
     assert submission.draft_mode
+
+@pytest.mark.django_db
+def test_expired_submission(client, user, draft_submission):
+    pass
+    
+    # need to make sure the container is for a challenge that has already completed
+    
+    # ensure all submission details are disabled
+    # ensure all keyword args are disabled
+    # ensure all container details are disabled
+    # ensure all submission notes is enabled
+    # ensure return code is redirect
 
 
 @pytest.mark.django_db(transaction=True)

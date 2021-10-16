@@ -19,6 +19,7 @@ def run_and_score_submission(client, submission):
     Runs public and private, plus scoring
     """
     challenge = submission.challenge
+    print(challenge)
     delayed_conditional = dask.delayed(True)
     for is_public in (True, False):
         element_ids = challenge.inputelement_set.filter(
@@ -81,7 +82,9 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
 
 def create_submission_run(submission_id, *, is_public):
     submission = models.Submission.objects.get(pk=submission_id)
+    print(submission)
     container = submission.container
+    print(container)
     if not container.digest:
         container.digest = "nodigest"
         container.save()
@@ -102,12 +105,15 @@ def build_submission_run(submission_id, element_ids, conditional, is_public=True
 
     submission_run_id = create_submission_run(submission_id, is_public=is_public)
 
+    print(submission_run_id)
+
     evaluations = [
         models.Evaluation.objects.create(
             input_element_id=element_id, submission_run_id=submission_run_id
         )
         for element_id in element_ids
     ]
+    print(evaluations)
 
     evaluation_statuses = [
         run_evaluation(

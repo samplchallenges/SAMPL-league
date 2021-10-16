@@ -13,7 +13,10 @@ import referee
 import referee.tasks
 
 from .. import forms
-from ..models import Submission
+from ..models import Submission, Challenge
+
+import django.forms
+
 
 # pylint: disable=too-many-ancestors
 
@@ -106,6 +109,8 @@ def edit_submission_view(request, pk=None, clone=False):
     if request.method == "POST":
         # TODO: transaction?
         submission = Submission.objects.get(pk=pk, user=request.user) if pk else None
+        if submission:
+            challenge = submission.challenge
         container = submission.container if submission else None
         container_form = forms.ContainerForm(request.POST, instance=container)
         submission_form = forms.SubmissionForm(request.POST, instance=submission)
@@ -130,7 +135,8 @@ def edit_submission_view(request, pk=None, clone=False):
                 return redirect("submission-detail", pk=submission.pk)
 
         if container_form.is_valid():
-            if container_form.cleaned_data["challenge"].is_active(): # if challenge is still active, save all the user input
+            challenge = container_form.cleaned_data["challenge"]
+            if challenge.is_active(): # if challenge is still active, save all the user input
                 print(container_form.__dict__)
                 container = container_form.save(commit=False)
                 container.user = request.user
@@ -164,15 +170,16 @@ def edit_submission_view(request, pk=None, clone=False):
             show_container = False
             submission = Submission.objects.get(pk=pk)
             container = submission.container
+            challenge = container.challenge
             if clone:
                 submission.pk = None
                 container.pk = None
                 form_action = reverse_lazy("submission-add")
             container_form = forms.ContainerForm(instance=container)
 
-            # may need to find  better way to do this
-            if not container.challenge.is_active():
-                container_form.fields['challenge'].empty_label = container.challenge.name
+            # HERE may need to find  better way to do this
+            #if not container.challenge.is_active():
+            #    container_form.fields['challenge'].empty_label = container.challenge.name
 
             submission_form = forms.SubmissionForm(instance=submission)
             submission_notes_form = forms.SubmissionNotesForm(initial={"notes": submission.notes})
@@ -182,11 +189,17 @@ def edit_submission_view(request, pk=None, clone=False):
             initial_values = {}
             if "challenge_id" in request.GET:
                 initial_values["challenge"] = request.GET["challenge_id"]
+                challenge = Challenge.objects.get(pk=initial_values["challenge"])
+            else:
+                return HttpResponseBadRequest()
 
             container_form = forms.ContainerForm(initial=initial_values)
             submission_form = forms.SubmissionForm()
             submission_notes_form = forms.SubmissionNotesForm()
             arg_formset = forms.container_arg_formset()()
+            submission = None
+
+        container_form.fields["challenge"].widget = django.forms.HiddenInput()
 
         if pk and not submission.challenge.is_active():
             for field in submission_form.fields.keys():
@@ -214,6 +227,8 @@ def edit_submission_view(request, pk=None, clone=False):
         "arg_formset": arg_formset,
         "arg_helper": forms.ArgFormHelper(),
         "form_action": form_action,
+        "challenge": challenge,
+        "submission": submission,
     }
     '''
     # add check in case submission is not created

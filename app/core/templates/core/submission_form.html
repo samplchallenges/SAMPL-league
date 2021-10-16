@@ -1,6 +1,12 @@
 {% extends 'layout.html' %}
 {% load crispy_forms_tags %}
 {% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'challenge-detail' challenge.pk %}">Challenge: {{ challenge.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if submission %}Submission: {{ submission.name }}{% else %}New Submission{% endif %}</li>
+  </ol>
+</nav>
 <h1>Submission</h1>
 <div class="errors">
   {{ container_form|as_crispy_errors }}

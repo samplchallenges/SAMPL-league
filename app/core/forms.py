@@ -13,11 +13,12 @@ class RegisterForm(UserCreationForm):
 
 class ContainerForm(forms.ModelForm):
     prefix = "container"
-    challenge = forms.ModelChoiceField(queryset=Challenge.objects.exclude(end_at__lt=timezone.now()),empty_label="--")
+    #challenge = forms.ModelChoiceField(widget=forms.HiddenInput())
 
     class Meta:
         model = Container
         fields = ["name", "challenge", "registry", "label", "tag"]
+
 
 
 class SubmissionForm(forms.ModelForm):
