@@ -1,4 +1,6 @@
 # pylint: disable=unused-argument, unused-variable
+import re
+
 import os.path
 import tempfile
 from pathlib import Path
@@ -110,12 +112,10 @@ def test_load_prediction_file(
 def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):
     container = draft_submission.container
     assert container.custom_args() == {"stringarg": "hello world"}
-
-    assert container.custom_file_args() == {
-        "filearg": os.path.join(
-            settings.MEDIA_ROOT,
-            "container_args/{}/{}/filearg/example.txt".format(
-                container.user_id, container.id
-            ),
-        )
+    filearg_dict = {"filearg": os.path.join(settings.MEDIA_ROOT,
+                    "container_args/{}/{}/filearg/example.*.txt".format(container.user_id, container.id),
+                )
     }
+    assert type(filearg_dict) == type(container.custom_file_args())
+    assert filearg_dict.keys() == container.custom_file_args().keys()
+    assert re.match(filearg_dict["filearg"], container.custom_file_args()["filearg"])

@@ -6,12 +6,17 @@ from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
 
 import referee
 import referee.tasks
 
 from .. import forms
-from ..models import Submission
+from ..models import Submission, Challenge
+
+import django.forms
+
 
 # pylint: disable=too-many-ancestors
 
@@ -41,6 +46,7 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
         "computing_and_hardware",
         "software",
         "method",
+        "notes"
     )
 
     def get_context_data(self, **kwargs):
@@ -103,34 +109,58 @@ def edit_submission_view(request, pk=None, clone=False):
     if request.method == "POST":
         # TODO: transaction?
         submission = Submission.objects.get(pk=pk, user=request.user) if pk else None
+        if submission:
+            challenge = submission.challenge
         container = submission.container if submission else None
         container_form = forms.ContainerForm(request.POST, instance=container)
         submission_form = forms.SubmissionForm(request.POST, instance=submission)
+        submission_notes_form = forms.SubmissionNotesForm(request.POST)
         ArgFormSet = forms.container_arg_formset()
         arg_formset = None
+
+        # if its an update (pk), then the submission exists and we can get the 
+        # endtime without calling .is_valid() on container_form or submission_form
+        #
+        # if we have to call .is_valid() on container_form or submission_form after
+        # the fields have been disabled, we will get required field errors
+        #
+        # otherwise, if the submission doesn't exist yet, we must check if the forms
+        # are valid ahead of time
+
+        if pk: 
+            if not submission.challenge.is_active():                
+                if submission_notes_form.is_valid():
+                    submission.notes = submission_notes_form.cleaned_data["notes"]
+                    submission.save(update_fields=["notes"])
+                return redirect("submission-detail", pk=submission.pk)
+
         if container_form.is_valid():
-            container = container_form.save(commit=False)
-            container.user = request.user
-            container.save()
-            if submission_form.is_valid():
-                submission = submission_form.save(commit=False)
-                submission.container = container
-                submission.challenge = container.challenge
-                submission.user = request.user
-                submission.save()
-                arg_formset = ArgFormSet(
-                    request.POST, request.FILES, instance=container
-                )
-                if arg_formset.is_valid():
-                    arg_instances = arg_formset.save(commit=False)
-                    for instance in arg_instances:
-                        instance.container = container
-                        instance.save()
-                    for instance in arg_formset.deleted_objects:
-                        instance.delete()
-                    return redirect("submission-detail", pk=submission.pk)
-                else:
-                    show_args = True
+            challenge = container_form.cleaned_data["challenge"]
+            if challenge.is_active():
+                container = container_form.save(commit=False)
+                container.user = request.user
+                container.save()
+                if submission_form.is_valid():
+                    submission = submission_form.save(commit=False)
+                    submission.container = container
+                    submission.challenge = container.challenge
+                    submission.user = request.user
+                    if submission_notes_form.is_valid():
+                        submission.notes = submission_notes_form.cleaned_data["notes"]
+                    submission.save()
+                    arg_formset = ArgFormSet(
+                        request.POST, request.FILES, instance=container
+                    )
+                    if arg_formset.is_valid():
+                        arg_instances = arg_formset.save(commit=False)
+                        for instance in arg_instances:
+                            instance.container = container
+                            instance.save()
+                        for instance in arg_formset.deleted_objects:
+                            instance.delete()
+                        return redirect("submission-detail", pk=submission.pk)
+                    else:
+                        show_args = True
 
         if arg_formset is None:
             arg_formset = ArgFormSet(request.POST, request.FILES, instance=container)
@@ -139,22 +169,48 @@ def edit_submission_view(request, pk=None, clone=False):
             show_container = False
             submission = Submission.objects.get(pk=pk)
             container = submission.container
+            challenge = container.challenge
             if clone:
                 submission.pk = None
                 container.pk = None
                 form_action = reverse_lazy("submission-add")
             container_form = forms.ContainerForm(instance=container)
+
             submission_form = forms.SubmissionForm(instance=submission)
+            submission_notes_form = forms.SubmissionNotesForm(initial={"notes": submission.notes})
             arg_formset = forms.container_arg_formset()(instance=container)
 
         else:
             initial_values = {}
             if "challenge_id" in request.GET:
                 initial_values["challenge"] = request.GET["challenge_id"]
+                challenge = Challenge.objects.get(pk=initial_values["challenge"])
+            else:
+                return HttpResponseBadRequest()
 
             container_form = forms.ContainerForm(initial=initial_values)
             submission_form = forms.SubmissionForm()
+            submission_notes_form = forms.SubmissionNotesForm()
             arg_formset = forms.container_arg_formset()()
+            submission = None
+
+        container_form.fields["challenge"].widget = django.forms.HiddenInput()
+
+        if pk and not submission.challenge.is_active():
+            for field in submission_form.fields.keys():
+                if field != "notes":
+                    submission_form.fields[field].disabled = True
+
+            for field in container_form.fields.keys():
+                container_form.fields[field].disabled = True
+
+            for form in arg_formset.forms:
+                form.fields["key"].required = False
+                form.fields["key"].disabled = True
+                form.fields["file_value"].disabled = True
+                form.fields["DELETE"].disabled = True
+
+
     else:
         return HttpResponseBadRequest()
     context = {
@@ -162,8 +218,11 @@ def edit_submission_view(request, pk=None, clone=False):
         "show_container": show_container,
         "show_args": show_args,
         "submission_form": submission_form,
+        "submission_notes_form": submission_notes_form,
         "arg_formset": arg_formset,
         "arg_helper": forms.ArgFormHelper(),
         "form_action": form_action,
+        "challenge": challenge,
+        "submission": submission,
     }
     return render(request, "core/submission_form.html", context)

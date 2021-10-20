@@ -2,8 +2,8 @@ from crispy_forms.helper import FormHelper
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
-
-from .models import Container, ContainerArg, Submission
+from django.utils import timezone
+from .models import Container, ContainerArg, Submission, Challenge
 
 
 class RegisterForm(UserCreationForm):
@@ -17,6 +17,7 @@ class ContainerForm(forms.ModelForm):
     class Meta:
         model = Container
         fields = ["name", "challenge", "registry", "label", "tag"]
+
 
 
 class SubmissionForm(forms.ModelForm):
@@ -40,6 +41,9 @@ class SubmissionForm(forms.ModelForm):
             "software": forms.Textarea(attrs={"cols": 30, "rows": 4}),
         }
 
+class SubmissionNotesForm(forms.Form):
+    prefix = "submission_note"
+    notes = forms.CharField(label='Notes', widget=forms.Textarea(attrs={"cols": 30, "rows": 4}), required=False)
 
 def container_arg_formset():
     return inlineformset_factory(

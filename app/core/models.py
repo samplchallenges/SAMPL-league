@@ -49,11 +49,18 @@ class Challenge(Timestamped):
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
     repo_url = models.URLField()
+    
 
     __output_types_dict = None
 
     def __str__(self):
         return str(self.name)
+
+
+    def is_active(self):
+        return self.end_at > timezone.now()
+
+    #active = property(_is_active)
 
     def __load_output_types(self):
         output_types = self.valuetype_set.filter(is_input_flag=False)
@@ -152,6 +159,10 @@ class Submission(Timestamped):
         help_text=configurator.METHOD_DETAILS, blank=True, null=True
     )
     ranked = models.BooleanField(default=True, help_text=configurator.RANKED_DETAILS)
+
+    notes = models.TextField(
+        help_text="help text for notes field", blank=True, null=True
+    )
 
     def __str__(self):
         return f"{self.user}: {self.challenge}: {self.name}"
