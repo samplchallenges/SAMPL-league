@@ -13,7 +13,6 @@ class RegisterForm(UserCreationForm):
 
 class ContainerForm(forms.ModelForm):
     prefix = "container"
-    #challenge = forms.ModelChoiceField(widget=forms.HiddenInput())
 
     class Meta:
         model = Container

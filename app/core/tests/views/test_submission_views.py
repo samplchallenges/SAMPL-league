@@ -1,6 +1,8 @@
 # pylint:disable=unused-argument
 import re
 from unittest.mock import Mock, patch
+import time
+from datetime import timedelta
 
 import dask.distributed as dd
 import pytest
@@ -9,9 +11,10 @@ from django.db import transaction
 from django.forms.fields import CharField
 from django.http.response import FileResponse
 from django.urls import reverse
+from django.utils import timezone
 
 from core.forms import ContainerForm, SubmissionForm
-from core.models import Submission
+from core.models import Submission, Challenge
 from core.views.submission import edit_submission_view
 
 
@@ -86,6 +89,21 @@ def test_create_submission(client, user, challenge):
     assert submission.name == form_data["submission-name"]
 
 
+def test_create_submission_expired_challenge(client, user, challenge):
+    challenge.end_at = timezone.now()
+    form_data = {
+        "container-name": "test container",
+        "container-challenge": challenge.pk,
+        "container-registry": "local",
+        "container-label": "package2",
+        "submission-name": "draft submission 2",
+        "args-TOTAL_FORMS": 0,
+        "args-INITIAL_FORMS": 0,
+    }
+    client.force_login(user)
+    response = client.post("/submission/add/", form_data)
+    #assert response.status_code == 404
+
 
 @pytest.mark.django_db
 def test_update_submission(client, user, draft_submission):
@@ -129,16 +147,120 @@ def test_update_submission(client, user, draft_submission):
     assert submission.draft_mode
 
 @pytest.mark.django_db
-def test_expired_submission(client, user, draft_submission):
-    pass
-    
-    # need to make sure the container is for a challenge that has already completed
-    
-    # ensure all submission details are disabled
-    # ensure all keyword args are disabled
-    # ensure all container details are disabled
-    # ensure all submission notes is enabled
-    # ensure return code is redirect
+def test_load_expired_submission(rf, client, user, draft_submission):
+    time.sleep(5)
+    container_form = ContainerForm(instance=draft_submission.container)
+
+    # GET request after submission has expired
+    request = rf.get(f"/core/submission/{draft_submission.pk}")
+    request.user = user
+    response = edit_submission_view(request, pk=draft_submission.pk)
+    assert response.status_code == 200
+
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    assert response.status_code == 200
+
+    submission = response.context["submission"]
+    assert not submission.challenge.is_active()
+
+    # assert form submission, container, and args fields are visually disabled
+    submission_form = response.context["submission_form"]
+    container_form = response.context["submission_form"]
+    arg_formset = response.context["arg_formset"]
+    for field in submission_form.fields.keys():
+        assert submission_form.fields[field].disabled 
+    for field in container_form.fields.keys():
+        assert container_form.fields[field].disabled
+    for form in arg_formset.forms:
+        assert not form.fields["key"].required
+        assert form.fields["key"].disabled
+        assert form.fields["file_value"].disabled
+        assert form.fields["DELETE"].disabled
+
+    # assert submission note field is enabled 
+    submission_notes_form = response.context["submission_notes_form"]
+    assert not submission_notes_form.fields["notes"].disabled 
+
+@pytest.mark.django_db
+def test_update_expired_submission(rf, client, user, draft_submission):
+    time.sleep(5)
+    container_form = ContainerForm(instance=draft_submission.container)
+
+    # GET request after submission has expired
+    request = rf.get(f"/core/submission/{draft_submission.pk}")
+    request.user = user
+    response = edit_submission_view(request, pk=draft_submission.pk)
+    assert response.status_code == 200
+
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    assert response.status_code == 200
+
+    submission = response.context["submission"]
+    assert not submission.challenge.is_active()
+
+    # get forms
+    submission_form = response.context["submission_form"]
+    container_form = response.context["submission_form"]
+    submission_notes_form = response.context["submission_notes_form"]
+
+    # update the submission notes after expired - should update
+    form_data = {
+        f"{submission_notes_form.prefix}-notes": "hello from expired"
+    }
+    request = rf.post(f"/submission/{draft_submission.pk}/edit/", form_data)
+    request.user = user
+    response = edit_submission_view(request, pk=draft_submission.pk)
+    assert response.status_code == 302
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    assert response.status_code == 200
+    submission = response.context["submission"]
+    assert submission.notes == "hello from expired"
+
+    # update submission and container fields after expired - should not update
+    submission_old = submission
+    container_old = submission.container
+    change_challenge =  Challenge(
+                            name="ChangedChallenge", 
+                            start_at=timezone.now(),
+                            end_at = timezone.now() + timedelta(hours=1),
+                            repo_url = "http://github.com"
+                        )
+    change_challenge.save()
+    form_data = {
+        f"{container_form.prefix}-name": "UPDATED CONTAINER",
+        f"{container_form.prefix}-registry": "docker.io",
+        f"{container_form.prefix}-challenge": change_challenge,
+        f"{container_form.prefix}-label": "osatom/adv-tutorial",
+        f"{container_form.prefix}-tag": "UPDATED",
+        f"{submission_form.prefix}-ranked": not submission_old.ranked,
+        f"{submission_form.prefix}-url": "http://samplchallengesarecool.org",
+        f"{submission_form.prefix}-method": "updating method from expired",
+        f"{submission_form.prefix}-compute_time": "updating compute_time from expired",
+        f"{submission_form.prefix}-software": "updating software from expired",
+        f"{submission_form.prefix}-computing_and_hardware": "updating computing and hardware from expired",
+    }
+    request = rf.post(f"/submission/{draft_submission.pk}/edit/", form_data)
+    request.user = user
+    response = edit_submission_view(request, pk=draft_submission.pk)
+    assert response.status_code == 302
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    assert response.status_code == 200
+
+    submission = response.context["submission"]
+    container = submission.container
+    assert container.name == container_old.name
+    assert container.registry == container_old.registry
+    assert container.challenge == container_old.challenge
+    assert container.label == container_old.label
+    assert container.tag == container_old.tag
+    assert submission.ranked == submission_old.ranked
+    assert submission.url == submission_old.url
+    assert submission.method == submission_old.method
+    assert submission.compute_time == submission_old.compute_time
+    assert submission.software == submission_old.software
+    assert submission.computing_and_hardware == submission_old.computing_and_hardware
 
 
 @pytest.mark.django_db(transaction=True)

@@ -136,8 +136,7 @@ def edit_submission_view(request, pk=None, clone=False):
 
         if container_form.is_valid():
             challenge = container_form.cleaned_data["challenge"]
-            if challenge.is_active(): # if challenge is still active, save all the user input
-                print(container_form.__dict__)
+            if challenge.is_active():
                 container = container_form.save(commit=False)
                 container.user = request.user
                 container.save()
@@ -176,10 +175,6 @@ def edit_submission_view(request, pk=None, clone=False):
                 container.pk = None
                 form_action = reverse_lazy("submission-add")
             container_form = forms.ContainerForm(instance=container)
-
-            # HERE may need to find  better way to do this
-            #if not container.challenge.is_active():
-            #    container_form.fields['challenge'].empty_label = container.challenge.name
 
             submission_form = forms.SubmissionForm(instance=submission)
             submission_notes_form = forms.SubmissionNotesForm(initial={"notes": submission.notes})
@@ -230,29 +225,4 @@ def edit_submission_view(request, pk=None, clone=False):
         "challenge": challenge,
         "submission": submission,
     }
-    '''
-    # add check in case submission is not created
-    error = False
-    try:
-        active = submission.challenge.is_active()
-    except:
-        error = True
-
-    if not error and not active:
-        for field in submission_form.fields.keys():
-            if field != "notes":
-                submission_form.fields[field].disabled = True
-
-        for field in container_form.fields.keys():
-            container_form.fields[field].disabled = True
-
-        for form in arg_formset.forms:
-            form.fields["key"].required = False
-            form.fields["key"].disabled = True
-            form.fields["file_value"].disabled = True
-            form.fields["DELETE"].disabled = True
-    else:
-        # challenge is no longer active
-        pass
-    '''
     return render(request, "core/submission_form.html", context)

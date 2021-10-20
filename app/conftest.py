@@ -44,15 +44,26 @@ def other_user(users):
 
 @pytest.fixture
 def challenge(challenge_factory, db):
+    #start_at = timezone.now()
+    #end_at = start_at + timedelta(hours=3)
+    #return challenge_factory("SAMPL1", start_at, end_at)
     return challenge_factory("SAMPL1")
+
+@pytest.fixture
+def challenge_expired(challenge_factory_expired, db):
+    #start_at = timezone.now()
+    #end_at = start_at + timedelta(seconds=5)
+    #return challenge_factory("SAMPL1-expired", start_at, end_at)
+    return challenge_factory_expired("SAMPL1-expired")
 
 
 @pytest.fixture
 def challenge_factory(db):
     def maker(name):
+        #def maker(name, start_at, end_at):
         empty_url = "http://github.com"
         start_at = timezone.now()
-        end_at = start_at + timedelta(hours=3)
+        end_at = start_at + timedelta(seconds=5)
         challenge = models.Challenge(
             name=name,
             start_at=start_at,
@@ -64,6 +75,22 @@ def challenge_factory(db):
 
     return maker
 
+@pytest.fixture
+def challenge_factory_expired(db):
+    def maker(name):
+        empty_url = "http://github.com"
+        start_at = timezone.now()
+        end_at = start_at + timedelta(seconds=5)
+        challenge = models.Challenge(
+            name=name,
+            start_at=start_at,
+            end_at=end_at,
+            repo_url=empty_url,
+        )
+        challenge.save()
+        return challenge
+
+    return maker
 
 @pytest.fixture
 def config_factory(challenge_factory, container_factory, db):
@@ -122,6 +149,65 @@ def config_factory(challenge_factory, container_factory, db):
 
     return maker
 
+
+@pytest.fixture
+def config_factory_expired(challenge_factory_expired, container_factory_expired, db):
+    """
+    Create a challenge and related objects for testing
+    """
+
+    def maker(
+        challenge_name,
+        label,
+        score_label,
+        input_key,
+        input_model,
+        output_key,
+        output_model,
+    ):
+        challenge = challenge_factory_expired(challenge_name)
+        scoring_container = container_factory_expired(challenge, score_label, tag="latest")
+        models.ScoreMaker.objects.create(
+            challenge=challenge, container=scoring_container
+        )
+        for key, level in (
+            ("diff", models.ScoreType.Level.EVALUATION),
+            ("rmse", models.ScoreType.Level.SUBMISSION_RUN),
+        ):
+            models.ScoreType.objects.create(challenge=challenge, key=key, level=level)
+
+        input_type = models.ValueType.objects.create(
+            challenge=challenge,
+            is_input_flag=True,
+            content_type=ContentType.objects.get_for_model(input_model),
+            key=input_key,
+            description="N/A",
+        )
+        output_type = models.ValueType.objects.create(
+            challenge=challenge,
+            is_input_flag=False,
+            content_type=ContentType.objects.get_for_model(output_model),
+            key=output_key,
+            description="N/A",
+        )
+        container = container_factory(challenge, label, tag="latest")
+        submission = models.Submission.objects.create(
+            name="Draft Submission",
+            user=container.user,
+            container=container,
+            challenge=challenge,
+        )
+        submission_run = models.SubmissionRun.objects.create(
+            submission=submission,
+            digest="cafef00d",
+            is_public=True,
+            status=models.Status.PENDING,
+        )
+        return TestConfig(challenge, input_type, output_type, submission_run)
+
+    return maker
+
+
 @pytest.fixture
 def container_factory(user, db):
     def container_maker(challenge, label, tag):
@@ -136,11 +222,33 @@ def container_factory(user, db):
 
     return container_maker
 
+@pytest.fixture
+def container_factory_expired(user, db):
+    def container_maker(challenge_expired, label, tag):
+        return models.Container.objects.create(
+            name="Container1",
+            user=user,
+            challenge=challenge_expired,
+            registry="ghcr.io",
+            label=label,
+            tag=tag,
+        )
+
+    return container_maker
+
 
 @pytest.fixture
 def container(container_factory, challenge):
     return container_factory(
         challenge,
+        label="robbason/calc-molwt",
+        tag="latest",
+    )
+
+@pytest.fixture
+def container_expired(container_factory_expired, challenge_expired):
+    return container_factory_expired(
+        challenge_expired,
         label="robbason/calc-molwt",
         tag="latest",
     )
@@ -190,6 +298,11 @@ def draft_submission(submission_factory, container, db):
 
 
 @pytest.fixture
+def draft_submission_expired(submission_factory_expired, container_expired, db):
+    return submission_factory_expired(container_expired)
+
+
+@pytest.fixture
 def molfile_type(challenge, db):
     return models.ValueType.objects.create(
         challenge=challenge,
@@ -220,6 +333,22 @@ def elem_factory(testing_data_path, db):
         return elem
 
     return elem_maker
+
+
+@pytest.fixture
+def submission_factory_expired(db):
+    def submission_maker(container_expired):
+        submission = models.Submission(
+            name="Draft Submission",
+            user=container_expired.user,
+            container=container_expired,
+            challenge=container_expired.challenge,
+        )
+        submission.full_clean()
+        submission.save()
+        return submission
+
+    return submission_maker
 
 
 @pytest.fixture
