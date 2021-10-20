@@ -6,8 +6,6 @@ from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
-from django.utils import timezone
-from django.shortcuts import get_object_or_404
 
 import referee
 import referee.tasks

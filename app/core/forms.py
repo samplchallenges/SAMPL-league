@@ -2,8 +2,7 @@ from crispy_forms.helper import FormHelper
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
-from django.utils import timezone
-from .models import Container, ContainerArg, Submission, Challenge
+from .models import Container, ContainerArg, Submission
 
 
 class RegisterForm(UserCreationForm):

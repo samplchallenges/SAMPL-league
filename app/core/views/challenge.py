@@ -4,7 +4,6 @@ import ever_given.wrapper
 from django.utils.safestring import mark_safe
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
-from django.utils import timezone
 
 from ..models import Challenge, FileValue
 
