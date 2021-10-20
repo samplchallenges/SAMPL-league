@@ -1,22 +1,19 @@
+import django.forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseBadRequest
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
-from django.utils import timezone
-from django.shortcuts import get_object_or_404
 
 import referee
 import referee.tasks
 
 from .. import forms
-from ..models import Submission, Challenge
-
-import django.forms
-
+from ..models import Challenge, Submission
 
 # pylint: disable=too-many-ancestors
 
@@ -46,7 +43,7 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
         "computing_and_hardware",
         "software",
         "method",
-        "notes"
+        "notes",
     )
 
     def get_context_data(self, **kwargs):
@@ -118,7 +115,7 @@ def edit_submission_view(request, pk=None, clone=False):
         ArgFormSet = forms.container_arg_formset()
         arg_formset = None
 
-        # if its an update (pk), then the submission exists and we can get the 
+        # if its an update (pk), then the submission exists and we can get the
         # endtime without calling .is_valid() on container_form or submission_form
         #
         # if we have to call .is_valid() on container_form or submission_form after
@@ -127,8 +124,8 @@ def edit_submission_view(request, pk=None, clone=False):
         # otherwise, if the submission doesn't exist yet, we must check if the forms
         # are valid ahead of time
 
-        if pk: 
-            if not submission.challenge.is_active():                
+        if pk:
+            if not submission.challenge.is_active():
                 if submission_notes_form.is_valid():
                     submission.notes = submission_notes_form.cleaned_data["notes"]
                     submission.save(update_fields=["notes"])
@@ -177,7 +174,9 @@ def edit_submission_view(request, pk=None, clone=False):
             container_form = forms.ContainerForm(instance=container)
 
             submission_form = forms.SubmissionForm(instance=submission)
-            submission_notes_form = forms.SubmissionNotesForm(initial={"notes": submission.notes})
+            submission_notes_form = forms.SubmissionNotesForm(
+                initial={"notes": submission.notes}
+            )
             arg_formset = forms.container_arg_formset()(instance=container)
 
         else:
@@ -209,7 +208,6 @@ def edit_submission_view(request, pk=None, clone=False):
                 form.fields["key"].disabled = True
                 form.fields["file_value"].disabled = True
                 form.fields["DELETE"].disabled = True
-
 
     else:
         return HttpResponseBadRequest()

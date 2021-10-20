@@ -1,6 +1,6 @@
 import os
 from collections import namedtuple
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import dask.distributed as dd
 import pytest
@@ -44,23 +44,24 @@ def other_user(users):
 
 @pytest.fixture
 def challenge(challenge_factory, db):
-    #start_at = timezone.now()
-    #end_at = start_at + timedelta(hours=3)
-    #return challenge_factory("SAMPL1", start_at, end_at)
+    # start_at = timezone.now()
+    # end_at = start_at + timedelta(hours=3)
+    # return challenge_factory("SAMPL1", start_at, end_at)
     return challenge_factory("SAMPL1")
+
 
 @pytest.fixture
 def challenge_expired(challenge_factory_expired, db):
-    #start_at = timezone.now()
-    #end_at = start_at + timedelta(seconds=5)
-    #return challenge_factory("SAMPL1-expired", start_at, end_at)
+    # start_at = timezone.now()
+    # end_at = start_at + timedelta(seconds=5)
+    # return challenge_factory("SAMPL1-expired", start_at, end_at)
     return challenge_factory_expired("SAMPL1-expired")
 
 
 @pytest.fixture
 def challenge_factory(db):
     def maker(name):
-        #def maker(name, start_at, end_at):
+        # def maker(name, start_at, end_at):
         empty_url = "http://github.com"
         start_at = timezone.now()
         end_at = start_at + timedelta(seconds=5)
@@ -74,6 +75,7 @@ def challenge_factory(db):
         return challenge
 
     return maker
+
 
 @pytest.fixture
 def challenge_factory_expired(db):
@@ -91,6 +93,7 @@ def challenge_factory_expired(db):
         return challenge
 
     return maker
+
 
 @pytest.fixture
 def config_factory(challenge_factory, container_factory, db):
@@ -166,7 +169,9 @@ def config_factory_expired(challenge_factory_expired, container_factory_expired,
         output_model,
     ):
         challenge = challenge_factory_expired(challenge_name)
-        scoring_container = container_factory_expired(challenge, score_label, tag="latest")
+        scoring_container = container_factory_expired(
+            challenge, score_label, tag="latest"
+        )
         models.ScoreMaker.objects.create(
             challenge=challenge, container=scoring_container
         )
@@ -222,6 +227,7 @@ def container_factory(user, db):
 
     return container_maker
 
+
 @pytest.fixture
 def container_factory_expired(user, db):
     def container_maker(challenge_expired, label, tag):
@@ -244,6 +250,7 @@ def container(container_factory, challenge):
         label="robbason/calc-molwt",
         tag="latest",
     )
+
 
 @pytest.fixture
 def container_expired(container_factory_expired, challenge_expired):

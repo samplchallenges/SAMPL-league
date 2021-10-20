@@ -1,12 +1,12 @@
 # pylint: disable=unused-argument, unused-variable
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
-from core.forms import ContainerForm, SubmissionForm
+import pytest
 from django.utils import timezone
 
 from core import models
+from core.forms import ContainerForm, SubmissionForm
 
 
 @pytest.mark.django_db
@@ -15,7 +15,6 @@ def test_create(challenge, user):
     assert not submission_form.is_valid()
     container_form = ContainerForm()
     assert not container_form.is_valid()
-
 
     container_form = ContainerForm(
         data={
@@ -44,6 +43,7 @@ def test_create(challenge, user):
     submission.save()
     assert submission.draft_mode
 
+
 @pytest.mark.django_db
 def test_expired_challenge(challenge, user):
     submission_form = SubmissionForm()
@@ -58,5 +58,3 @@ def test_expired_challenge(challenge, user):
     assert not challenge.is_active()
 
     assert challenge.end_at < timezone.now()
-
-
