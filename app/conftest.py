@@ -46,10 +46,6 @@ def other_user(users):
 def challenge(challenge_factory, db):
     return challenge_factory("SAMPL1")
 
-@pytest.fixture
-def challenge_expired(challenge_factory_expired, db):
-    return challenge_factory_expired("SAMPL1-expired")
-
 
 @pytest.fixture
 def challenge_factory(db):
@@ -67,6 +63,7 @@ def challenge_factory(db):
         return challenge
 
     return maker
+
 
 @pytest.fixture
 def config_factory(challenge_factory, container_factory, db):
@@ -225,7 +222,6 @@ def elem_factory(testing_data_path, db):
         return elem
 
     return elem_maker
-
 
 @pytest.fixture
 def submission_factory(db):

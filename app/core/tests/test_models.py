@@ -1,7 +1,6 @@
 # pylint: disable=unused-argument, unused-variable
-import re
-
 import os.path
+import re
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -112,9 +111,13 @@ def test_load_prediction_file(
 def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):
     container = draft_submission.container
     assert container.custom_args() == {"stringarg": "hello world"}
-    filearg_dict = {"filearg": os.path.join(settings.MEDIA_ROOT,
-                    "container_args/{}/{}/filearg/example.*.txt".format(container.user_id, container.id),
-                )
+    filearg_dict = {
+        "filearg": os.path.join(
+            settings.MEDIA_ROOT,
+            "container_args/{}/{}/filearg/example.*.txt".format(
+                container.user_id, container.id
+            ),
+        )
     }
     assert type(filearg_dict) == type(container.custom_file_args())
     assert filearg_dict.keys() == container.custom_file_args().keys()

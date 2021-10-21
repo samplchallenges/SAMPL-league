@@ -2,7 +2,6 @@ from crispy_forms.helper import FormHelper
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
-from django.utils import timezone
 from .models import Container, ContainerArg, Submission
 from . import configurator
 
@@ -17,7 +16,6 @@ class ContainerForm(forms.ModelForm):
     class Meta:
         model = Container
         fields = ["name", "challenge", "registry", "label", "tag"]
-
 
 
 class SubmissionForm(forms.ModelForm):
@@ -40,6 +38,7 @@ class SubmissionForm(forms.ModelForm):
             "compute_time": forms.Textarea(attrs={"cols": 30, "rows": 4}),
             "software": forms.Textarea(attrs={"cols": 30, "rows": 4}),
         }
+
 
 class SubmissionNotesForm(forms.Form):
     prefix = "submission_note"
