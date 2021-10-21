@@ -51,12 +51,10 @@ def test_expired_challenge(challenge, user):
     container_form = ContainerForm()
     assert not container_form.is_valid()
 
-    # make challenge expired
     challenge.start_at = timezone.now() - timedelta(hours=3)
     challenge.end_at = challenge.start_at + timedelta(hours=1)
 
     assert not challenge.is_active()
-
     assert challenge.end_at < timezone.now()
 
 

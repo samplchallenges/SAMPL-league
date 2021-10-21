@@ -58,9 +58,7 @@ class Challenge(Timestamped):
 
 
     def is_active(self):
-        return self.end_at > timezone.now()
-
-    #active = property(_is_active)
+        return self.end_at > timezone.now() and self.start_at < timezone.now()
 
     def __load_output_types(self):
         output_types = self.valuetype_set.filter(is_input_flag=False)

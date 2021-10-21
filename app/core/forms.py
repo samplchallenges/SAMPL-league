@@ -4,6 +4,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
 from .models import Container, ContainerArg, Submission
 
+from . import configurator
+
 
 class RegisterForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
@@ -42,7 +44,9 @@ class SubmissionForm(forms.ModelForm):
 
 class SubmissionNotesForm(forms.Form):
     prefix = "submission_note"
-    notes = forms.CharField(label='Notes', widget=forms.Textarea(attrs={"cols": 30, "rows": 4}), required=False)
+    notes = forms.CharField(label='Notes', 
+                            widget=forms.Textarea(attrs={"cols": 30, "rows": 4}, helptext=configurator.NOTES_DETAILS), 
+                            required=False)
 
 def container_arg_formset():
     return inlineformset_factory(

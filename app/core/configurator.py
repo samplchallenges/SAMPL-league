@@ -36,6 +36,11 @@ If you used a microstate other than the challenge provided microstate (`SMXX_mic
 
 Use as many lines of text as you need."""
 
+NOTES_DETAILS = """Extra Notes.
+Please place any extra notes about your submission or submission run here. This section is only intended for notes to yourself, and will be disregarded by challenge administrators.  
+
+Unlike other sections, you may modify this section after the challenge has concluded. 
+"""
 
 RANKED_DETAILS = """All submissions must either be ranked or non-ranked.
 Only one ranked submission per participant is allowed.

@@ -116,15 +116,6 @@ def edit_submission_view(request, pk=None, clone=False):
         ArgFormSet = forms.container_arg_formset()
         arg_formset = None
 
-        # if its an update (pk), then the submission exists and we can get the 
-        # endtime without calling .is_valid() on container_form or submission_form
-        #
-        # if we have to call .is_valid() on container_form or submission_form after
-        # the fields have been disabled, we will get required field errors
-        #
-        # otherwise, if the submission doesn't exist yet, we must check if the forms
-        # are valid ahead of time
-
         if pk: 
             if not submission.challenge.is_active():                
                 if submission_notes_form.is_valid():
