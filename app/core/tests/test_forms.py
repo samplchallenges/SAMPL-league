@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument, unused-variable
 
-import pytest
 from datetime import timedelta
 
 import pytest
