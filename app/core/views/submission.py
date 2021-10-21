@@ -1,8 +1,10 @@
+import django.forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseBadRequest
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
@@ -11,10 +13,7 @@ import referee
 import referee.tasks
 
 from .. import forms
-from ..models import Submission, Challenge
-
-import django.forms
-
+from ..models import Challenge, Submission
 
 # pylint: disable=too-many-ancestors
 
@@ -44,7 +43,7 @@ class SubmissionDetail(OwnerMatchMixin, DetailView):
         "computing_and_hardware",
         "software",
         "method",
-        "notes"
+        "notes",
     )
 
     def get_context_data(self, **kwargs):
@@ -166,7 +165,9 @@ def edit_submission_view(request, pk=None, clone=False):
             container_form = forms.ContainerForm(instance=container)
 
             submission_form = forms.SubmissionForm(instance=submission)
-            submission_notes_form = forms.SubmissionNotesForm(initial={"notes": submission.notes})
+            submission_notes_form = forms.SubmissionNotesForm(
+                initial={"notes": submission.notes}
+            )
             arg_formset = forms.container_arg_formset()(instance=container)
 
         else:
@@ -198,7 +199,6 @@ def edit_submission_view(request, pk=None, clone=False):
                 form.fields["key"].disabled = True
                 form.fields["file_value"].disabled = True
                 form.fields["DELETE"].disabled = True
-
 
     else:
         return HttpResponseBadRequest()

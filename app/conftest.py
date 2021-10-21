@@ -1,6 +1,6 @@
 import os
 from collections import namedtuple
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import dask.distributed as dd
 import pytest
@@ -50,7 +50,7 @@ def challenge(challenge_factory, db):
 @pytest.fixture
 def challenge_factory(db):
     def maker(name):
-        #def maker(name, start_at, end_at):
+        # def maker(name, start_at, end_at):
         empty_url = "http://github.com"
         start_at = timezone.now()
         end_at = start_at + timedelta(seconds=5)
@@ -64,6 +64,27 @@ def challenge_factory(db):
         return challenge
 
     return maker
+
+<<<<<<< HEAD
+=======
+
+@pytest.fixture
+def challenge_factory_expired(db):
+    def maker(name):
+        empty_url = "http://github.com"
+        start_at = timezone.now()
+        end_at = start_at + timedelta(seconds=5)
+        challenge = models.Challenge(
+            name=name,
+            start_at=start_at,
+            end_at=end_at,
+            repo_url=empty_url,
+        )
+        challenge.save()
+        return challenge
+
+    return maker
+>>>>>>> f6a6bd1d3f9b053232cfa67273d36feb3c36dc7a
 
 
 @pytest.fixture
@@ -139,19 +160,6 @@ def container_factory(user, db):
 
     return container_maker
 
-@pytest.fixture
-def container_factory_expired(user, db):
-    def container_maker(challenge_expired, label, tag):
-        return models.Container.objects.create(
-            name="Container1",
-            user=user,
-            challenge=challenge_expired,
-            registry="ghcr.io",
-            label=label,
-            tag=tag,
-        )
-
-    return container_maker
 
 
 @pytest.fixture

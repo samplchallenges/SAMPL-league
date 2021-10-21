@@ -49,13 +49,11 @@ class Challenge(Timestamped):
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
     repo_url = models.URLField()
-    
 
     __output_types_dict = None
 
     def __str__(self):
         return str(self.name)
-
 
     def is_active(self):
         return self.end_at > timezone.now() and self.start_at < timezone.now()

@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument, unused-variable
 import re
+
 import pytest
 from pytest_django.asserts import assertContains
 
@@ -11,7 +12,7 @@ def test_challenge_detail(client, user, benzene_from_mol):
     response = client.get(f"/challenge/{challenge.pk}/")
 
     found = False
-    for elem in response.context[0].dicts[3]['elements'][0]:
+    for elem in response.context[0].dicts[3]["elements"][0]:
         print(elem, type(elem))
 
         if re.match("--molfile ChEBI_16716.*.mdl", elem.strip()):

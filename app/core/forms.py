@@ -20,7 +20,6 @@ class ContainerForm(forms.ModelForm):
         fields = ["name", "challenge", "registry", "label", "tag"]
 
 
-
 class SubmissionForm(forms.ModelForm):
     prefix = "submission"
 
@@ -42,11 +41,11 @@ class SubmissionForm(forms.ModelForm):
             "software": forms.Textarea(attrs={"cols": 30, "rows": 4}),
         }
 
+
 class SubmissionNotesForm(forms.Form):
     prefix = "submission_note"
     notes = forms.CharField(label='Notes', 
                             widget=forms.Textarea(attrs={"cols": 30, "rows": 4}, helptext=configurator.NOTES_DETAILS), 
-                            required=False)
 
 def container_arg_formset():
     return inlineformset_factory(

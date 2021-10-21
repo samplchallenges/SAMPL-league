@@ -1,8 +1,8 @@
 # pylint:disable=unused-argument
 import re
-from unittest.mock import Mock, patch
 import time
 from datetime import timedelta
+from unittest.mock import Mock, patch
 
 import dask.distributed as dd
 import pytest
@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.forms import ContainerForm, SubmissionForm
-from core.models import Submission, Challenge
+from core.models import Challenge, Submission
 from core.views.submission import edit_submission_view
 
 
@@ -102,7 +102,7 @@ def test_create_submission_expired_challenge(client, user, challenge):
     }
     client.force_login(user)
     response = client.post("/submission/add/", form_data)
-    #assert response.status_code == 404
+    # assert response.status_code == 404
 
 
 @pytest.mark.django_db
@@ -146,6 +146,7 @@ def test_update_submission(client, user, draft_submission):
     submission = response.context["submission"]
     assert submission.draft_mode
 
+
 @pytest.mark.django_db
 def test_load_expired_submission(rf, client, user, draft_submission):
     time.sleep(5)
@@ -169,7 +170,7 @@ def test_load_expired_submission(rf, client, user, draft_submission):
     container_form = response.context["submission_form"]
     arg_formset = response.context["arg_formset"]
     for field in submission_form.fields.keys():
-        assert submission_form.fields[field].disabled 
+        assert submission_form.fields[field].disabled
     for field in container_form.fields.keys():
         assert container_form.fields[field].disabled
     for form in arg_formset.forms:
@@ -178,9 +179,10 @@ def test_load_expired_submission(rf, client, user, draft_submission):
         assert form.fields["file_value"].disabled
         assert form.fields["DELETE"].disabled
 
-    # assert submission note field is enabled 
+    # assert submission note field is enabled
     submission_notes_form = response.context["submission_notes_form"]
-    assert not submission_notes_form.fields["notes"].disabled 
+    assert not submission_notes_form.fields["notes"].disabled
+
 
 @pytest.mark.django_db
 def test_update_expired_submission(rf, client, user, draft_submission):
@@ -206,9 +208,7 @@ def test_update_expired_submission(rf, client, user, draft_submission):
     submission_notes_form = response.context["submission_notes_form"]
 
     # update the submission notes after expired - should update
-    form_data = {
-        f"{submission_notes_form.prefix}-notes": "hello from expired"
-    }
+    form_data = {f"{submission_notes_form.prefix}-notes": "hello from expired"}
     request = rf.post(f"/submission/{draft_submission.pk}/edit/", form_data)
     request.user = user
     response = edit_submission_view(request, pk=draft_submission.pk)
@@ -221,12 +221,12 @@ def test_update_expired_submission(rf, client, user, draft_submission):
     # update submission and container fields after expired - should not update
     submission_old = submission
     container_old = submission.container
-    change_challenge =  Challenge(
-                            name="ChangedChallenge", 
-                            start_at=timezone.now(),
-                            end_at = timezone.now() + timedelta(hours=1),
-                            repo_url = "http://github.com"
-                        )
+    change_challenge = Challenge(
+        name="ChangedChallenge",
+        start_at=timezone.now(),
+        end_at=timezone.now() + timedelta(hours=1),
+        repo_url="http://github.com",
+    )
     change_challenge.save()
     form_data = {
         f"{container_form.prefix}-name": "UPDATED CONTAINER",
