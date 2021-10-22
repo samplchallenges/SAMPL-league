@@ -1,8 +1,8 @@
 # pylint: disable=unused-argument, unused-variable
 import os.path
 import re
-import time
 import tempfile
+import time
 from pathlib import Path
 from unittest.mock import Mock, patch
 

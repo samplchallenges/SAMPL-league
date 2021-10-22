@@ -42,4 +42,3 @@ def test_create(challenge, user):
     submission.challenge = container.challenge
     submission.save()
     assert submission.draft_mode
-

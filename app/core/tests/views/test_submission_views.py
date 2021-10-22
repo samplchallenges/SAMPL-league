@@ -135,7 +135,7 @@ def test_update_submission(client, user, draft_submission):
 
 @pytest.mark.django_db
 def test_load_expired_submission(rf, client, user, draft_submission):
-    time.sleep(5) # sleep to ensure challenge has expired
+    time.sleep(5)  # sleep to ensure challenge has expired
 
     # GET request after submission has expired
     request = rf.get(f"/core/submission/{draft_submission.pk}")
@@ -170,7 +170,7 @@ def test_load_expired_submission(rf, client, user, draft_submission):
 
 @pytest.mark.django_db
 def test_update_expired_submission(rf, client, user, draft_submission):
-    time.sleep(5) # sleep to ensure challenge has expired
+    time.sleep(5)  # sleep to ensure challenge has expired
 
     # GET request after submission has expired
     request = rf.get(f"/core/submission/{draft_submission.pk}")
@@ -194,7 +194,7 @@ def test_update_expired_submission(rf, client, user, draft_submission):
     request = rf.post(f"/submission/{draft_submission.pk}/edit/", form_data)
     request.user = user
     response = edit_submission_view(request, pk=draft_submission.pk)
-    assert response.status_code == 302 # redirect to submission details 
+    assert response.status_code == 302  # redirect to submission details
     response = client.get(f"/submission/{draft_submission.pk}/edit/")
     assert response.status_code == 200
     submission = response.context["submission"]
@@ -245,7 +245,6 @@ def test_update_expired_submission(rf, client, user, draft_submission):
     assert submission.compute_time == submission_old.compute_time
     assert submission.software == submission_old.software
     assert submission.computing_and_hardware == submission_old.computing_and_hardware
-
 
 
 @pytest.mark.django_db(transaction=True)
