@@ -69,6 +69,17 @@ def _convert_file_kwargs(file_kwargs):
     return dirpaths, final_file_kwargs
 
 
+def get_authenticated_client():
+    """
+    Authenticate docker client to pull from aws ECR registry
+    returns a docker client
+    Note: we just login every time instead of checking if our 12hr login has expired
+    """
+    login_command = subprocess.run(["aws ecr get-login --no-include-email --region us-east-2"], shell=True, capture_output=True, check=True)
+    subprocess.run(login_command.stdout, shell=True, check=True)
+    return docker.from_env()
+
+
 def run(
     container_uri,
     command="",
@@ -112,7 +123,7 @@ def run(
 
 
 def run_container(container_uri, command, inputdir_map=None, output_dir=None):
-    client = docker.from_env()
+    client = get_authenticated_client()
     volumes = {}
     for inputdir, guest_input_dir in inputdir_map.items():
         volumes[str(inputdir)] = {"bind": str(guest_input_dir), "mode": "ro"}
