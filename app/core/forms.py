@@ -2,8 +2,10 @@ from crispy_forms.helper import FormHelper
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
-from .models import Container, ContainerArg, Submission
+
 from . import configurator
+from .models import Container, ContainerArg, Submission
+
 
 class RegisterForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):

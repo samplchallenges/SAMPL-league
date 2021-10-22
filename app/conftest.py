@@ -123,7 +123,6 @@ def config_factory(challenge_factory, container_factory, db):
     return maker
 
 
-
 @pytest.fixture
 def container_factory(user, db):
     def container_maker(challenge, label, tag):
@@ -222,6 +221,7 @@ def elem_factory(testing_data_path, db):
         return elem
 
     return elem_maker
+
 
 @pytest.fixture
 def submission_factory(db):
