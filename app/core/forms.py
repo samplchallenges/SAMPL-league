@@ -42,7 +42,7 @@ class SubmissionForm(forms.ModelForm):
 
 class SubmissionNotesForm(forms.Form):
     prefix = "submission_note"
-    notes = forms.CharField(label='Notes', widget=forms.Textarea(attrs={"cols": 30, "rows": 4, "placeholder": configurator.NOTES_DETAILS}), required=False)
+    notes = forms.CharField(label='Notes', widget=forms.Textarea(attrs={"cols": 30, "rows": 4,}), required=False, help_text=configurator.NOTES_DETAILS)
 
 def container_arg_formset():
     return inlineformset_factory(

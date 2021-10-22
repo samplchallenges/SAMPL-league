@@ -36,9 +36,8 @@ If you used a microstate other than the challenge provided microstate (`SMXX_mic
 
 Use as many lines of text as you need."""
 
-NOTES_DETAILS = """Extra Notes.
-Please place any extra notes about your submission or submission run here. This section is only intended for notes to yourself, and will be disregarded by challenge administrators.
-
+NOTES_DETAILS = """Submission Annotations and Notes-to-self.
+Please place any extra notes or annotations about your submission or submission run here. This section is only intended for notes-to-self, and will be disregarded by challenge administrators.
 Unlike other sections, you may modify this section after the challenge has concluded.
 """
 
