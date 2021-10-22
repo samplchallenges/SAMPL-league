@@ -174,6 +174,12 @@ def edit_submission_view(request, pk=None, clone=False):
             if "challenge_id" in request.GET:
                 initial_values["challenge"] = request.GET["challenge_id"]
                 challenge = Challenge.objects.get(pk=initial_values["challenge"])
+                
+                # ISSUE #153: for now Bad Request if someone goes to add submission page
+                # of a challenge that is not open, needs to be changed later to a 
+                # redirect with a banner that says submission window has expired
+                if not challenge.is_active():
+                    return HttpResponseBadRequest()
             else:
                 return HttpResponseBadRequest()
 

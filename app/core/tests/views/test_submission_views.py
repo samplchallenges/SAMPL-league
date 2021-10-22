@@ -91,22 +91,6 @@ def test_create_submission(client, user, challenge):
     assert submission.name == form_data["submission-name"]
 
 
-def test_create_submission_expired_challenge(client, user, challenge):
-    challenge.end_at = timezone.now()
-    form_data = {
-        "container-name": "test container",
-        "container-challenge": challenge.pk,
-        "container-registry": "local",
-        "container-label": "package2",
-        "submission-name": "draft submission 2",
-        "args-TOTAL_FORMS": 0,
-        "args-INITIAL_FORMS": 0,
-    }
-    client.force_login(user)
-    response = client.post("/submission/add/", form_data)
-    # assert response.status_code == 404
-
-
 @pytest.mark.django_db
 def test_update_submission(client, user, draft_submission):
     client.force_login(user)
@@ -151,8 +135,7 @@ def test_update_submission(client, user, draft_submission):
 
 @pytest.mark.django_db
 def test_load_expired_submission(rf, client, user, draft_submission):
-    time.sleep(5)
-    container_form = ContainerForm(instance=draft_submission.container)
+    time.sleep(5) # sleep to ensure challenge has expired
 
     # GET request after submission has expired
     request = rf.get(f"/core/submission/{draft_submission.pk}")
@@ -176,7 +159,6 @@ def test_load_expired_submission(rf, client, user, draft_submission):
     for field in container_form.fields.keys():
         assert container_form.fields[field].disabled
     for form in arg_formset.forms:
-        assert not form.fields["key"].required
         assert form.fields["key"].disabled
         assert form.fields["file_value"].disabled
         assert form.fields["DELETE"].disabled
@@ -188,8 +170,7 @@ def test_load_expired_submission(rf, client, user, draft_submission):
 
 @pytest.mark.django_db
 def test_update_expired_submission(rf, client, user, draft_submission):
-    time.sleep(5)
-    container_form = ContainerForm(instance=draft_submission.container)
+    time.sleep(5) # sleep to ensure challenge has expired
 
     # GET request after submission has expired
     request = rf.get(f"/core/submission/{draft_submission.pk}")
@@ -213,7 +194,7 @@ def test_update_expired_submission(rf, client, user, draft_submission):
     request = rf.post(f"/submission/{draft_submission.pk}/edit/", form_data)
     request.user = user
     response = edit_submission_view(request, pk=draft_submission.pk)
-    assert response.status_code == 302
+    assert response.status_code == 302 # redirect to submission details 
     response = client.get(f"/submission/{draft_submission.pk}/edit/")
     assert response.status_code == 200
     submission = response.context["submission"]
@@ -246,6 +227,7 @@ def test_update_expired_submission(rf, client, user, draft_submission):
     request.user = user
     response = edit_submission_view(request, pk=draft_submission.pk)
     assert response.status_code == 302
+
     response = client.get(f"/submission/{draft_submission.pk}/edit/")
     assert response.status_code == 200
 
@@ -263,6 +245,7 @@ def test_update_expired_submission(rf, client, user, draft_submission):
     assert submission.compute_time == submission_old.compute_time
     assert submission.software == submission_old.software
     assert submission.computing_and_hardware == submission_old.computing_and_hardware
+
 
 
 @pytest.mark.django_db(transaction=True)
