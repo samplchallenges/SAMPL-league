@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument, unused-variable
 import os.path
 import re
+import time
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -10,6 +11,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models as django_models
+from django.utils import timezone
 
 from core import models
 
@@ -38,6 +40,16 @@ def test_container(scoring_container):
     scoring_container.tag = None
 
     assert scoring_container.uri == "ghcr.io/robbason/score-coords"
+
+
+def test_challenge(challenge):
+    assert challenge.is_active()
+    assert challenge.start_at < timezone.now()
+    assert challenge.end_at > timezone.now()
+
+    time.sleep(5)
+    assert challenge.end_at < timezone.now()
+    assert not challenge.is_active()
 
 
 def test_file_value(input_elements, molfile_type):

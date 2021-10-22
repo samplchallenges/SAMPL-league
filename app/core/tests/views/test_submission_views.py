@@ -202,7 +202,6 @@ def test_update_expired_submission(rf, client, user, draft_submission):
     submission = response.context["submission"]
     assert not submission.challenge.is_active()
 
-    # get forms
     submission_form = response.context["submission_form"]
     container_form = response.context["submission_form"]
     submission_notes_form = response.context["submission_notes_form"]
@@ -250,6 +249,7 @@ def test_update_expired_submission(rf, client, user, draft_submission):
 
     submission = response.context["submission"]
     container = submission.container
+
     assert container.name == container_old.name
     assert container.registry == container_old.registry
     assert container.challenge == container_old.challenge
