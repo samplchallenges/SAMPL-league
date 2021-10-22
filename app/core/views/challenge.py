@@ -1,7 +1,6 @@
 import os.path
 
 import ever_given.wrapper
-from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView

@@ -1,11 +1,7 @@
 # pylint: disable=unused-argument, unused-variable
-import time
-from datetime import timedelta
 
 import pytest
-from django.utils import timezone
 
-from core import models
 from core.forms import ContainerForm, SubmissionForm
 
 
