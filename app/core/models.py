@@ -157,7 +157,7 @@ class Submission(Timestamped):
     ranked = models.BooleanField(default=True, help_text=configurator.RANKED_DETAILS)
 
     notes = models.TextField(
-        help_text="help text for notes field", blank=True, null=True
+        help_text=configurator.NOTES_DETAILS, blank=True, null=True
     )
 
     def __str__(self):
