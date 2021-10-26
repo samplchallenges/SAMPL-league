@@ -21,7 +21,7 @@
       {% if challenge.is_active %}
         <a class="btn btn-primary" role="button" href="{% url 'submission-add' %}?challenge_id={{ challenge.pk }}">New Submission</a>
       {% else %}
-        <a class="btn btn-primary disabled" role="button" href="{% url 'submission-add' %}?challenge_id={{ challenge.pk }}" aria-disabled="true">New Submission</a>
+        <a class="btn btn-primary disabled" role="button" href="{% url 'submission-add' %}?challenge_id={{ challenge.pk }}" aria-disabled="true">Challenge Closed to New Submissions</a>
       {% endif %}
       {% if submissions %}
       <h5>Your submissions</h5>
