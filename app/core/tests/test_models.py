@@ -41,7 +41,6 @@ def test_container(scoring_container):
     assert scoring_container.uri == "ghcr.io/robbason/score-coords"
 
 
-
 def test_file_value(input_elements, molfile_type):
     elem = input_elements[0]
     challenge = elem.challenge
@@ -75,9 +74,14 @@ def test_input_element(input_elements, benzene_from_mol):
     assert relative_path == Path(expected_path)
 
 
-@pytest.mark.parametrize(['mocknow', 'compareval'], [(mocktime.inactive_before,False),
-                                                     (mocktime.active,True),
-                                                     (mocktime.inactive_after,False)])
+@pytest.mark.parametrize(
+    ["mocknow", "compareval"],
+    [
+        (mocktime.inactive_before, False),
+        (mocktime.active, True),
+        (mocktime.inactive_after, False),
+    ],
+)
 def test_challenge(challenge, mocknow, compareval):
     with patch("django.utils.timezone.now", mocknow):
         assert challenge.is_active() == compareval
@@ -121,5 +125,10 @@ def test_load_prediction_file(
 def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):
     container = draft_submission.container
     assert container.custom_args() == {"stringarg": "hello world"}
-    filepath = os.path.join(settings.MEDIA_ROOT, "container_args/{}/{}/filearg/example.*.txt".format(container.user_id, container.id))
+    filepath = os.path.join(
+        settings.MEDIA_ROOT,
+        "container_args/{}/{}/filearg/example.*.txt".format(
+            container.user_id, container.id
+        ),
+    )
     assert re.match(filepath, container.custom_file_args()["filearg"])

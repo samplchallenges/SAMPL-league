@@ -175,7 +175,7 @@ def edit_submission_view(request, pk=None, clone=False):
                 initial_values["challenge"] = request.GET["challenge_id"]
                 challenge = Challenge.objects.get(pk=initial_values["challenge"])
                 if not challenge.is_active():
-                    return redirect('challenge-detail', pk=challenge.pk)
+                    return redirect("challenge-detail", pk=challenge.pk)
             else:
                 return HttpResponseBadRequest()
 
