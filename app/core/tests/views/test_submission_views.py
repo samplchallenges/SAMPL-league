@@ -3,7 +3,6 @@ import re
 import time
 from datetime import datetime
 from unittest.mock import Mock, patch
-from datetime import datetime
 
 import dask.distributed as dd
 import pytest

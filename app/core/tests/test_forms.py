@@ -1,8 +1,5 @@
 # pylint: disable=unused-argument, unused-variable
 
-import pytest
-
-from core.forms import ContainerForm, SubmissionForm
 from datetime import datetime
 from unittest.mock import patch
 
