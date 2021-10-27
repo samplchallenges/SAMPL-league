@@ -3,8 +3,6 @@
 import pytest
 
 from core.forms import ContainerForm, SubmissionForm
-from datetime import datetime
-from django.utils import timezone
 from unittest.mock import patch
 
 from core.tests import mocktime

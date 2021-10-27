@@ -2,7 +2,6 @@
 import os.path
 import re
 import tempfile
-import time
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -11,7 +10,6 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models as django_models
-from django.utils import timezone
 
 from core import models
 from core.tests import mocktime

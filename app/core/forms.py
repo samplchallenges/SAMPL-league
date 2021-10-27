@@ -3,7 +3,6 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
 
-from . import configurator
 from .models import Container, ContainerArg, Submission
 
 
@@ -50,19 +49,6 @@ class SubmissionNotesForm(forms.ModelForm):
         widgets = {
             "notes": forms.Textarea(attrs={"cols": 30,"rows": 4,})
         }
-    '''
-    notes = forms.CharField(
-        label="Notes",
-        widget=forms.Textarea(
-            attrs={
-                "cols": 30,
-                "rows": 4,
-            }
-        ),
-        required=False,
-        help_text=configurator.NOTES_DETAILS,
-    )
-    '''
 
 
 def container_arg_formset():
