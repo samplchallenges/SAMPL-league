@@ -1,16 +1,16 @@
 # pylint: disable=unused-argument, unused-variable
 
-import pytest
-
-from core.forms import ContainerForm, SubmissionForm
 from datetime import datetime
-from django.utils import timezone
 from unittest.mock import patch
 
+import pytest
+from django.utils import timezone
+
+from core.forms import ContainerForm, SubmissionForm
 from core.tests import mocktime
 
 
-@patch('django.utils.timezone.now', mocktime.active)
+@patch("django.utils.timezone.now", mocktime.active)
 @pytest.mark.django_db
 def test_create(challenge, user):
     assert challenge.is_active()
@@ -45,5 +45,3 @@ def test_create(challenge, user):
     submission.challenge = container.challenge
     submission.save()
     assert submission.draft_mode
-
-    

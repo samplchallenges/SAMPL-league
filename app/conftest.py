@@ -51,8 +51,8 @@ def challenge(challenge_factory, db):
 def challenge_factory(db):
     def maker(name):
         empty_url = "http://github.com"
-        start_at =  datetime(2020, 1, 1, hour=1, tzinfo=timezone.utc)
-        end_at =  datetime(2020, 9, 1, hour=1, tzinfo=timezone.utc)
+        start_at = datetime(2020, 1, 1, hour=1, tzinfo=timezone.utc)
+        end_at = datetime(2020, 9, 1, hour=1, tzinfo=timezone.utc)
         challenge = models.Challenge(
             name=name,
             start_at=start_at,

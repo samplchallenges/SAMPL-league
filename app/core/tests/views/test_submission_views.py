@@ -1,7 +1,7 @@
 # pylint:disable=unused-argument
 import re
 import time
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
@@ -15,9 +15,8 @@ from django.utils import timezone
 
 from core.forms import ContainerForm, SubmissionForm
 from core.models import Challenge, Submission
-from core.views.submission import edit_submission_view
-
 from core.tests import mocktime
+from core.views.submission import edit_submission_view
 
 
 @pytest.mark.django_db
@@ -31,7 +30,8 @@ def test_list_submissions(client, user, other_user, draft_submission):
     assert response.status_code == 200
     assert draft_submission.name not in response.content.decode()
 
-@patch('django.utils.timezone.now', mocktime.active)
+
+@patch("django.utils.timezone.now", mocktime.active)
 @pytest.mark.django_db
 def test_load_submission_form(rf, user, draft_submission):
     request = rf.get(
@@ -73,7 +73,7 @@ def test_clone_submission(client, user, draft_submission):
     assert submission_form.instance.name == "Draft Submission"
 
 
-@patch('django.utils.timezone.now', mocktime.active)
+@patch("django.utils.timezone.now", mocktime.active)
 @pytest.mark.django_db
 def test_create_submission(client, user, challenge):
     form_data = {
@@ -94,7 +94,7 @@ def test_create_submission(client, user, challenge):
     assert submission.name == form_data["submission-name"]
 
 
-@patch('django.utils.timezone.now', mocktime.active)
+@patch("django.utils.timezone.now", mocktime.active)
 @pytest.mark.django_db
 def test_update_submission(client, user, draft_submission):
     client.force_login(user)
@@ -137,7 +137,7 @@ def test_update_submission(client, user, draft_submission):
     assert submission.draft_mode
 
 
-@patch('django.utils.timezone.now', mocktime.inactive_after)
+@patch("django.utils.timezone.now", mocktime.inactive_after)
 @pytest.mark.django_db
 def test_load_expired_submission(rf, client, user, draft_submission):
     client.force_login(user)
@@ -165,7 +165,7 @@ def test_load_expired_submission(rf, client, user, draft_submission):
     assert not submission_notes_form.fields["notes"].disabled
 
 
-@patch('django.utils.timezone.now', mocktime.inactive_after)
+@patch("django.utils.timezone.now", mocktime.inactive_after)
 @pytest.mark.django_db
 def test_update_expired_submission(client, user, draft_submission):
 
@@ -202,7 +202,7 @@ def test_update_expired_submission(client, user, draft_submission):
         "registry": "docker.io",
         "challenge": change_challenge,
         "label": "osatom/adv-tutorial",
-        "tag": "UPDATED"
+        "tag": "UPDATED",
     }
     submission_form_data = {
         "ranked": not submission_old.ranked,
@@ -212,8 +212,14 @@ def test_update_expired_submission(client, user, draft_submission):
         "software": "updating software from expired",
         "computing_and_hardware": "updating computing and hardware from expired",
     }
-    final_container_form_data = {f"{container_form.prefix}-{key}": value for key, value in container_form_data.items()}
-    final_submission_form_data = {f"{submission_form.prefix}-{key}": value for key, value in submission_form_data.items()}
+    final_container_form_data = {
+        f"{container_form.prefix}-{key}": value
+        for key, value in container_form_data.items()
+    }
+    final_submission_form_data = {
+        f"{submission_form.prefix}-{key}": value
+        for key, value in submission_form_data.items()
+    }
 
     final_form_data = {**final_container_form_data, **final_submission_form_data}
 
@@ -231,7 +237,6 @@ def test_update_expired_submission(client, user, draft_submission):
 
     for key in submission_form_data.keys():
         assert getattr(submission, key) == getattr(submission_old, key)
-
 
 
 @pytest.mark.django_db(transaction=True)
