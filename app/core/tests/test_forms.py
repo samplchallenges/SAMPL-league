@@ -1,10 +1,11 @@
 # pylint: disable=unused-argument, unused-variable
 
-from datetime import datetime
+import pytest
+
+from core.forms import ContainerForm, SubmissionForm
 from unittest.mock import patch
 
 import pytest
-from django.utils import timezone
 
 from core.forms import ContainerForm, SubmissionForm
 from core.tests import mocktime

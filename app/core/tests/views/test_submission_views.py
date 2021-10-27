@@ -1,6 +1,5 @@
 # pylint:disable=unused-argument
 import re
-import time
 from datetime import datetime
 from unittest.mock import Mock, patch
 
