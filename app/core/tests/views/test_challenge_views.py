@@ -11,15 +11,10 @@ def test_challenge_detail(client, user, benzene_from_mol):
     challenge = benzene_from_mol.challenge
     response = client.get(f"/challenge/{challenge.pk}/")
 
-    found = False
-    for elem in response.context[0].dicts[3]["elements"][0]:
-        print(elem, type(elem))
-
-        if re.match("--molfile ChEBI_16716.*.mdl", elem.strip()):
-            found = True
-            break
-    assert found
-
+    response = "".join(i for i in response.content.decode('utf-8'))
+    regex = re.compile(r'--molfile ChEBI_16716.*.mdl')
+    
+    assert regex.search(response)
 
 @pytest.mark.django_db
 def test_challenge_list(client, user, benzene_from_mol):

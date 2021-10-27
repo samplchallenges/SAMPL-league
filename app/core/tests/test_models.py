@@ -14,6 +14,7 @@ from django.db import models as django_models
 from django.utils import timezone
 
 from core import models
+from core.tests import mocktime
 
 TEST_DATA_PATH = Path(__file__).parent / "data"
 
@@ -41,15 +42,6 @@ def test_container(scoring_container):
 
     assert scoring_container.uri == "ghcr.io/robbason/score-coords"
 
-
-def test_challenge(challenge):
-    assert challenge.is_active()
-    assert challenge.start_at < timezone.now()
-    assert challenge.end_at > timezone.now()
-
-    time.sleep(5)
-    assert challenge.end_at < timezone.now()
-    assert not challenge.is_active()
 
 
 def test_file_value(input_elements, molfile_type):
@@ -83,6 +75,14 @@ def test_input_element(input_elements, benzene_from_mol):
     relative_path = dirpath.relative_to(settings.MEDIA_ROOT)
     expected_path = f"file_uploads/challenges/{benzene_from_mol.challenge_id}"
     assert relative_path == Path(expected_path)
+
+
+@pytest.mark.parametrize(['mocknow', 'compareval'], [(mocktime.inactive_before,False),
+                                                     (mocktime.active,True),
+                                                     (mocktime.inactive_after,False)])
+def test_challenge(challenge, mocknow, compareval):
+    with patch("django.utils.timezone.now", mocknow):
+        assert challenge.is_active() == compareval
 
 
 def test_load_prediction_file(
@@ -123,14 +123,5 @@ def test_load_prediction_file(
 def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):
     container = draft_submission.container
     assert container.custom_args() == {"stringarg": "hello world"}
-    filearg_dict = {
-        "filearg": os.path.join(
-            settings.MEDIA_ROOT,
-            "container_args/{}/{}/filearg/example.*.txt".format(
-                container.user_id, container.id
-            ),
-        )
-    }
-    assert type(filearg_dict) == type(container.custom_file_args())
-    assert filearg_dict.keys() == container.custom_file_args().keys()
-    assert re.match(filearg_dict["filearg"], container.custom_file_args()["filearg"])
+    filepath = os.path.join(settings.MEDIA_ROOT, "container_args/{}/{}/filearg/example.*.txt".format(container.user_id, container.id))
+    assert re.match(filepath, container.custom_file_args()["filearg"])

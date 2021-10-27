@@ -3,10 +3,17 @@
 import pytest
 
 from core.forms import ContainerForm, SubmissionForm
+from datetime import datetime
+from django.utils import timezone
+from unittest.mock import patch
+
+from core.tests import mocktime
 
 
+@patch('django.utils.timezone.now', mocktime.active)
 @pytest.mark.django_db
 def test_create(challenge, user):
+    assert challenge.is_active()
     submission_form = SubmissionForm()
     assert not submission_form.is_valid()
     container_form = ContainerForm()
@@ -38,3 +45,5 @@ def test_create(challenge, user):
     submission.challenge = container.challenge
     submission.save()
     assert submission.draft_mode
+
+    

@@ -42,8 +42,15 @@ class SubmissionForm(forms.ModelForm):
         }
 
 
-class SubmissionNotesForm(forms.Form):
+class SubmissionNotesForm(forms.ModelForm):
     prefix = "submission_note"
+    class Meta:
+        model = Submission
+        fields = ["notes"]
+        widgets = {
+            "notes": forms.Textarea(attrs={"cols": 30,"rows": 4,})
+        }
+    '''
     notes = forms.CharField(
         label="Notes",
         widget=forms.Textarea(
@@ -55,6 +62,7 @@ class SubmissionNotesForm(forms.Form):
         required=False,
         help_text=configurator.NOTES_DETAILS,
     )
+    '''
 
 
 def container_arg_formset():
