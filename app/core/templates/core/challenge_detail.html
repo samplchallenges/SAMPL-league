@@ -37,11 +37,12 @@
     <p class="card-text">
       <h5>Public Input Data</h5>
       <table class="table table-striped">
-        <thead><tr><td>Name</td>
+        <thead><tr>
+            <td>Name</td>
             {% for input_type in input_types %}
             <td>{{ input_type.key }}</td>
             {% endfor %}
-        <td>Container arguments</td></tr></thead>
+        </tr></thead>
         <tbody>
           {% for element in elements %}
           <tr>

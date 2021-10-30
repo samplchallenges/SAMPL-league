@@ -51,9 +51,10 @@ class ChallengeDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         challenge = context["challenge"]
-        context["submissions"] = challenge.submission_set.filter(
-            user=self.request.user
-        ).all()
+        if self.request.user.is_authenticated:
+            context["submissions"] = challenge.submission_set.filter(
+                user=self.request.user
+            ).all()
         context["output_types"] = challenge.valuetype_set.filter(
             is_input_flag=False
         ).order_by("key")

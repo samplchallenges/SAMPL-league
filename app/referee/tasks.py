@@ -7,6 +7,7 @@ import dask.distributed as dd
 import ever_given.wrapper
 from django.conf import settings
 
+from core import filecache
 from core import models
 
 from . import scoring
@@ -194,3 +195,6 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
         return evaluation.status
     finally:
         evaluation.save()
+        for prediction in evaluation.prediction_set.filter(
+                value_type__key__in=output_file_keys):
+            filecache.delete_local_cache(prediction.value)
