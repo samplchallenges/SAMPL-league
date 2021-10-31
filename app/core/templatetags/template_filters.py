@@ -13,7 +13,9 @@ def render_prediction(value_parent):
     value = value_parent.value
     if isinstance(value_parent.value_object, FileValue):
         value = format_html(
-            '<a href="/download_output/{}/">{}</a>', value_parent.pk, os.path.basename(value.name)
+            '<a href="/download_output/{}/">{}</a>',
+            value_parent.pk,
+            os.path.basename(value.name),
         )
     return value
 
@@ -26,5 +28,7 @@ def render_input_value(input_value):
     if isinstance(input_value.value_object, FileValue):
         value = format_html(
             '<a href="/download_input/{}/">{}</a>',
-            input_value.pk, os.path.basename(value.name))
+            input_value.pk,
+            os.path.basename(value.name),
+        )
     return value

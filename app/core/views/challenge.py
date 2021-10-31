@@ -1,18 +1,27 @@
-from collections import OrderedDict, defaultdict
 import os.path
+from collections import OrderedDict, defaultdict
 
 import ever_given.wrapper
 from django.utils.safestring import mark_safe
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
-from ..models import Challenge, FileValue, InputValue, InputElement
+from ..models import Challenge, FileValue, InputElement, InputValue
 
 
 def _input_elements(challenge):
-    input_values = InputValue.objects.select_related(
-        "input_element", "value_type", "value_type__content_type").filter(input_element__challenge=challenge, value_type__is_input_flag=True,
-                                                                          input_element__is_public=True).order_by("input_element_id", "value_type__key").all()
+    input_values = (
+        InputValue.objects.select_related(
+            "input_element", "value_type", "value_type__content_type"
+        )
+        .filter(
+            input_element__challenge=challenge,
+            value_type__is_input_flag=True,
+            input_element__is_public=True,
+        )
+        .order_by("input_element_id", "value_type__key")
+        .all()
+    )
     input_types = OrderedDict()
     elements = defaultdict(OrderedDict)
     for input_value in input_values:
@@ -29,7 +38,9 @@ def _input_elements(challenge):
         args_dict = kwargs
         for k, v in file_kwargs.items():
             args_dict[k] = os.path.basename(v)
-        element_dict["container_args"] = ever_given.wrapper.prepare_commandline("", args_dict)
+        element_dict["container_args"] = ever_given.wrapper.prepare_commandline(
+            "", args_dict
+        )
     return list(elements.values()), list(input_types.values())
 
 
