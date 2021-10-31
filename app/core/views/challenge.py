@@ -34,7 +34,7 @@ def _input_elements(challenge):
                 )
             else:
                 value = input_value.value
-        element_attribute.append(value)
+            element_attribute.append(value)
 
         kwargs, file_kwargs = element.all_values()
         args_dict = kwargs
