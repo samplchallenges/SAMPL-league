@@ -15,7 +15,6 @@ from django.utils import timezone
 from core.forms import ContainerForm, SubmissionForm
 from core.models import Challenge, Submission
 from core.tests import mocktime
-from core.views.submission import edit_submission_view
 
 
 @pytest.mark.django_db
