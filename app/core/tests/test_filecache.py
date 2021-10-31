@@ -1,11 +1,9 @@
-from unittest.mock import patch
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
-from .. import filecache
-from .. import models
-
+from .. import filecache, models
 
 TEST_DATA_PATH = Path(__file__).parent / "data"
 

@@ -10,6 +10,7 @@ register = template.Library()
 def render_prediction(value_parent):
     value = value_parent.value
     if isinstance(value_parent.value_object, FileValue):
-        value = format_html('<a href="/download_output/{}/">{}</a>',
-                            value_parent.pk, value)
+        value = format_html(
+            '<a href="/download_output/{}/">{}</a>', value_parent.pk, value
+        )
     return value

@@ -114,7 +114,9 @@ def score_submission_run(container, submission_run, score_types):
                 matched_keys.add(key)
 
         if matched_keys != set(submission_run_score_types.keys()):
-            raise Exception(f"Found keys of {matched_keys} out of required {submission_run_score_types}")
+            raise Exception(
+                f"Found keys of {matched_keys} out of required {submission_run_score_types}"
+            )
 
 
 def score_submission(submission_id, *run_ids):

@@ -1,11 +1,11 @@
-from django.contrib.auth.decorators import login_required
 from django import http
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 
-from .. import filecache
-from .. import models
-#import ContainerArg, InputValue
+from .. import filecache, models
+
+# import ContainerArg, InputValue
 
 
 def _respond_file(value):
@@ -21,14 +21,16 @@ def download_output_file(request, pk):  # pylint: disable=unused-argument
     prediction = get_object_or_404(
         models.Prediction,
         evaluation__submission_run__submission__user=request.user,
-        pk=pk)
+        pk=pk,
+    )
 
     return _respond_file(prediction.value)
 
 
 @login_required
 def download_input_file(request, pk):  #  pylint: disable=unused-argument
-    input_value = get_object_or_404(models.InputValue,
+    input_value = get_object_or_404(
+        models.InputValue,
         input_element__is_public=True,
         value_type__content_type__model="filevalue",
         pk=pk,
@@ -39,7 +41,8 @@ def download_input_file(request, pk):  #  pylint: disable=unused-argument
 
 @login_required
 def download_container_arg_file(request, pk):
-    container_arg = get_object_or_404(models.ContainerArg,
-        container__user=request.user, pk=pk)
+    container_arg = get_object_or_404(
+        models.ContainerArg, container__user=request.user, pk=pk
+    )
 
     return _respond_file(container_arg.file_value)
