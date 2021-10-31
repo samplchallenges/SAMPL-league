@@ -1,3 +1,4 @@
+from collections import OrderedDict, defaultdict
 import os.path
 
 import ever_given.wrapper
@@ -5,44 +6,31 @@ from django.utils.safestring import mark_safe
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
-from ..models import Challenge, FileValue
+from ..models import Challenge, FileValue, InputValue, InputElement
 
 
 def _input_elements(challenge):
-    elements = (
-        challenge.inputelement_set.filter(is_public=True)
-        .prefetch_related("inputvalue_set", "inputvalue_set__value_type")
-        .all()
-    )
-    input_types = (
-        challenge.valuetype_set.filter(is_input_flag=True).order_by("key").all()
-    )
-    element_attributes = []
+    input_values = InputValue.objects.select_related(
+        "input_element", "value_type", "value_type__content_type").filter(input_element__challenge=challenge, value_type__is_input_flag=True,
+                                                                          input_element__is_public=True).order_by("input_element_id", "value_type__key").all()
+    input_types = OrderedDict()
+    elements = defaultdict(OrderedDict)
+    for input_value in input_values:
+        key = input_value.value_type.key
+        if key not in input_types:
+            input_types[key] = input_value.value_type
+        element_id = input_value.input_element_id
+        elements[element_id]["name"] = input_value.input_element.name
+        elements[element_id][key] = input_value
 
-    for element in elements:
-        input_values = {
-            input_value.value_type.key: input_value
-            for input_value in element.inputvalue_set.all()
-        }
-        element_attribute = [element.name]
-
-        for input_type in input_types:
-            input_value = input_values[input_type.key]
-            if input_type.content_type.model_class() == FileValue:
-                value = mark_safe(
-                    f'<a href="/download_input/{input_value.pk}/">{input_value.value}</a>'
-                )
-            else:
-                value = input_value.value
-            element_attribute.append(value)
-
-        kwargs, file_kwargs = element.all_values()
+    for element_dict in elements.values():
+        element_values = [v for k, v in element_dict.items() if k != "name"]
+        kwargs, file_kwargs = InputElement.all_element_values(element_values)
         args_dict = kwargs
         for k, v in file_kwargs.items():
             args_dict[k] = os.path.basename(v)
-        element_attribute.append(ever_given.wrapper.prepare_commandline("", args_dict))
-        element_attributes.append(element_attribute)
-    return element_attributes, input_types
+        element_dict["container_args"] = ever_given.wrapper.prepare_commandline("", args_dict)
+    return list(elements.values()), list(input_types.values())
 
 
 class ChallengeDetail(DetailView):

@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+{% load template_filters %}
 {% block content %}
 <div class="card">
   <div class="card-header">Challenge</div>
@@ -47,8 +48,8 @@
         <tbody>
           {% for element in elements %}
           <tr>
-            {% for value in element %}
-            <td>{{ value }}</td>
+            {% for value in element.values %}
+            <td>{{ value|render_input_value }}</td>
             {% endfor %}
           </tr>
           {% endfor %}

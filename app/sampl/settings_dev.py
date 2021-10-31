@@ -10,6 +10,13 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+# requires installing django-debug-toolbar
+INSTALLED_APPS = (*INSTALLED_APPS, "debug_toolbar")
+MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
+] + MIDDLEWARE
+INTERNAL_IPS = ["127.0.0.1"]
+
 # If in debug mode, have crispy-forms raise errors
 # https://django-crispy-forms.readthedocs.io/en/latest/crispy_tag_forms.html#make-crispy-forms-fail-loud
 CRISPY_FAIL_SILENTLY = not DEBUG

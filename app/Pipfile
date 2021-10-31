@@ -29,6 +29,7 @@ pytest-django = "*"
 bokeh = ">=0.13.0"
 pytest-cov = "*"
 pytest-xdist = {extras = ["psutil"], version = "*"}
+django-debug-toolbar = "*"
 
 [requires]
 python_version = "3.8"
