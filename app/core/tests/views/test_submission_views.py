@@ -32,12 +32,11 @@ def test_list_submissions(client, user, other_user, draft_submission):
 
 @patch("django.utils.timezone.now", mocktime.active)
 @pytest.mark.django_db
-def test_load_submission_form(rf, user, draft_submission):
-    request = rf.get(
-        f"/core/submission/add/?challenge_id={draft_submission.challenge_id}"
+def test_load_submission_form(client, user, draft_submission):
+    client.force_login(user)
+    response = client.get(
+        f"/submission/add/?challenge_id={draft_submission.challenge_id}"
     )
-    request.user = user
-    response = edit_submission_view(request)
     assert response.status_code == 200
 
 
@@ -138,7 +137,7 @@ def test_update_submission(client, user, draft_submission):
 
 @patch("django.utils.timezone.now", mocktime.inactive_after)
 @pytest.mark.django_db
-def test_load_expired_submission(rf, client, user, draft_submission):
+def test_load_expired_submission(client, user, draft_submission):
     client.force_login(user)
     response = client.get(f"/submission/{draft_submission.pk}/edit/")
     assert response.status_code == 200

@@ -12,6 +12,7 @@ from django.db import models
 from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.functional import classproperty
 from django.utils.translation import gettext_lazy as _
 
 from . import configurator, filecache
@@ -160,23 +161,45 @@ class Submission(Timestamped):
         help_text=configurator.NOTES_DETAILS, blank=True, null=True
     )
 
+    NONDRAFT_FIELD_NAMES = [
+        "ranked",
+        "category",
+        "url",
+        "compute_time",
+        "computing_and_hardware",
+        "software",
+        "method",
+    ]
+    DETAIL_FIELD_NAMES = [*NONDRAFT_FIELD_NAMES, "notes"]
+
     def __str__(self):
         return f"{self.user}: {self.challenge}: {self.name}"
 
     def get_absolute_url(self):
         return reverse("submission", kwargs={"pk": self.pk})
 
+    @property
+    def missing_fields(self):
+        return [
+            field_name
+            for field_name in self.NONDRAFT_FIELD_NAMES
+            if getattr(self, field_name) in (None, "")
+        ]
+
+    @property
+    def details(self):
+        return [
+            (field_name, getattr(self, field_name))
+            for field_name in self.DETAIL_FIELD_NAMES
+            if getattr(self, field_name) not in (None, "")
+        ]
+
     def clean(self):
         super().clean()
         if not self.draft_mode:
             # All fields
-            for field in self._meta.get_fields(include_parents=False):
-                if isinstance(field, models.fields.Field) and not isinstance(
-                    field, models.BooleanField
-                ):
-                    if not getattr(self, field.attname):
-                        self.draft_mode = True
-                        break
+            if self.missing_fields:
+                self.draft_mode = True
 
     def clone(self):
         """

@@ -34,31 +34,12 @@ class OwnerMatchMixin(LoginRequiredMixin, UserPassesTestMixin):
 class SubmissionDetail(OwnerMatchMixin, DetailView):
     model = Submission
 
-    DETAIL_FIELD_NAMES = (
-        "ranked",
-        "category",
-        "url",
-        "compute_time",
-        "computing_and_hardware",
-        "software",
-        "method",
-        "notes",
-    )
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["container"] = self.object.container
         context["custom_args"] = self.object.container.args.all()
-        context["submission_details"] = [
-            (field_name, getattr(self.object, field_name))
-            for field_name in self.DETAIL_FIELD_NAMES
-            if getattr(self.object, field_name)
-        ]
-        context["missing_fields"] = [
-            field_name
-            for field_name in self.DETAIL_FIELD_NAMES
-            if not getattr(self.object, field_name)
-        ]
+        context["submission_details"] = self.object.details
+        context["missing_fields"] = self.object.missing_fields
         context["public_run"] = self.object.last_public_run()
         if context["public_run"]:
             context["public_completion"] = context["public_run"].completion()
@@ -97,6 +78,43 @@ def submit_submission_view(request, pk):
     return redirect("submission-detail", pk=submission.pk)
 
 
+def _create_submission(container, submission_form, submission_notes_form):
+    submission = submission_form.save(commit=False)
+    submission.container = container
+    submission.challenge = container.challenge
+    submission.user = container.user
+    if submission_notes_form.is_valid():
+        submission.notes = submission_notes_form.cleaned_data["notes"]
+    submission.save()
+    return submission
+
+
+def _create_container_args(container, arg_formset):
+    arg_instances = arg_formset.save(commit=False)
+    for instance in arg_instances:
+        instance.container = container
+        instance.save()
+    for instance in arg_formset.deleted_objects:
+        instance.delete()
+
+
+def _disable_fields_for_inactive_challenge(
+    submission_form, container_form, arg_formset
+):
+    for field in submission_form.fields.keys():
+        if field != "notes":
+            submission_form.fields[field].disabled = True
+
+    for field in container_form.fields.keys():
+        container_form.fields[field].disabled = True
+
+    for form in arg_formset.forms:
+        form.fields["key"].required = False
+        form.fields["key"].disabled = True
+        form.fields["file_value"].disabled = True
+        form.fields["DELETE"].disabled = True
+
+
 @login_required
 def edit_submission_view(request, pk=None, clone=False):
     form_action = ""
@@ -128,23 +146,14 @@ def edit_submission_view(request, pk=None, clone=False):
                 container.user = request.user
                 container.save()
                 if submission_form.is_valid():
-                    submission = submission_form.save(commit=False)
-                    submission.container = container
-                    submission.challenge = container.challenge
-                    submission.user = request.user
-                    if submission_notes_form.is_valid():
-                        submission.notes = submission_notes_form.cleaned_data["notes"]
-                    submission.save()
+                    submission = _create_submission(
+                        container, submission_form, submission_notes_form
+                    )
                     arg_formset = ArgFormSet(
                         request.POST, request.FILES, instance=container
                     )
                     if arg_formset.is_valid():
-                        arg_instances = arg_formset.save(commit=False)
-                        for instance in arg_instances:
-                            instance.container = container
-                            instance.save()
-                        for instance in arg_formset.deleted_objects:
-                            instance.delete()
+                        _create_container_args(container, arg_formset)
                         return redirect("submission-detail", pk=submission.pk)
                     else:
                         show_args = True
@@ -185,21 +194,10 @@ def edit_submission_view(request, pk=None, clone=False):
             arg_formset = forms.container_arg_formset()()
             submission = None
 
-        container_form.fields["challenge"].widget = django.forms.HiddenInput()
-
         if pk and not submission.challenge.is_active():
-            for field in submission_form.fields.keys():
-                if field != "notes":
-                    submission_form.fields[field].disabled = True
-
-            for field in container_form.fields.keys():
-                container_form.fields[field].disabled = True
-
-            for form in arg_formset.forms:
-                form.fields["key"].required = False
-                form.fields["key"].disabled = True
-                form.fields["file_value"].disabled = True
-                form.fields["DELETE"].disabled = True
+            _disable_fields_for_inactive_challenge(
+                submission_form, container_form, arg_formset
+            )
 
     else:
         return HttpResponseBadRequest()
