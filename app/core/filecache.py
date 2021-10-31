@@ -58,4 +58,3 @@ def delete_local_cache(field_file):
         except NotImplementedError:
             logger.debug("Deleting local copy as we have remote storage")
             os.remove(local_path)
-            raise Exception(local_path)
