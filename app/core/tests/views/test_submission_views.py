@@ -1,5 +1,6 @@
 # pylint:disable=unused-argument
 import re
+from datetime import datetime
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
@@ -9,10 +10,11 @@ from django.db import transaction
 from django.forms.fields import CharField
 from django.http.response import FileResponse
 from django.urls import reverse
+from django.utils import timezone
 
 from core.forms import ContainerForm, SubmissionForm
-from core.models import Submission
-from core.views.submission import edit_submission_view
+from core.models import Challenge, Submission
+from core.tests import mocktime
 
 
 @pytest.mark.django_db
@@ -27,11 +29,13 @@ def test_list_submissions(client, user, other_user, draft_submission):
     assert draft_submission.name not in response.content.decode()
 
 
+@patch("django.utils.timezone.now", mocktime.active)
 @pytest.mark.django_db
-def test_load_submission_form(rf, user, draft_submission):
-    request = rf.get("/core/submission/add/")
-    request.user = user
-    response = edit_submission_view(request)
+def test_load_submission_form(client, user, draft_submission):
+    client.force_login(user)
+    response = client.get(
+        f"/submission/add/?challenge_id={draft_submission.challenge_id}"
+    )
     assert response.status_code == 200
 
 
@@ -66,6 +70,7 @@ def test_clone_submission(client, user, draft_submission):
     assert submission_form.instance.name == "Draft Submission"
 
 
+@patch("django.utils.timezone.now", mocktime.active)
 @pytest.mark.django_db
 def test_create_submission(client, user, challenge):
     form_data = {
@@ -86,6 +91,7 @@ def test_create_submission(client, user, challenge):
     assert submission.name == form_data["submission-name"]
 
 
+@patch("django.utils.timezone.now", mocktime.active)
 @pytest.mark.django_db
 def test_update_submission(client, user, draft_submission):
     client.force_login(user)
@@ -126,6 +132,108 @@ def test_update_submission(client, user, draft_submission):
     response = client.get(response.url)
     submission = response.context["submission"]
     assert submission.draft_mode
+
+
+@patch("django.utils.timezone.now", mocktime.inactive_after)
+@pytest.mark.django_db
+def test_load_expired_submission(client, user, draft_submission):
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    assert response.status_code == 200
+
+    submission = response.context["submission"]
+    assert not submission.challenge.is_active()
+
+    # assert form submission, container, and args fields are visually disabled
+    submission_form = response.context["submission_form"]
+    container_form = response.context["submission_form"]
+    arg_formset = response.context["arg_formset"]
+    for field in submission_form.fields.keys():
+        assert submission_form.fields[field].disabled
+    for field in container_form.fields.keys():
+        assert container_form.fields[field].disabled
+    for form in arg_formset.forms:
+        assert form.fields["key"].disabled
+        assert form.fields["file_value"].disabled
+        assert form.fields["DELETE"].disabled
+
+    # assert submission note field is enabled
+    submission_notes_form = response.context["submission_notes_form"]
+    assert not submission_notes_form.fields["notes"].disabled
+
+
+@patch("django.utils.timezone.now", mocktime.inactive_after)
+@pytest.mark.django_db
+def test_update_expired_submission(client, user, draft_submission):
+
+    client.force_login(user)
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    assert response.status_code == 200
+
+    submission = response.context["submission"]
+    assert not submission.challenge.is_active()
+
+    submission_form = response.context["submission_form"]
+    container_form = response.context["submission_form"]
+    submission_notes_form = response.context["submission_notes_form"]
+
+    form_data = {f"{submission_notes_form.prefix}-notes": "hello from expired"}
+    response = client.post(f"/submission/{draft_submission.pk}/edit/", form_data)
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    assert response.status_code == 200
+    submission = response.context["submission"]
+    assert submission.notes == "hello from expired"
+
+    # update submission and container fields after expired - should not update
+    submission_old = submission
+    container_old = submission.container
+    change_challenge = Challenge(
+        name="ChangedChallenge",
+        start_at=datetime(2020, 2, 1, hour=1, tzinfo=timezone.utc),
+        end_at=datetime(2020, 9, 1, hour=1, tzinfo=timezone.utc),
+        repo_url="http://github.com",
+    )
+    change_challenge.save()
+    container_form_data = {
+        "name": "UPDATED CONTAINER",
+        "registry": "docker.io",
+        "challenge": change_challenge,
+        "label": "osatom/adv-tutorial",
+        "tag": "UPDATED",
+    }
+    submission_form_data = {
+        "ranked": not submission_old.ranked,
+        "url": "http://samplchallengesarecool.org",
+        "method": "updating method from expired",
+        "compute_time": "updating compute_time from expired",
+        "software": "updating software from expired",
+        "computing_and_hardware": "updating computing and hardware from expired",
+    }
+    final_container_form_data = {
+        f"{container_form.prefix}-{key}": value
+        for key, value in container_form_data.items()
+    }
+    final_submission_form_data = {
+        f"{submission_form.prefix}-{key}": value
+        for key, value in submission_form_data.items()
+    }
+
+    final_form_data = {**final_container_form_data, **final_submission_form_data}
+
+    response = client.post(f"/submission/{draft_submission.pk}/edit/", final_form_data)
+    assert response.status_code == 302
+
+    response = client.get(f"/submission/{draft_submission.pk}/edit/")
+    assert response.status_code == 200
+
+    submission = response.context["submission"]
+    container = submission.container
+
+    for key in container_form_data.keys():
+        assert getattr(container, key) == getattr(container_old, key)
+
+    for key in submission_form_data.keys():
+        assert getattr(submission, key) == getattr(submission_old, key)
 
 
 @pytest.mark.django_db(transaction=True)
