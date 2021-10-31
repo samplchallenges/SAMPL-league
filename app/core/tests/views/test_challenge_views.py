@@ -1,5 +1,4 @@
 # pylint: disable=unused-argument, unused-variable
-import re
 
 import pytest
 from pytest_django.asserts import assertContains

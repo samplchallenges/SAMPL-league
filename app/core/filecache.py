@@ -53,7 +53,7 @@ def delete_local_cache(field_file):
     if os.path.exists(local_path):
         # Only delete if using remote storage (e.g. S3!)
         try:
-            filepath = field_file.path
+            _filepath = field_file.path
             logger.debug("Will not delete local copy as we don't have remote storage")
         except NotImplementedError:
             logger.debug("Deleting local copy as we have remote storage")
