@@ -1,4 +1,4 @@
-# pylint: disable=unused-argument, unused-variable
+# pylint: disable=unused-argument, unused-variable, protected-access
 
 import pytest
 from django.db import connection, reset_queries

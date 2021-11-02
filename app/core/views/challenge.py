@@ -2,11 +2,10 @@ import os.path
 from collections import OrderedDict, defaultdict
 
 import ever_given.wrapper
-from django.utils.safestring import mark_safe
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
-from ..models import Challenge, FileValue, InputElement, InputValue
+from ..models import Challenge, InputElement, InputValue
 
 
 def _input_elements(challenge):
