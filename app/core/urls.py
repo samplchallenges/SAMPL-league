@@ -26,6 +26,11 @@ urlpatterns = [
         name="download-input",
     ),
     path(
+        "download_output/<int:pk>/",
+        file_downloads.download_output_file,
+        name="download-output",
+    ),
+    path(
         "download_arg/<int:pk>/",
         file_downloads.download_container_arg_file,
         name="download-arg",

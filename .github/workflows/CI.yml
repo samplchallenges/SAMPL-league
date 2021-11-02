@@ -70,7 +70,7 @@ jobs:
           RDS_PASSWORD: postgres
           RDS_PORT: 5432
           RDS_USERNAME: sampl_user
-          DJANGO_SETTINGS_MODULE: sampl.settings_dev
+          DJANGO_SETTINGS_MODULE: sampl.settings_test
 
       - name: Upload test coverage
         uses: codecov/codecov-action@v2.1.0

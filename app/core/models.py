@@ -287,16 +287,12 @@ class InputElement(Timestamped):
     class Meta:
         unique_together = ["challenge", "name"]
 
-    def all_values(self):
-        """
-        Returns a pair of key: value dicts, where the first dict is regular values
-        and the second is file values
-        """
+    @classmethod
+    def all_element_values(cls, input_values):
         file_values = {}
         values = {}
-        for input_value in self.inputvalue_set.select_related(
-            "value_type", "value_type__content_type"
-        ).all():
+
+        for input_value in input_values:
             value_type = input_value.value_type
             key = value_type.key
             content_type = value_type.content_type
@@ -305,6 +301,16 @@ class InputElement(Timestamped):
             else:
                 values[key] = input_value.value
         return values, file_values
+
+    def all_values(self):
+        """
+        Returns a pair of key: value dicts, where the first dict is regular values
+        and the second is file values
+        """
+        input_values = self.inputvalue_set.select_related(
+            "value_type", "value_type__content_type"
+        ).all()
+        return self.all_element_values(input_values)
 
     def __str__(self):
         return f"{self.name}, is public? {self.is_public}"

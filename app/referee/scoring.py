@@ -101,6 +101,7 @@ def score_submission_run(container, submission_run, score_types):
         kwargs.update(container.custom_args())
         file_kwargs.update(container.custom_file_args())
         command = "score-submissionrun"
+        matched_keys = set()
         for key, value in ever_given.wrapper.run(
             container.uri, command, file_kwargs=file_kwargs, kwargs=kwargs
         ):
@@ -110,6 +111,12 @@ def score_submission_run(container, submission_run, score_types):
                     score_type=submission_run_score_types[key],
                     value=value,
                 )
+                matched_keys.add(key)
+
+        if matched_keys != set(submission_run_score_types.keys()):
+            raise Exception(
+                f"Found keys of {matched_keys} out of required {submission_run_score_types}"
+            )
 
 
 def score_submission(submission_id, *run_ids):
