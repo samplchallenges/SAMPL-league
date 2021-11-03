@@ -19,6 +19,15 @@
       </ul>
     </p>
     <p class="card-text">
+      Containers must output the following results:
+      <ul>
+        {% for output_type in output_types %}
+        <li><code>{{ output_type.key }}</code>, <i>{{ output_type.description }}</i>, a {{ output_type.content_type.name }}</li>
+        {% endfor %}
+      </ul>
+      Please see our output requirements documentation at <a href="https://github.com/samplchallenges/SAMPL-containers/blob/main/tutorials/OutputRequirements.md">https://github.com/samplchallenges/SAMPL-containers/blob/main/tutorials/OutputRequirements.md</a>
+    </p>
+    <p class="card-text">
       {% if challenge.is_active %}
         <a class="btn btn-primary" role="button" href="{% url 'submission-add' %}?challenge_id={{ challenge.pk }}">New Submission</a>
       {% else %}
