@@ -193,7 +193,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
         evaluation.save(update_fields=["log_stderr"])
         return evaluation.status
     finally:
-        evaluation.save()
+        evaluation.save(update_fields=["status"])
         for prediction in evaluation.prediction_set.filter(
             value_type__key__in=output_file_keys
         ):
