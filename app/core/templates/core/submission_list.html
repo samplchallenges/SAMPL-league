@@ -2,9 +2,11 @@
 {% block content %}
 <h1>Your submissions</h1>
 <table class="table table-striped">
+<!--- <table class="table table-striped"> --->
   <thead>
     <tr>
       <th scope="col">Challenge</th>
+      <th scope="col">Challenge Status</th>
       <th scope="col">Name</th>
       <th scope="col">Container</th>
       <th scope="col">Last Run</th>
@@ -14,16 +16,21 @@
   {% for submission in submission_list %}
   <tr>
     <td>{{ submission.challenge }}</td>
-  <td>
-    {% include 'core/_submission_list_elem.html' with submission=submission only %}
-  </td>
-  <td>
-    {{ submission.container.name }}
-  </td>
-  <td>
-    {{ submission.last_public_run.status }}, {{ submission.last_public_run.updated_at }}
-  </td>
-</tr>
+    {% if submission.challenge.is_active %}
+      <td>OPEN</td>
+    {% else %}
+      <td>CLOSED</td>
+    {% endif %} 
+    <td>
+      {% include 'core/_submission_list_elem.html' with submission=submission only %}
+    </td>
+    <td>
+      {{ submission.container.name }}
+    </td>
+    <td>
+      {{ submission.last_public_run.status }}, {{ submission.last_public_run.updated_at }}
+    </td>
+  </tr>
 {% endfor %}
 </tbody>
 </table>
