@@ -38,8 +38,7 @@ def _parse_output(host_path, raw_text, output_file_keys):
                 result[key] = _convert_guest_to_host_path(host_path, value)
             else:
                 result[key] = value
-        else:
-            raise ValueError(f"Cannot parse output {line}, needs KEY VALUE format")
+                
     return result
 
 
