@@ -76,6 +76,14 @@ def test_run_element_custom(
     assert "Error: No such option" in evaluation.log_stderr
 
 
+def test_evaluation_scoring_failure():
+    raise Exception("Not implemented, needs to be tested on tasks")
+
+
+def test_submission_run_scoring_failure():
+    raise Exception("Not implemented, needs to be tested on tasks")
+
+
 @pytest.fixture
 def file_container(challenge_factory, user, db):
     coord_challenge = challenge_factory("Coords Challenge")

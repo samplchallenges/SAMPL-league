@@ -2,6 +2,7 @@ import logging
 import os.path
 import time
 from collections import namedtuple
+from functools import cached_property
 
 import django.contrib.auth.models as auth_models
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -81,10 +82,16 @@ class Logged(Timestamped, StatusMixin):
             )
 
     def append(self, stdout=None, stderr=None):
+        update_fields = []
         if stdout is not None:
             self.log_stdout = Concat(models.F("log_stdout"), models.Value(stdout))
+            update_fields.append("log_stdout")
         if stderr is not None:
             self.log_stderr = Concat(models.F("log_stderr"), models.Value(stderr))
+            update_fields.append("log_stderr")
+
+        if update_fields:
+            self.save(update_fields=update_fields)
 
 
 class Challenge(Timestamped):
@@ -122,6 +129,18 @@ class Challenge(Timestamped):
         if self.__output_types_dict is None:
             self.__load_output_types()
         return self.__output_types_dict.get(key)
+
+    @cached_property
+    def score_types(self):
+        score_types = {
+            ScoreType.Level.EVALUATION: {},
+            ScoreType.Level.SUBMISSION_RUN: {},
+        }
+
+        for score_type in self.scoretype_set.all():
+            score_types[score_type.level][score_type.key] = score_type
+
+        return score_types
 
 
 class Container(Timestamped):
@@ -448,6 +467,12 @@ class Evaluation(Logged):
 
     def __str__(self):
         return f"{self.submission_run}:, status {self.status}"
+
+    def cleanup_local_outputs(self, output_file_keys):
+        for prediction in self.prediction_set.filter(
+            value_type__key__in=output_file_keys
+        ):
+            filecache.delete_local_cache(prediction.value)
 
 
 class ScoreType(Timestamped):
