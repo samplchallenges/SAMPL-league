@@ -44,6 +44,49 @@ class Timestamped(models.Model):
         get_latest_by = ("created_at",)
 
 
+def _timestamped_log(log):
+    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
+
+
+class Logged(Timestamped, StatusMixin):
+    log_stdout = models.TextField(blank=True)
+    log_stderr = models.TextField(blank=True)
+
+    log_handler = None
+
+    class Meta:
+        abstract = True
+
+    class LogHandler:
+        def __init__(self, instance):
+            self.instance_id = instance.pk
+            self.cls = type(instance)
+
+        @property
+        def _update(self):
+            return self.cls.objects.filter(pk=self.instance_id).update
+
+        def handle_stdout(self, log):
+            self._update(
+                log_stdout=Concat(
+                    models.F("log_stdout"), models.Value(_timestamped_log(log))
+                )
+            )
+
+        def handle_stderr(self, log):
+            self._update(
+                log_stderr=Concat(
+                    models.F("log_stderr"), models.Value(_timestamped_log(log))
+                )
+            )
+
+    def append(self, stdout=None, stderr=None):
+        if stdout is not None:
+            self.log_stdout = Concat(models.F("log_stdout"), models.Value(stdout))
+        if stderr is not None:
+            self.log_stderr = Concat(models.F("log_stderr"), models.Value(stderr))
+
+
 class Challenge(Timestamped):
     name = models.CharField(max_length=255, unique=True)
     start_at = models.DateTimeField()
@@ -259,7 +302,7 @@ class ContainerArg(Timestamped):
         return os.path.basename(self.file_value.name)
 
 
-class SubmissionRun(Timestamped, StatusMixin):
+class SubmissionRun(Logged):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
     is_public = models.BooleanField(default=False)
@@ -383,47 +426,15 @@ class InputValue(ValueParentMixin):
             )
 
 
-def _timestamped_log(log):
-    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
-
-
-class Evaluation(Timestamped, StatusMixin):
+class Evaluation(Logged):
     submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
     status = models.CharField(
         max_length=25, choices=Status.choices, default=Status.PENDING
     )
-    log_stdout = models.TextField(blank=True)
-    log_stderr = models.TextField(blank=True)
-
-    log_handler = None
 
     class Meta:
         unique_together = ["submission_run", "input_element"]
-
-    class LogHandler:
-        def __init__(self, evaluation):
-            self.evaluation_id = evaluation.pk
-
-        def handle_stdout(self, log):
-            Evaluation.objects.filter(pk=self.evaluation_id).update(
-                log_stdout=Concat(
-                    models.F("log_stdout"), models.Value(_timestamped_log(log))
-                )
-            )
-
-        def handle_stderr(self, log):
-            Evaluation.objects.filter(pk=self.evaluation_id).update(
-                log_stderr=Concat(
-                    models.F("log_stderr"), models.Value(_timestamped_log(log))
-                )
-            )
-
-    def append(self, stdout=None, stderr=None):
-        if stdout is not None:
-            self.log_stdout = Concat(models.F("log_stdout"), models.Value(stdout))
-        if stderr is not None:
-            self.log_stderr = Concat(models.F("log_stderr"), models.Value(stderr))
 
     def mark_started(self, kwargs, file_kwargs):
         self.append(

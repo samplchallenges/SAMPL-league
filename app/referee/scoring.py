@@ -9,6 +9,10 @@ from core import models
 logger = logging.getLogger(__name__)
 
 
+class MissingKeyException(Exception):
+    pass
+
+
 class AnswerPredictionPair:
     def __init__(self, answer, prediction):
         self.answer = answer
@@ -114,9 +118,11 @@ def score_submission_run(container, submission_run, score_types):
                 matched_keys.add(key)
 
         if matched_keys != set(submission_run_score_types.keys()):
-            raise Exception(
-                f"Found keys of {matched_keys} out of required {submission_run_score_types}"
+            error_message = (
+                f"Scoring submission run failed. Found keys of "
+                f"{matched_keys} out of required {submission_run_score_types}"
             )
+            raise MissingKeyException(error_message)
 
 
 def score_submission(submission_id, *run_ids):
@@ -137,4 +143,11 @@ def score_submission(submission_id, *run_ids):
 
         submission_run = submission.submissionrun_set.get(pk=run_id)
 
-        score_submission_run(container, submission_run, score_types)
+        try:
+            score_submission_run(container, submission_run, score_types)
+        except Exception as exc:
+            submission_run.append(stderr=str(exc))
+            submission_run.save(update_fields=["log_stderr"])
+            raise
+        submission_run.append(stdout="Scoring complete")
+        submission_run.save(update_fields=["log_stdout"])
