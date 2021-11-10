@@ -90,7 +90,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
                     value=float(score_value),
                 )
     except Exception as exc:  # pylint: disable=broad-except
-        raise ScoringFailureException(str(exc))
+        raise ScoringFailureException from exc
 
 
 def _score_submission_run(container, submission_run, score_types):
@@ -141,7 +141,7 @@ def score_submission_run(submission_run):
     except Exception as exc:
         submission_run.append(stderr=str(exc))
         submission_run.status = models.Status.FAILURE
-        raise ScoringFailureException(str(exc))
+        raise ScoringFailureException from exc
     finally:
         submission_run.save(update_fields=["status"])
     submission_run.append(stdout="Scoring complete")
