@@ -287,7 +287,7 @@
                 "sha256:6ecf387fc0f29da128b2a1b6a35056d361e1d5f987d12a6fb12170a297b0f58e"
             ],
             "index": "pypi",
-            "version": "==0.0.5"
+            "version": "==0.0.6"
         },
         "fsspec": {
             "hashes": [
