@@ -5,7 +5,6 @@ name: CI
 # Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
-  push:
   pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
@@ -55,7 +54,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: ~/.local/share/virtualenvs
-          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}-${{ hashFiles('**/Pipfile') }}
 
       - name: Install dependencies
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
