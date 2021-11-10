@@ -1,13 +1,13 @@
 from unittest.mock import patch
-import dask.distributed as dd
 
+import dask.distributed as dd
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.db import transaction
 
 from core import models
-from referee import tasks, scoring
+from referee import scoring, tasks
 
 
 @pytest.mark.django_db(transaction=True)
