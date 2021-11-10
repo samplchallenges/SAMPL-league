@@ -1,11 +1,13 @@
+from unittest.mock import patch
 import dask.distributed as dd
+
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.db import transaction
 
 from core import models
-from referee import tasks
+from referee import tasks, scoring
 
 
 @pytest.mark.django_db(transaction=True)
@@ -76,12 +78,56 @@ def test_run_element_custom(
     assert "Error: No such option" in evaluation.log_stderr
 
 
-def test_evaluation_scoring_failure():
-    raise Exception("Not implemented, needs to be tested on tasks")
+def test_evaluation_scoring_failure(molfile_molw_config, benzene_from_mol):
+    submission_run = molfile_molw_config.submission_run
+    evaluation = models.Evaluation.objects.create(
+        input_element=benzene_from_mol, submission_run=submission_run
+    )
+
+    with patch("referee.scoring.score_evaluation") as mock_score:
+        mock_score.side_effect = scoring.ScoringFailureException("Mock failure")
+        delayed = tasks.run_evaluation(
+            submission_run.submission.id,
+            evaluation.id,
+            submission_run.id,
+            True,
+        )
+        delayed.compute(scheduler="synchronous")
+
+    evaluation.refresh_from_db()
+    assert evaluation.log_stderr.endswith("Mock failure")
+    assert evaluation.status == models.Status.FAILURE
 
 
-def test_submission_run_scoring_failure():
-    raise Exception("Not implemented, needs to be tested on tasks")
+@pytest.fixture
+def evaluation_scores(smiles_molw_config, evaluations):
+    score_types = smiles_molw_config.challenge.score_types[
+        models.ScoreType.Level.EVALUATION
+    ]
+
+    def _score(evaluation):
+        for score_type in score_types.values():
+            yield models.EvaluationScore.create(
+                score_type=score_type, evaluation=evaluation, value=99.9
+            )
+
+    return [_score(evaluation) for evaluation in evaluations]
+
+
+def test_submission_run_scoring_failure(
+    smiles_molw_config, evaluations, evaluation_scores
+):
+    submission_run = smiles_molw_config.submission_run
+    with patch("referee.scoring._score_submission_run") as mock_score:
+        mock_score.side_effect = scoring.ScoringFailureException("Mock failure")
+        with pytest.raises(scoring.ScoringFailureException):
+            delayed = tasks.check_and_score(
+                submission_run.id, True, [models.Status.SUCCESS] * len(evaluations)
+            )
+            delayed.compute(scheduler="synchronous")
+
+    submission_run.refresh_from_db()
+    assert submission_run.log_stderr == "Mock failure"
 
 
 @pytest.fixture

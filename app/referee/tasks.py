@@ -43,13 +43,13 @@ def run_and_score_submission(client, submission):
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses):
+    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     uniq_statuses = set(evaluation_statuses)
     if not delayed_conditional:
         status = models.Status.CANCELLED
     elif {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
-        logger.error(
-            "Evaluations should have all completed, but have statuses %s!",
-            evaluation_statuses,
+        submission_run.append(
+            stderr=f"Evaluations should have all completed, but have statuses {evaluation_statuses}!"
         )
         status = models.Status.FAILURE
     elif {models.Status.CANCELLED} == uniq_statuses:
@@ -59,22 +59,12 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
     else:
         status = models.Status.SUCCESS
 
-    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     submission_run.status = status
     if status != models.Status.SUCCESS:
-        logger.warning(
-            "Submission run failed (public? %s), %s: %s",
-            submission_run.is_public,
-            submission_run,
-            status,
-        )
+        submission_run.append(stderr=f"Submission run failed {status}")
         submission_run.save(update_fields=["status"])
         return False
-    logger.info(
-        "Running check_and_score %s public? %s",
-        submission_run_id,
-        submission_run.is_public,
-    )
+    submission_run.append(stdout="Running check_and_score")
     scoring.score_submission_run(submission_run)
 
     return True
@@ -179,7 +169,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
         evaluation.status = models.Status.SUCCESS
     except scoring.ScoringFailureException as exc:
         evaluation.status = models.Status.FAILURE
-        evaluation.append(stderr=f"Error scoring\n{exc}")
+        evaluation.append(stderr=f"Error scoring: {exc}")
     except Exception as exc:  # pylint: disable=broad-except
         evaluation.status = models.Status.FAILURE
         evaluation.append(stderr=f"Execution failure: {exc}\n")
