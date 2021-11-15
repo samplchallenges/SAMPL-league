@@ -17,9 +17,9 @@
   <tr>
     <td>{{ submission.challenge }}</td>
     {% if submission.challenge.is_active %}
-      <td>OPEN</td>
+      <td style="color:green;"><strong>OPEN</strong></td>
     {% else %}
-      <td>CLOSED</td>
+      <td style="color:red;"><strong>CLOSED</strong></td>
     {% endif %}
     <td>
       {% include 'core/_submission_list_elem.html' with submission=submission only %}

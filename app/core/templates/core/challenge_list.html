@@ -8,9 +8,9 @@
     <tr>
       <td><a href="{% url 'challenge-detail' pk=challenge.pk %}">{{ challenge }}</a></td>
       {% if challenge.is_active %}
-        <td>OPEN</td>
+        <td style="color:green;"><strong>OPEN</strong></td>
       {% else %}
-        <td>CLOSED</td>
+        <td style="color:red;"><strong>CLOSED</strong></td>
       {% endif %}
       <td>{{ challenge.start_at }}</td>
       <td>{{ challenge.end_at }}</td>
