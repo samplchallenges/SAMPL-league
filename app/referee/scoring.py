@@ -9,6 +9,14 @@ from core import models
 logger = logging.getLogger(__name__)
 
 
+class MissingKeyException(Exception):
+    pass
+
+
+class ScoringFailureException(Exception):
+    pass
+
+
 class AnswerPredictionPair:
     def __init__(self, answer, prediction):
         self.answer = answer
@@ -64,26 +72,28 @@ def score_evaluation(container, evaluation, evaluation_score_types):
     kwargs, file_kwargs = _build_kwargs(evaluation)
     command = "score-evaluation"
     evaluation.append(stdout=f"Scoring with {container.uri} {command}\n")
-    evaluation.save(update_fields=["log_stdout"])
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
 
-    for key, score_value in ever_given.wrapper.run(
-        container.uri,
-        command,
-        file_kwargs=file_kwargs,
-        kwargs=kwargs,
-        log_handler=models.Evaluation.LogHandler(evaluation),
-    ):
-        if key in evaluation_score_types:
-            models.EvaluationScore.objects.create(
-                evaluation=evaluation,
-                score_type=evaluation_score_types[key],
-                value=float(score_value),
-            )
+    try:
+        for key, score_value in ever_given.wrapper.run(
+            container.uri,
+            command,
+            file_kwargs=file_kwargs,
+            kwargs=kwargs,
+            log_handler=models.Evaluation.LogHandler(evaluation),
+        ):
+            if key in evaluation_score_types:
+                models.EvaluationScore.objects.create(
+                    evaluation=evaluation,
+                    score_type=evaluation_score_types[key],
+                    value=float(score_value),
+                )
+    except Exception as exc:  # pylint: disable=broad-except
+        raise ScoringFailureException from exc
 
 
-def score_submission_run(container, submission_run, score_types):
+def _score_submission_run(container, submission_run, score_types):
     submission_run_score_types = score_types[models.ScoreType.Level.SUBMISSION_RUN]
 
     evaluations = submission_run.evaluation_set.all()
@@ -114,27 +124,24 @@ def score_submission_run(container, submission_run, score_types):
                 matched_keys.add(key)
 
         if matched_keys != set(submission_run_score_types.keys()):
-            raise Exception(
-                f"Found keys of {matched_keys} out of required {submission_run_score_types}"
+            error_message = (
+                f"Scoring submission run failed. Found keys of "
+                f"{matched_keys} out of required {submission_run_score_types}"
             )
+            raise MissingKeyException(error_message)
 
 
-def score_submission(submission_id, *run_ids):
-
-    submission = models.Submission.objects.get(pk=submission_id)
+def score_submission_run(submission_run):
+    submission = submission_run.submission
     challenge = submission.challenge
     container = models.ScoreMaker.objects.get(challenge=challenge).container
 
-    score_types = {
-        models.ScoreType.Level.EVALUATION: {},
-        models.ScoreType.Level.SUBMISSION_RUN: {},
-    }
-
-    for score_type in challenge.scoretype_set.all():
-        score_types[score_type.level][score_type.key] = score_type
-
-    for run_id in run_ids:
-
-        submission_run = submission.submissionrun_set.get(pk=run_id)
-
-        score_submission_run(container, submission_run, score_types)
+    try:
+        _score_submission_run(container, submission_run, challenge.score_types)
+    except Exception as exc:
+        submission_run.append(stderr=str(exc))
+        submission_run.status = models.Status.FAILURE
+        raise ScoringFailureException from exc
+    finally:
+        submission_run.save(update_fields=["status"])
+    submission_run.append(stdout="Scoring complete")
