@@ -2,7 +2,6 @@
 {% block content %}
 <h1>Your submissions</h1>
 <table class="table table-striped">
-<!--- <table class="table table-striped"> --->
   <thead>
     <tr>
       <th scope="col">Challenge</th>
@@ -17,9 +16,9 @@
   <tr>
     <td>{{ submission.challenge }}</td>
     {% if submission.challenge.is_active %}
-      <td style="color:green;"><strong>OPEN</strong></td>
+      <td class="active-status">OPEN</td>
     {% else %}
-      <td style="color:red;"><strong>CLOSED</strong></td>
+      <td class="inactive-status">CLOSED</td>
     {% endif %}
     <td>
       {% include 'core/_submission_list_elem.html' with submission=submission only %}
@@ -31,7 +30,7 @@
       {{ submission.last_public_run.status }}, {{ submission.last_public_run.updated_at }}
     </td>
   </tr>
-{% endfor %}
+  {% endfor %}
 </tbody>
 </table>
 {% endblock %}
