@@ -11,13 +11,15 @@
     vertical-align: top;
 }
 
-table.active-status {
+.active-status {
   font-weight: bold;
   color: green;
 }
 
-table.inactive-status {
+.inactive-status {
   font-weight: bold;
   color: red;
 }
+
+
 
