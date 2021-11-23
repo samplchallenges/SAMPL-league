@@ -5,8 +5,8 @@ from pathlib import Path
 import dask
 import dask.distributed as dd
 import ever_given.wrapper
-from ever_given.log_processing import CancelledException
 from django.conf import settings
+from ever_given.log_processing import CancelledException
 
 from core import models
 
