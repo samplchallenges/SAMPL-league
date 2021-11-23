@@ -5,6 +5,7 @@ from pathlib import Path
 import dask
 import dask.distributed as dd
 import ever_given.wrapper
+from ever_given.log_processing import CancelledException
 from django.conf import settings
 
 from core import models
@@ -149,6 +150,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                 output_dir=output_dir,
                 output_file_keys=output_file_keys,
                 log_handler=models.Evaluation.LogHandler(evaluation),
+                cancel_requested_func=submission_run.check_cancel_requested,
             )
 
             for key, value in parsed_results:
@@ -167,6 +169,9 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation_score_types,
         )
         evaluation.status = models.Status.SUCCESS
+    except CancelledException:
+        evaluation.status = models.Status.CANCELLED
+        evaluation.append(stderr="Cancelled")
     except scoring.ScoringFailureException as exc:
         evaluation.status = models.Status.FAILURE
         evaluation.append(stderr=f"Error scoring: {exc}")

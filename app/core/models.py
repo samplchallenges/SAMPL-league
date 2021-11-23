@@ -10,6 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
+from django.db import transaction
 from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils import timezone
@@ -29,11 +30,12 @@ class Status(models.TextChoices):
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     CANCELLED = "CANCELLED"
+    CANCEL_PENDING = "CANCEL_PENDING"
 
 
 class StatusMixin:
     def is_finished(self):
-        return self.status in (Status.SUCCESS, Status.FAILURE)
+        return self.status in (Status.SUCCESS, Status.FAILURE, Status.CANCELLED)
 
 
 class Timestamped(models.Model):
@@ -329,6 +331,24 @@ class SubmissionRun(Logged):
 
     def __str__(self):
         return f"{self.submission}:{self.digest}, status {self.status}"
+
+    def check_cancel_requested(self):
+        status = SubmissionRun.objects.filter(pk=self.id).values_list(
+            "status", flat=True
+        )[0]
+        return status == Status.CANCEL_PENDING
+
+    def mark_for_cancel(self):
+        with transaction.atomic():
+            SubmissionRun.objects.filter(pk=self.id).update(
+                status=Status.CANCEL_PENDING
+            )
+            Evaluation.objects.filter(
+                submission_run_id=self.id, status=Status.PENDING
+            ).update(status=Status.CANCELLED)
+            Evaluation.objects.filter(
+                submission_run_id=self.id, status=Status.RUNNING
+            ).update(status=Status.CANCEL_PENDING)
 
     def completion(self):
         completed = self.evaluation_set.filter(

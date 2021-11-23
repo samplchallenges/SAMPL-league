@@ -1,9 +1,17 @@
 import io
 import queue
 import threading
+import time
+
+# Check for cancels every 30 seconds
+CANCEL_CHECK_FUNCTION_INTERVAL = 1
 
 
-def process_messages(running_container, log_handler):
+class CancelledException(Exception):
+    pass
+
+
+def process_messages(running_container, log_handler, cancel_requested_func):
     if log_handler is None:
         log_handler = PrintLogHandler()
 
@@ -25,11 +33,21 @@ def process_messages(running_container, log_handler):
     )
     err_thread.start()
     out_thread.start()
+    if cancel_requested_func is None:
+        cancel_check_thread = None
+    else:
+        cancel_check_thread = threading.Thread(
+            target=_loop_check_cancel(cancel_requested_func, log_handler),
+            name="cancel_check",
+        )
+    cancel_check_thread.start()
 
     while (err_thread.is_alive() or out_thread.is_alive()) or not (
         err_message_queue.empty() and out_message_queue.empty()
     ):
         _handle(log_handler, err_message_queue, out_message_queue)
+        if cancel_check_thread is not None and not cancel_check_thread.is_alive():
+            raise CancelledException
 
     return output_buffer.getvalue()
 
@@ -70,3 +88,12 @@ def _handle(log_handler, err_message_queue, out_message_queue):
                 log_handler.handle_stderr(log)
     except queue.Empty:
         pass
+
+
+def _loop_check_cancel(cancel_requested_func, log_handler):
+    while True:
+        should_cancel = cancel_requested_func()
+        if should_cancel:
+            log_handler.handle_stderr(b"Cancel requested\n")
+            return
+        time.sleep(CANCEL_CHECK_FUNCTION_INTERVAL)
