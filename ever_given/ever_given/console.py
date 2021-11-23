@@ -7,9 +7,9 @@ from ever_given import wrapper
 into evergiven; container will get --key=filename
 
 Example command:
-python ../ever_given/run.py robbason/calc-coords:latest --file-molfile tests/data/ChEBI_16716.mdl --output-keys conformation
+python evergiven robbason/calc-coords:latest --file-molfile tests/data/ChEBI_16716.mdl --output-keys conformation
 
-(assuming you are in app directory and you have built the container in  example_container/coords as robbason/calc-coords using its build.sh)
+(assuming you have installed evergiven into your Python virtualenv and you have built the container in  example_container/coords as robbason/calc-coords using its build.sh)
 """
 
 
@@ -56,10 +56,11 @@ def main():
     print("file kwargs", file_kwargs)
     print("kwargs", kwargs)
     output_file_keys = args.output_keys.split(",")
-    output_dir = "evergiven_output"
+    output_dir = Path("evergiven_output")
     print("Putting output into", output_dir)
+    output_dir.mkdir(exist_ok=True)
     results = {}
-    return
+
     for k, v in wrapper.run(
         args.container_uri,
         command=args.command,
