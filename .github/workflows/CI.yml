@@ -60,6 +60,13 @@ jobs:
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
           pipenv install --dev --deploy
+      - name: Install ever-given locally, overriding Pipfile
+        if: 'false' != 'true'
+        run: |
+          pip uninstall ever-given
+          cd ../ever_given
+          python setup.py install
+          cd ../app
       - name: Run test suite
         run: |
           pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given
