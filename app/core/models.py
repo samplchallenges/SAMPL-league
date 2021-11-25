@@ -287,6 +287,24 @@ class Submission(Timestamped):
     def last_private_run(self):
         return self.last_run(is_public=False)
 
+    def create_run(self, *, is_public):
+        digest = self.container.digest
+        if digest is None:
+            digest = "nodigest"
+        submission_run = self.submissionrun_set.create(
+            digest=digest,
+            is_public=is_public,
+            status=Status.PENDING,
+        )
+        evaluations = [
+            submission_run.evaluation_set.create(input_element_id=element_id)
+            for element_id in self.challenge.inputelement_set.filter(
+                is_public=is_public
+            ).values_list("id", flat=True)
+        ]
+
+        return submission_run
+
 
 def _container_file_location(instance, filename):
     return os.path.join(

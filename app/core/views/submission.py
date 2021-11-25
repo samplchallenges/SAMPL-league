@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseBadRequest
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView
@@ -69,7 +69,9 @@ def ignore_future(future):
 def cancel_submissionrun_view(request, pk):
     if request.method != "POST":
         return HttpResponseBadRequest()
-    submission_run = SubmissionRun.objects.get(pk=pk, submission__user=request.user)
+    submission_run = get_object_or_404(
+        SubmissionRun, pk=pk, submission__user=request.user
+    )
     if not submission_run.is_finished():
         submission_run.mark_for_cancel()
 

@@ -3,6 +3,8 @@ import queue
 import threading
 import time
 
+QUEUE_WAIT_SECONDS = 2
+
 
 class CancelledException(Exception):
     pass
@@ -61,7 +63,6 @@ def _read_stderr(container, err_message_queue):
 
 
 def _handle(log_handler, err_message_queue, out_message_queue):
-    QUEUE_WAIT_SECONDS = 2
 
     try:
         while True:

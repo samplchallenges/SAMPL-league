@@ -5,7 +5,6 @@ from pathlib import Path
 
 import docker
 
-
 from . import log_processing
 
 GUEST_INPUT_DIR = Path("/mnt") / "inputs"
