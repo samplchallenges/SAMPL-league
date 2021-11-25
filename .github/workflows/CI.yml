@@ -62,7 +62,6 @@ jobs:
           pipenv install --dev --deploy
 
       - name: Install evergiven locally
-        if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
           pip uninstall ever-given
           cd ../ever_given
