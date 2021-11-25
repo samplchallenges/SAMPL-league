@@ -63,9 +63,9 @@ jobs:
 
       - name: Install evergiven locally
         run: |
-          pip uninstall ever-given
+          pipenv run pip uninstall ever-given
           cd ../ever_given
-          python setup.py install
+          pipenv run python setup.py install
           cd ../app
 
       - name: Run test suite
