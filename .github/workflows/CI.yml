@@ -60,6 +60,7 @@ jobs:
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
           pipenv install --dev --deploy
+
       - name: Install evergiven locally
         if: 'false' != 'true'
         run: |
@@ -67,6 +68,7 @@ jobs:
           cd ../ever_given
           python setup.py install
           cd ../app
+
       - name: Run test suite
         run: |
           pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given
