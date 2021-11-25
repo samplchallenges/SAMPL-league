@@ -60,7 +60,7 @@ jobs:
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
           pipenv install --dev --deploy
-      - name: Install ever-given locally, overriding Pipfile
+      - name: Install evergiven locally
         if: 'false' != 'true'
         run: |
           pip uninstall ever-given
