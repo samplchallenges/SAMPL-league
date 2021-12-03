@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.forms import ContainerForm, SubmissionForm
-from core.models import Challenge, Submission
+from core.models import Challenge, Status, Submission
 from core.tests import mocktime
 
 
@@ -325,3 +325,18 @@ def test_download_input_file(client, user, benzene_from_mol):
         'attachment; filename="ChEBI_16716.*.mdl"',
         response.headers["Content-Disposition"],
     )
+
+
+@pytest.mark.django_db
+def test_cancel_request(
+    client, user, other_user, draft_submission, submission_run_factory
+):
+    submission_run = submission_run_factory(draft_submission)
+    client.force_login(other_user)
+    response = client.post(f"/submissionrun/{submission_run.pk}/cancel/")
+    assert response.status_code == 404
+    client.force_login(user)
+    response = client.post(f"/submissionrun/{submission_run.pk}/cancel/")
+    assert response.status_code == 302
+    submission_run.refresh_from_db()
+    assert submission_run.status == Status.CANCEL_PENDING
