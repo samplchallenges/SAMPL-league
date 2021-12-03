@@ -132,3 +132,11 @@ def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):
         ),
     )
     assert re.match(filepath, container.custom_file_args()["filearg"])
+
+
+def test_cancel_requested(draft_submission, submission_run_factory):
+    submission_run = submission_run_factory(draft_submission)
+    submission_run.status = models.Status.CANCEL_PENDING
+    submission_run.save()
+
+    assert submission_run.check_cancel_requested()

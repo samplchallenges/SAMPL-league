@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseBadRequest
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView
@@ -11,7 +11,7 @@ import referee
 import referee.tasks
 
 from .. import forms
-from ..models import Challenge, Submission
+from ..models import Challenge, Submission, SubmissionRun
 
 # pylint: disable=too-many-ancestors
 
@@ -63,6 +63,19 @@ class SubmissionDelete(OwnerMatchMixin, DeleteView):
 def ignore_future(future):
     """patch this in testing"""
     return future.key
+
+
+@login_required
+def cancel_submissionrun_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+    submission_run = get_object_or_404(
+        SubmissionRun, pk=pk, submission__user=request.user
+    )
+    if not submission_run.is_finished():
+        submission_run.mark_for_cancel()
+
+    return redirect("submission-detail", pk=submission_run.submission.pk)
 
 
 @login_required

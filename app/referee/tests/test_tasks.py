@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import dask.distributed as dd
 import pytest
@@ -212,3 +212,32 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     assert evaluation.status == models.Status.SUCCESS
     prediction = evaluation.prediction_set.get()
     assert pytest.approx(prediction.value, 78.046950192)
+
+
+def test_cancel_evaluation_before_run(molfile_molw_config, benzene_from_mol):
+    submission_run = molfile_molw_config.submission_run
+    evaluation = models.Evaluation.objects.create(
+        input_element=benzene_from_mol, submission_run=submission_run
+    )
+    submission_run.mark_for_cancel()
+    delayed = tasks.run_evaluation(
+        submission_run.submission.id,
+        evaluation.id,
+        submission_run.id,
+        True,
+    )
+    result = delayed.compute(scheduler="synchronous")
+    assert result == models.Status.CANCELLED
+    evaluation.refresh_from_db()
+    assert evaluation.status == models.Status.CANCELLED
+
+
+def test_cancel_submission_before_run(molfile_molw_config, benzene_from_mol):
+    submission = molfile_molw_config.submission_run.submission
+    delayed_conditional = tasks._trigger_submission_run(
+        submission, True, is_public=True
+    )
+    submission.last_public_run().mark_for_cancel()
+    result = delayed_conditional.compute(scheduler="synchronous")
+    assert result is False
+    assert submission.last_public_run().status == models.Status.CANCELLED

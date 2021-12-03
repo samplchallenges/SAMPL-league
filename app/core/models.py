@@ -9,7 +9,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.db import models
+from django.db import models, transaction
 from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils import timezone
@@ -29,11 +29,12 @@ class Status(models.TextChoices):
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     CANCELLED = "CANCELLED"
+    CANCEL_PENDING = "CANCEL_PENDING"
 
 
 class StatusMixin:
     def is_finished(self):
-        return self.status in (Status.SUCCESS, Status.FAILURE)
+        return self.status in (Status.SUCCESS, Status.FAILURE, Status.CANCELLED)
 
 
 class Timestamped(models.Model):
@@ -286,6 +287,22 @@ class Submission(Timestamped):
     def last_private_run(self):
         return self.last_run(is_public=False)
 
+    def create_run(self, *, is_public):
+        digest = self.container.digest
+        if digest is None:
+            digest = "nodigest"
+        submission_run = self.submissionrun_set.create(
+            digest=digest,
+            is_public=is_public,
+            status=Status.PENDING,
+        )
+        for element_id in self.challenge.inputelement_set.filter(
+            is_public=is_public
+        ).values_list("id", flat=True):
+            submission_run.evaluation_set.create(input_element_id=element_id)
+
+        return submission_run
+
 
 def _container_file_location(instance, filename):
     return os.path.join(
@@ -329,6 +346,22 @@ class SubmissionRun(Logged):
 
     def __str__(self):
         return f"{self.submission}:{self.digest}, status {self.status}"
+
+    def check_cancel_requested(self):
+        status = SubmissionRun.objects.values_list("status", flat=True).get(pk=self.id)
+        return status == Status.CANCEL_PENDING
+
+    def mark_for_cancel(self):
+        with transaction.atomic():
+            SubmissionRun.objects.filter(pk=self.id).update(
+                status=Status.CANCEL_PENDING
+            )
+            Evaluation.objects.filter(
+                submission_run_id=self.id, status=Status.PENDING
+            ).update(status=Status.CANCELLED)
+            Evaluation.objects.filter(
+                submission_run_id=self.id, status=Status.RUNNING
+            ).update(status=Status.CANCEL_PENDING)
 
     def completion(self):
         completed = self.evaluation_set.filter(

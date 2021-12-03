@@ -6,6 +6,7 @@ import dask
 import dask.distributed as dd
 import ever_given.wrapper
 from django.conf import settings
+from ever_given.log_processing import CancelledException
 
 from core import models
 
@@ -18,17 +19,10 @@ def run_and_score_submission(client, submission):
     """
     Runs public and private, plus scoring
     """
-    challenge = submission.challenge
     delayed_conditional = dask.delayed(True)
     for is_public in (True, False):
-        element_ids = challenge.inputelement_set.filter(
-            is_public=is_public
-        ).values_list("id", flat=True)
-        run_id, evaluation_statuses = build_submission_run(
-            submission.pk, element_ids, delayed_conditional, is_public=is_public
-        )
-        delayed_conditional = check_and_score(
-            run_id, delayed_conditional, evaluation_statuses
+        delayed_conditional = _trigger_submission_run(
+            submission, delayed_conditional, is_public=is_public
         )
 
     if settings.VISUALIZE_DASK_GRAPH:
@@ -39,6 +33,12 @@ def run_and_score_submission(client, submission):
 
     dd.fire_and_forget(future)
     return future
+
+
+def _trigger_submission_run(submission, delayed_conditional, *, is_public):
+    submission_run = submission.create_run(is_public=is_public)
+    evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
+    return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
@@ -70,59 +70,31 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
     return True
 
 
-def create_submission_run(submission_id, *, is_public):
-    submission = models.Submission.objects.get(pk=submission_id)
-    container = submission.container
-    if not container.digest:
-        container.digest = "nodigest"
-        container.save()
-    submission_run = models.SubmissionRun.objects.create(
-        submission=submission,
-        digest=container.digest,
-        is_public=is_public,
-        status=models.Status.PENDING,
-    )
-    # TODO: need to store future key?
-    # submission run pair is place to store?
-    # submission_run.digest = future.key
-    submission_run.save()
-    return submission_run.id
+def _run_evaluations(submission_run, conditional):
 
-
-def build_submission_run(submission_id, element_ids, conditional, is_public=True):
-
-    submission_run_id = create_submission_run(submission_id, is_public=is_public)
-
-    evaluations = [
-        models.Evaluation.objects.create(
-            input_element_id=element_id, submission_run_id=submission_run_id
-        )
-        for element_id in element_ids
-    ]
-
-    evaluation_statuses = [
+    return [
         run_evaluation(
-            submission_id,
+            submission_run.submission.id,
             evaluation.id,
-            submission_run_id,
+            submission_run.id,
             conditional=conditional,
         )
-        for evaluation in evaluations
+        for evaluation in submission_run.evaluation_set.all()
     ]
-    return (submission_run_id, evaluation_statuses)
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
-    if not conditional:
-        models.Evaluation.objects.filter(pk=evaluation_id).update(
-            status=models.Status.CANCELLED
-        )
-        return models.Status.CANCELLED
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     challenge = submission.challenge
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
+
+    if not conditional or submission_run.check_cancel_requested():
+        models.Evaluation.objects.filter(pk=evaluation_id).update(
+            status=models.Status.CANCELLED
+        )
+        return models.Status.CANCELLED
 
     evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
 
@@ -149,6 +121,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                 output_dir=output_dir,
                 output_file_keys=output_file_keys,
                 log_handler=models.Evaluation.LogHandler(evaluation),
+                cancel_requested_func=submission_run.check_cancel_requested,
             )
 
             for key, value in parsed_results:
@@ -167,6 +140,9 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation_score_types,
         )
         evaluation.status = models.Status.SUCCESS
+    except CancelledException:
+        evaluation.status = models.Status.CANCELLED
+        evaluation.append(stderr="Cancelled")
     except scoring.ScoringFailureException as exc:
         evaluation.status = models.Status.FAILURE
         evaluation.append(stderr=f"Error scoring: {exc}")
