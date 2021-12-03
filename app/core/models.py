@@ -296,12 +296,10 @@ class Submission(Timestamped):
             is_public=is_public,
             status=Status.PENDING,
         )
-        evaluations = [
+        for element_id in self.challenge.inputelement_set.filter(
+            is_public=is_public
+        ).values_list("id", flat=True):
             submission_run.evaluation_set.create(input_element_id=element_id)
-            for element_id in self.challenge.inputelement_set.filter(
-                is_public=is_public
-            ).values_list("id", flat=True)
-        ]
 
         return submission_run
 
@@ -350,9 +348,7 @@ class SubmissionRun(Logged):
         return f"{self.submission}:{self.digest}, status {self.status}"
 
     def check_cancel_requested(self):
-        status = SubmissionRun.objects.filter(pk=self.id).values_list(
-            "status", flat=True
-        )[0]
+        status = SubmissionRun.objects.values_list("status", flat=True).get(pk=self.id)
         return status == Status.CANCEL_PENDING
 
     def mark_for_cancel(self):

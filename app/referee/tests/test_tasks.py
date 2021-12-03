@@ -10,12 +10,6 @@ from core import models
 from referee import scoring, tasks
 
 
-class SynchronousClient:
-    @staticmethod
-    def submit(delayed_compute):
-        return delayed_compute(scheduler="synchronous")
-
-
 @pytest.mark.django_db(transaction=True)
 def test_run_and_score_submission():
     # This test will fail if run after another transaction=True test

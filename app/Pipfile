@@ -13,7 +13,6 @@ dask = "*"
 distributed = "*"
 docker = "*"
 six = "*"
-#ever-given = {editable = true, path = "./../ever_given"}
 ever-given = "0.0.8"
 sampl = {path = "."}
 rollbar = "*"
@@ -31,6 +30,9 @@ bokeh = ">=0.13.0"
 pytest-cov = "*"
 pytest-xdist = {extras = ["psutil"], version = "*"}
 django-debug-toolbar = "*"
+# For local development
+#ever-given = {editable = true, path = "./../ever_given"}
+#sampl = {editable = true, path = "."}
 
 [requires]
 python_version = "3.8"

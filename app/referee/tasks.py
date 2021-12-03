@@ -19,7 +19,6 @@ def run_and_score_submission(client, submission):
     """
     Runs public and private, plus scoring
     """
-    challenge = submission.challenge
     delayed_conditional = dask.delayed(True)
     for is_public in (True, False):
         delayed_conditional = _trigger_submission_run(
@@ -38,9 +37,7 @@ def run_and_score_submission(client, submission):
 
 def _trigger_submission_run(submission, delayed_conditional, *, is_public):
     submission_run = submission.create_run(is_public=is_public)
-    evaluation_statuses = _run_evaluations(
-        submission_run, delayed_conditional, is_public=is_public
-    )
+    evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
 
@@ -73,7 +70,7 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
     return True
 
 
-def _run_evaluations(submission_run, conditional, is_public=True):
+def _run_evaluations(submission_run, conditional):
 
     return [
         run_evaluation(
