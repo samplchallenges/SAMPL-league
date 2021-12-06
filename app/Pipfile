@@ -19,7 +19,7 @@ rollbar = "*"
 jupyterlab = "*"
 
 [dev-packages]
-black = "==21.11b1"
+black = "==21.12b0"
 isort = "*"
 pylint = "*"
 pytest = "*"
