@@ -34,7 +34,7 @@ Update ``ever_given``
 
 You will need an account on `PyPI`_.
 Starting from the root of the repository (after making changes to the code):
-
+ever_given version number must be incremented in setup.cfg for a new PyPI upload
 .. code-block:: bash
 
    $ cd ever_given
