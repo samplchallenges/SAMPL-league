@@ -3,26 +3,21 @@ import shlex
 import sys
 from pathlib import Path
 
-from . import docker_wrapper
+from .engines import GUEST_OUTPUT_DIR, REGISTERED_ENGINES
 
 from . import log_processing
 
 GUEST_INPUT_DIR = Path("/mnt") / "inputs"
-GUEST_OUTPUT_DIR = Path("/mnt") / "outputs"
 
 
 def _guest_input_path(filename):
     return GUEST_INPUT_DIR / Path(filename).name
 
 
-def prepare_commandline(command, args_dict):
-    return (
-        command
-        + " "
-        + " ".join(
-            [f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()]
-        )
-    )
+def prepare_command_list(command, args_dict):
+    return [command] + [
+        f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()
+    ]
 
 
 def _parse_output(host_path, raw_text, output_file_keys):
@@ -73,6 +68,7 @@ def run(
     *,
     file_kwargs,
     kwargs,
+    engine_name="docker",
     output_dir=None,
     output_file_keys=None,
     log_handler=None,
@@ -94,10 +90,10 @@ def run(
     final_kwargs = copy.deepcopy(kwargs)
     final_kwargs.update(final_file_kwargs)
 
-    final_command = prepare_commandline(command, final_kwargs)
+    command_list = prepare_command_list(command, final_kwargs)
 
-    running_container = docker_wrapper.run_container(
-        container_uri, final_command, input_dir_map, output_dir=output_dir
+    running_container = REGISTERED_ENGINES[engine_name].run_container(
+        container_uri, command_list, input_dir_map, output_dir=output_dir
     )
 
     try:
@@ -108,14 +104,15 @@ def run(
         yield from _parse_output(output_dir, result, output_file_keys).items()
     finally:
         running_container.reload()
-        if running_container.status != "exited":
+        if running_container.status() != "exited":
             if log_handler is not None:
                 log_handler.handle_stderr(b"Killing running container\n")
             running_container.kill()
             running_container.reload()
+            status = running_container.status()
             if log_handler is not None:
                 log_handler.handle_stderr(
-                    f"After killing running container, status is {running_container.status}\n".encode()
+                    f"After killing running container, status is {status}\n".encode()
                 )
-            print(f"Container status is {running_container.status}", file=sys.stderr)
+            print(f"Container status is {status}", file=sys.stderr)
         running_container.remove()

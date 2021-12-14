@@ -15,6 +15,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+import ever_given.process_runner
+
 from . import configurator, filecache
 
 logger = logging.getLogger(__name__)
@@ -59,7 +61,7 @@ class Logged(Timestamped, StatusMixin):
     class Meta:
         abstract = True
 
-    class LogHandler:
+    class LogHandler(ever_given.process_runner.LogHandler):
         def __init__(self, instance):
             self.instance_id = instance.pk
             self.cls = type(instance)

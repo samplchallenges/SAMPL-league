@@ -52,13 +52,13 @@ class PrintLogHandler:
 
 
 def _read_stdout(container, out_message_queue, output_buffer):
-    for log in container.logs(stdout=True, stderr=False, stream=True):
+    for log in container.logs(stdout=True, stderr=False):
         out_message_queue.put(log)
         output_buffer.write(log)
 
 
 def _read_stderr(container, err_message_queue):
-    for log in container.logs(stdout=False, stderr=True, stream=True):
+    for log in container.logs(stdout=False, stderr=True):
         err_message_queue.put(log)
 
 
