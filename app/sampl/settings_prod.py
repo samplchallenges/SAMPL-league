@@ -25,6 +25,9 @@ ALLOWED_HOSTS = [
     "app.samplchallenges.org",
     "sampl.us-east-2.elasticbeanstalk.com",
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://app.samplchallenges.org",
+]
 
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID_S3"]
