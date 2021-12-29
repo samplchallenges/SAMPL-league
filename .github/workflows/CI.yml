@@ -4,7 +4,7 @@ name: CI
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
+  # Triggers the workflow on push or pull request events for all branches
   pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
@@ -77,6 +77,14 @@ jobs:
           RDS_USERNAME: sampl_user
           DJANGO_SETTINGS_MODULE: sampl.settings_test
 
+      - name: Run mypy on ever-given
+        defaults:
+          run:
+            working-directory: ./ever_given
+        run: |
+          pipenv install --dev
+          pipenv run pylint ever_given
+          pipenv run mypy ever_given
       - name: Upload test coverage
         uses: codecov/codecov-action@v2.1.0
         with:

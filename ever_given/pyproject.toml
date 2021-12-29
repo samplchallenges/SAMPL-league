@@ -1,3 +1,11 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+[tool.pytest.ini_options]
+addopts = "-vv"
+
+[tool.pylint.format]
+max-line-length = "88"
+
+[tool.pylint.messages_control]
+disable = "missing-class-docstring, missing-function-docstring, missing-module-docstring"
+
+[tool.isort]
+profile = "black"

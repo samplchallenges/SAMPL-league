@@ -2,48 +2,58 @@ import copy
 import shlex
 import sys
 from pathlib import Path
+import typing
 
 from .engines import GUEST_OUTPUT_DIR, REGISTERED_ENGINES
 
 from . import log_processing
+from .utils import LogHandlerBase
 
 GUEST_INPUT_DIR = Path("/mnt") / "inputs"
 
 
-def _guest_input_path(filename):
+def _guest_input_path(filename: str) -> Path:
     return GUEST_INPUT_DIR / Path(filename).name
 
 
-def prepare_command_list(command, args_dict):
+def prepare_command_list(command: str, args_dict: typing.Dict[str, str]):
     return [command] + [
         f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()
     ]
 
 
-def _parse_output(host_path, raw_text, output_file_keys):
+def _parse_output(
+    host_output_path: typing.Optional[str],
+    raw_text: str,
+    output_file_keys: typing.Optional[typing.List[str]],
+) -> typing.Dict[str, str]:
     result = {}
-    for line in raw_text.decode("utf-8").splitlines():
+    for line in raw_text.splitlines():
         lineparts = line.split(maxsplit=1)
         if len(lineparts) == 2:
             key, value = lineparts
             value = value.strip()
             if output_file_keys and key in output_file_keys:
-                print(host_path, key, value)
-                result[key] = _convert_guest_to_host_path(host_path, value)
+                if host_output_path is None:
+                    raise ValueError("output path not set but output files expected")
+                print(host_output_path, key, value)
+                result[key] = _convert_guest_to_host_path(host_output_path, value)
             else:
                 result[key] = value
 
     return result
 
 
-def _convert_guest_to_host_path(host_path, filepath):
-    filepath = GUEST_OUTPUT_DIR / filepath
-    relative_path = filepath.relative_to(GUEST_OUTPUT_DIR)
+def _convert_guest_to_host_path(host_path: str, filepath: str) -> str:
+    abs_filepath = GUEST_OUTPUT_DIR / filepath
+    relative_path = abs_filepath.relative_to(GUEST_OUTPUT_DIR)
     # so we don't care whether container outputs relative or absolute paths
     return str(Path(host_path) / relative_path)
 
 
-def _convert_file_kwargs(file_kwargs):
+def _convert_file_kwargs(
+    file_kwargs: typing.Dict[str, str]
+) -> typing.Tuple[typing.Dict[Path, Path], typing.Dict[str, str]]:
     """
     file_kwargs has key: path, where path is on the host
     generate a dict of host: guest path mappings that can be used to generate bind commands and return a file_kwargs pointing to the files with corresponding paths that are accessible to the container
@@ -63,16 +73,16 @@ def _convert_file_kwargs(file_kwargs):
 
 
 def run(
-    container_uri,
-    command="",
+    container_uri: str,
+    command: str = "",
     *,
-    file_kwargs,
-    kwargs,
-    engine_name="docker",
-    output_dir=None,
-    output_file_keys=None,
-    log_handler=None,
-    cancel_requested_func=None,
+    file_kwargs: typing.Dict[str, str],
+    kwargs: typing.Dict[str, str],
+    engine_name: str = "docker",
+    output_dir: str = None,
+    output_file_keys: typing.List[str] = None,
+    log_handler: LogHandlerBase = None,
+    cancel_requested_func: typing.Callable[[], bool] = None,
 ):
     """
     kwargs will be passed to container as --key=value
@@ -85,6 +95,8 @@ def run(
     command is optional
     Iterate over key/values of results.
     """
+    if log_handler is None:
+        log_handler = LogHandlerBase()
 
     input_dir_map, final_file_kwargs = _convert_file_kwargs(file_kwargs)
     final_kwargs = copy.deepcopy(kwargs)
@@ -105,14 +117,12 @@ def run(
     finally:
         running_container.reload()
         if running_container.status() != "exited":
-            if log_handler is not None:
-                log_handler.handle_stderr(b"Killing running container\n")
+            log_handler.handle_stderr("Killing running container\n")
             running_container.kill()
             running_container.reload()
             status = running_container.status()
-            if log_handler is not None:
-                log_handler.handle_stderr(
-                    f"After killing running container, status is {status}\n".encode()
-                )
+            log_handler.handle_stderr(
+                f"After killing running container, status is {status}\n"
+            )
             print(f"Container status is {status}", file=sys.stderr)
         running_container.remove()

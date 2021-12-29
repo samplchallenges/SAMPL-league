@@ -1,7 +1,7 @@
 from pathlib import Path
+import typing
 
-import docker
-
+import docker  # type: ignore
 
 from .utils import ContainerInstance, Engine, GUEST_OUTPUT_DIR
 
@@ -11,8 +11,12 @@ class DockerContainerInstance(ContainerInstance):
         self.client = client
         self.container = container
 
-    def logs(self, *, stdout, stderr):
-        return self.container.logs(stdout=stdout, stderr=stderr, stream=True)
+    def logs(self, *, want_stdout, want_stderr):
+        # Docker gives us bytes; convert to text with UTF-8 encoding
+        for row in self.container.logs(
+            stdout=want_stdout, stderr=want_stderr, stream=True
+        ):
+            yield row.decode()
 
     def reload(self):
         self.container.reload()
@@ -32,16 +36,22 @@ class DockerEngine(Engine):
 
     @classmethod
     def run_container(
-        cls, container_uri, command_list, *, inputdir_map=None, output_dir=None
-    ):
+        cls,
+        container_uri: str,
+        command_list: typing.List[str],
+        *,
+        inputdir_map: typing.Dict[str, str] = None,
+        output_dir: str = None,
+    ) -> DockerContainerInstance:
         command = " ".join(command_list)
         client = docker.from_env()
         volumes = {}
-        for inputdir, guest_input_dir in inputdir_map.items():
-            volumes[str(inputdir)] = {"bind": str(guest_input_dir), "mode": "ro"}
+        if inputdir_map is not None:
+            for inputdir, guest_input_dir in inputdir_map.items():
+                volumes[str(inputdir)] = {"bind": str(guest_input_dir), "mode": "ro"}
         if output_dir:
-            output_dir = Path(output_dir).resolve()
-            volumes[str(output_dir)] = {"bind": str(GUEST_OUTPUT_DIR), "mode": "rw"}
+            output_dir = str(Path(output_dir).resolve())
+            volumes[output_dir] = {"bind": str(GUEST_OUTPUT_DIR), "mode": "rw"}
             command = f" --output-dir {GUEST_OUTPUT_DIR} {command}"
 
         docker_container = client.containers.run(

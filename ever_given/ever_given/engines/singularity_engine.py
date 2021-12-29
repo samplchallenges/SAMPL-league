@@ -1,29 +1,45 @@
+import io
 from pathlib import Path
-
-from spython.main import Client
-
+import subprocess
+import typing
 
 from .utils import ContainerInstance, Engine, GUEST_OUTPUT_DIR
 
+AFTER_TERMINATE_WAIT = 5  # Seconds to wait after 'terminate' signal before 'kill'
+
 
 class SingularityContainerInstance(ContainerInstance):
-    def __init__(self, container):
-        self.container = container
+    def __init__(self, process: subprocess.Popen):
+        self.process = process
 
-    def logs(self, *, stdout, stderr):
-        return self.container.logs(stdout=stdout, stderr=stderr, stream=True)
+    def logs(self, *, want_stdout: bool, want_stderr: bool):
+        if want_stdout and want_stderr:
+            raise ValueError("Can't have want_stdout and want_stderr both true")
+        pipe: io.TextIOBase
+        if want_stdout:
+            pipe = typing.cast(io.TextIOBase, self.process.stdout)
+        elif want_stderr:
+            pipe = typing.cast(io.TextIOBase, self.process.stderr)
+        else:
+            raise ValueError("Can't have want_stdout and want_stderr both false")
+        return pipe.readline()
 
     def reload(self):
-        self.container.reload()
+        pass  # don't need this for status, right?
 
     def kill(self):
-        self.container.kill()
+        self.process.terminate()
+        try:
+            self.process.wait(AFTER_TERMINATE_WAIT)
+        except subprocess.TimeoutExpired:
+            self.process.kill()
 
     def remove(self):
-        self.container.remove()
+        raise Exception("Not yet implemented")
+        # self.container.remove()
 
     def status(self):
-        return self.container.status
+        return self.process.poll()
 
 
 class SingularityEngine(Engine):
@@ -41,19 +57,13 @@ class SingularityEngine(Engine):
             bind_volumes.append(f"{output_dir}:{GUEST_OUTPUT_DIR}:rw")
             command_list.extend(["--output-dir", GUEST_OUTPUT_DIR])
 
-        sing_container = Client.run(
-            image=container_uri,
-            args=command_list,
-            writable=True,
-            contain=True,
-            bind=bind_volumes,
-            stream=True,
-            # options, singularity_options,
-            # nv=False, TODO: how to decide when to load Nvidia drivers?
-            # network_disabled=True,
-            # network_mode="none",
-            remove=False,
-            detach=True,
+        command = _build_singularity_command()
+        process = subprocess.Popen(
+            command, stdin=subprocess.PIPE, stderr=subprocess.PIPE
         )
+        return SingularityContainerInstance(process)
 
-        return SingularityContainerInstance(sing_container)
+
+def _build_singularity_command():
+    #  TODO: how to decide when to load Nvidia drivers?
+    raise Exception("not implemented yet")

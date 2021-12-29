@@ -3,38 +3,16 @@ Shared classes and constants used by docker and singularity
 """
 import abc
 from pathlib import Path
-
+import typing
 
 GUEST_OUTPUT_DIR = Path("/mnt") / "outputs"
 
 
-class Engine(abc.ABC):
-    """
-    Base class used by docker and singularity enngines
-    """
-
-    _engine_name = None
-
-    @classmethod
-    @property
-    def name(cls):
-        return cls._engine_name
-
-    @classmethod
-    @abc.abstractmethod
-    def run_container(
-        cls, container_uri, command, *, inputdir_map=None, output_dir=None
-    ):
-        pass
-
-
 class ContainerInstance(abc.ABC):
     @abc.abstractmethod
-    def logs(self, container):
-        pass
-
-    @abc.abstractmethod
-    def reload(self):
+    def logs(
+        self, *, want_stdout: bool, want_stderr: bool
+    ) -> typing.Generator[str, None, None]:
         pass
 
     @abc.abstractmethod
@@ -51,4 +29,31 @@ class ContainerInstance(abc.ABC):
 
     @abc.abstractmethod
     def status(self):
+        pass
+
+
+class Engine(abc.ABC):
+    """
+    Base class used by docker and singularity enngines
+    """
+
+    _engine_name: typing.Optional[str] = None
+
+    @classmethod
+    @property
+    def name(cls) -> str:
+        if cls._engine_name is None:
+            raise ValueError("Engine name is not set")
+        return cls._engine_name
+
+    @classmethod
+    @abc.abstractmethod
+    def run_container(
+        cls,
+        container_uri: str,
+        command_list: typing.List[str],
+        *,
+        inputdir_map: typing.Dict[str, str] = None,
+        output_dir: str = None
+    ) -> ContainerInstance:
         pass
