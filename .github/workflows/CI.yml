@@ -78,13 +78,12 @@ jobs:
           DJANGO_SETTINGS_MODULE: sampl.settings_test
 
       - name: Run mypy on ever-given
-        defaults:
-          run:
-            working-directory: ./ever_given
+        working-directory: ./ever_given
         run: |
           pipenv install --dev
           pipenv run pylint ever_given
           pipenv run mypy ever_given
+
       - name: Upload test coverage
         uses: codecov/codecov-action@v2.1.0
         with:
