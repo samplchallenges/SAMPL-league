@@ -14,7 +14,6 @@ from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
 from ever_given.utils import LogHandlerBase
 
 from . import configurator, filecache
