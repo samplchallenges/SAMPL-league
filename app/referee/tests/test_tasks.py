@@ -42,7 +42,9 @@ def _run_and_check_evaluation(submission_run, evaluation):
     delayed.compute(scheduler="synchronous")
     assert submission_run.evaluation_set.count() == 1
     evaluation = submission_run.evaluation_set.get()
-    assert evaluation.status == models.Status.SUCCESS, f"Evaluation failed: {evaluation.log_stdout};; {evaluation.log_stderr}"
+    assert (
+        evaluation.status == models.Status.SUCCESS
+    ), f"Evaluation failed: {evaluation.log_stdout};; {evaluation.log_stderr}"
     prediction = evaluation.prediction_set.get()
     return prediction
 
