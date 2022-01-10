@@ -98,14 +98,15 @@ def run(
     if log_handler is None:
         log_handler = LogHandlerBase()
 
-    input_dir_map, final_file_kwargs = _convert_file_kwargs(file_kwargs)
+    inputdir_map, final_file_kwargs = _convert_file_kwargs(file_kwargs)
     final_kwargs = copy.deepcopy(kwargs)
     final_kwargs.update(final_file_kwargs)
 
     command_list = prepare_command_list(command, final_kwargs)
 
     running_container = REGISTERED_ENGINES[engine_name].run_container(
-        container_uri, command_list, input_dir_map, output_dir=output_dir
+        container_uri, command_list,
+        inputdir_map=inputdir_map, output_dir=output_dir
     )
 
     try:

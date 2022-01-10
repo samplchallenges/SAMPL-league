@@ -48,7 +48,7 @@ class Timestamped(models.Model):
 
 
 def _timestamped_log(log):
-    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
+    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log])
 
 
 class Logged(Timestamped, StatusMixin):

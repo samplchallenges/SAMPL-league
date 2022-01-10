@@ -40,7 +40,6 @@ class Engine(abc.ABC):
     _engine_name: typing.Optional[str] = None
 
     @classmethod
-    @property
     def name(cls) -> str:
         if cls._engine_name is None:
             raise ValueError("Engine name is not set")
