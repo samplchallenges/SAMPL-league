@@ -56,6 +56,13 @@ jobs:
           path: ~/.local/share/virtualenvs
           key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}-${{ hashFiles('**/Pipfile') }}
 
+      - name: Run mypy on ever-given
+        working-directory: ./ever_given
+        run: |
+          pipenv install --dev
+          pipenv run pylint ever_given
+          pipenv run mypy ever_given
+
       - name: Install dependencies
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
@@ -76,13 +83,6 @@ jobs:
           RDS_PORT: 5432
           RDS_USERNAME: sampl_user
           DJANGO_SETTINGS_MODULE: sampl.settings_test
-
-      - name: Run mypy on ever-given
-        working-directory: ./ever_given
-        run: |
-          pipenv install --dev
-          pipenv run pylint ever_given
-          pipenv run mypy ever_given
 
       - name: Upload test coverage
         uses: codecov/codecov-action@v2.1.0
