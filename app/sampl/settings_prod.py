@@ -1,10 +1,18 @@
 # pylint: skip-file
 import os
+from pathlib import Path
 
 from .base_settings import *  # lgtm [py/polluting-import]
 
+BASE_DIR = Path("/opt/app/sampl")
+MEDIA_ROOT = BASE_DIR / "media"
+
 # Set dask URL for aws
-DASK_SCHEDULER_URL = "172.31.39.184:8786"
+# DASK_SCHEDULER_URL = "172.31.39.184:8786"
+
+DASK_SCHEDULER_HOST = os.environ.get("DASK_SCHEDULER_HOST", "127.0.0.1")
+DASK_SCHEDULER_URL = f"{DASK_SCHEDULER_HOST}:8786"
+
 
 # We only need rollbar in production
 MIDDLEWARE.append("rollbar.contrib.django.middleware.RollbarNotifierMiddleware")
@@ -16,6 +24,9 @@ POST_SERVER_ITEM_ACCESS_TOKEN = os.environ["POST_SERVER_ITEM_ACCESS_TOKEN"]
 ALLOWED_HOSTS = [
     "app.samplchallenges.org",
     "sampl.us-east-2.elasticbeanstalk.com",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://app.samplchallenges.org",
 ]
 
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"

@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+{% load template_filters %}
 {% block content %}
 <div class="card">
   <div class="card-header">Challenge</div>
@@ -18,7 +19,20 @@
       </ul>
     </p>
     <p class="card-text">
-      <a class="btn btn-primary" role="button" href="{% url 'submission-add' %}?challenge_id={{ challenge.pk }}">New Submission</a>
+      Containers must output the following results:
+      <ul>
+        {% for output_type in output_types %}
+        <li><code>{{ output_type.key }}</code>, <i>{{ output_type.description }}</i>, a {{ output_type.content_type.name }}</li>
+        {% endfor %}
+      </ul>
+      Please see our output requirements documentation at <a href="https://github.com/samplchallenges/SAMPL-containers/blob/main/tutorials/OutputRequirements.md">https://github.com/samplchallenges/SAMPL-containers/blob/main/tutorials/OutputRequirements.md</a>
+    </p>
+    <p class="card-text">
+      {% if challenge.is_active %}
+        <a class="btn btn-primary" role="button" href="{% url 'submission-add' %}?challenge_id={{ challenge.pk }}">New Submission</a>
+      {% else %}
+        <a class="btn btn-primary disabled" role="button" href="{% url 'submission-add' %}?challenge_id={{ challenge.pk }}" aria-disabled="true">Challenge Closed to New Submissions</a>
+      {% endif %}
       {% if submissions %}
       <h5>Your submissions</h5>
       <ul>
@@ -33,16 +47,18 @@
     <p class="card-text">
       <h5>Public Input Data</h5>
       <table class="table table-striped">
-        <thead><tr><td>Name</td>
+        <thead><tr>
+            <td>Name</td>
             {% for input_type in input_types %}
             <td>{{ input_type.key }}</td>
             {% endfor %}
-        <td>Container arguments</td></tr></thead>
+            <td>Container arguments</td>
+        </tr></thead>
         <tbody>
           {% for element in elements %}
           <tr>
-            {% for value in element %}
-            <td>{{ value }}</td>
+            {% for value in element.values %}
+            <td>{{ value|render_input_value }}</td>
             {% endfor %}
           </tr>
           {% endfor %}

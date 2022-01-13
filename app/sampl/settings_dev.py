@@ -1,10 +1,22 @@
 # pylint: skip-file
 import os
+from pathlib import Path
 
 from .base_settings import *  # lgtm [py/polluting-import]
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+MEDIA_ROOT = BASE_DIR / "media"
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+# requires installing django-debug-toolbar
+INSTALLED_APPS = (*INSTALLED_APPS, "debug_toolbar")
+MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
+] + MIDDLEWARE
+INTERNAL_IPS = ["127.0.0.1"]
+
 # If in debug mode, have crispy-forms raise errors
 # https://django-crispy-forms.readthedocs.io/en/latest/crispy_tag_forms.html#make-crispy-forms-fail-loud
 CRISPY_FAIL_SILENTLY = not DEBUG

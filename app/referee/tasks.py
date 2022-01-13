@@ -6,6 +6,7 @@ import dask
 import dask.distributed as dd
 import ever_given.wrapper
 from django.conf import settings
+from ever_given.log_processing import CancelledException
 
 from core import models
 
@@ -18,17 +19,10 @@ def run_and_score_submission(client, submission):
     """
     Runs public and private, plus scoring
     """
-    challenge = submission.challenge
     delayed_conditional = dask.delayed(True)
     for is_public in (True, False):
-        element_ids = challenge.inputelement_set.filter(
-            is_public=is_public
-        ).values_list("id", flat=True)
-        run_id, delayed_evaluation_ids = build_submission_run(
-            submission.pk, element_ids, delayed_conditional, is_public=is_public
-        )
-        delayed_conditional = check_and_score(
-            run_id, delayed_conditional, delayed_evaluation_ids
+        delayed_conditional = _trigger_submission_run(
+            submission, delayed_conditional, is_public=is_public
         )
 
     if settings.VISUALIZE_DASK_GRAPH:
@@ -41,89 +35,68 @@ def run_and_score_submission(client, submission):
     return future
 
 
-@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def check_and_score(submission_run_id, conditional, evaluation_ids):
-    if not conditional:
-        return conditional
-    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
-    submission_run.status = models.Status.SUCCESS
-    submission_run.save()
-    if len(evaluation_ids) == 0:
-        return True
+def _trigger_submission_run(submission, delayed_conditional, *, is_public):
+    submission_run = submission.create_run(is_public=is_public)
+    evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
+    return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
-    logger.info(
-        "Running check_and_score %s public? %s",
-        submission_run_id,
-        submission_run.is_public,
-    )
-    scoring.score_submission(submission_run.submission.pk, submission_run_id)
+
+@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
+def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses):
+    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
+    uniq_statuses = set(evaluation_statuses)
+    if not delayed_conditional:
+        status = models.Status.CANCELLED
+    elif {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
+        submission_run.append(
+            stderr=f"Evaluations should have all completed, but have statuses {evaluation_statuses}!"
+        )
+        status = models.Status.FAILURE
+    elif {models.Status.CANCELLED} == uniq_statuses:
+        status = models.Status.CANCELLED
+    elif {models.Status.FAILURE, models.Status.CANCELLED} & uniq_statuses:
+        status = models.Status.FAILURE
+    else:
+        status = models.Status.SUCCESS
+
+    submission_run.status = status
+    if status != models.Status.SUCCESS:
+        submission_run.append(stderr=f"Submission run failed {status}")
+        submission_run.save(update_fields=["status"])
+        return False
+    submission_run.append(stdout="Running check_and_score")
+    scoring.score_submission_run(submission_run)
+
     return True
 
 
-def create_submission_run(submission_id, *, is_public):
-    submission = models.Submission.objects.get(pk=submission_id)
-    container = submission.container
-    if not container.digest:
-        container.digest = "nodigest"
-        container.save()
-    submission_run = models.SubmissionRun.objects.create(
-        submission=submission,
-        digest=container.digest,
-        is_public=is_public,
-        status=models.Status.PENDING,
-    )
-    # TODO: need to store future key?
-    # submission run pair is place to store?
-    # submission_run.digest = future.key
-    submission_run.save()
-    return submission_run.id
+def _run_evaluations(submission_run, conditional):
 
-
-def build_submission_run(submission_id, element_ids, conditional, is_public=True):
-
-    submission_run_id = create_submission_run(submission_id, is_public=is_public)
-
-    evaluations = [
-        models.Evaluation.objects.create(
-            input_element_id=element_id, submission_run_id=submission_run_id
+    return [
+        run_evaluation(
+            submission_run.submission.id,
+            evaluation.id,
+            submission_run.id,
+            conditional=conditional,
         )
-        for element_id in element_ids
+        for evaluation in submission_run.evaluation_set.all()
     ]
-
-    delayed_evaluation_ids = dask.delayed(
-        [
-            run_evaluation(
-                submission_id,
-                evaluation.id,
-                submission_run_id,
-                conditional=conditional,
-            )
-            for evaluation in evaluations
-        ],
-        name=f"evaluation_list_{submission_run_id}_{is_public}",
-        pure=False,
-        nout=len(evaluations),
-    )
-    return (submission_run_id, delayed_evaluation_ids)
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
-    if not conditional:
-        models.Evaluation.objects.filter(pk=evaluation_id).update(
-            status=models.Status.CANCELLED
-        )
-        return
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     challenge = submission.challenge
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
-    evaluation_score_types = {
-        score_type.key: score_type
-        for score_type in challenge.scoretype_set.filter(
-            level=models.ScoreType.Level.EVALUATION
+
+    if not conditional or submission_run.check_cancel_requested():
+        models.Evaluation.objects.filter(pk=evaluation_id).update(
+            status=models.Status.CANCELLED
         )
-    }
+        return models.Status.CANCELLED
+
+    evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
 
     evaluation = submission_run.evaluation_set.get(pk=evaluation_id)
     element = evaluation.input_element
@@ -148,6 +121,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                 output_dir=output_dir,
                 output_file_keys=output_file_keys,
                 log_handler=models.Evaluation.LogHandler(evaluation),
+                cancel_requested_func=submission_run.check_cancel_requested,
             )
 
             for key, value in parsed_results:
@@ -156,27 +130,27 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                     prediction = models.Prediction.load_output(
                         challenge, evaluation, output_type, value
                     )
-                    evaluation.append(stdout=f"{prediction.__dict__}\n")
                     prediction.save()
                 else:
                     evaluation.append(stderr=f"Ignoring key {key} with value {value}\n")
 
-        try:
-            scoring.score_evaluation(
-                challenge.scoremaker.container,
-                evaluation,
-                evaluation_score_types,
-            )
-        except Exception as exc:
-            evaluation.append(stderr=f"Error scoring\n{exc}")
-            evaluation.save(update_fields=["log_stderr"])
-            raise
+        scoring.score_evaluation(
+            challenge.scoremaker.container,
+            evaluation,
+            evaluation_score_types,
+        )
         evaluation.status = models.Status.SUCCESS
-        return evaluation.id
-    except Exception as exc:
+    except CancelledException:
+        evaluation.status = models.Status.CANCELLED
+        evaluation.append(stderr="Cancelled")
+    except scoring.ScoringFailureException as exc:
+        evaluation.status = models.Status.FAILURE
+        evaluation.append(stderr=f"Error scoring: {exc}")
+    except Exception as exc:  # pylint: disable=broad-except
         evaluation.status = models.Status.FAILURE
         evaluation.append(stderr=f"Execution failure: {exc}\n")
-        evaluation.save(update_fields=["log_stderr"])
-        raise
     finally:
-        evaluation.save()
+        evaluation.save(update_fields=["status"])
+        evaluation.cleanup_local_outputs(output_file_keys)
+
+    return evaluation.status

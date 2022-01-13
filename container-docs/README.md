@@ -1,4 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/sampl-docker-documentation/badge/?version=latest)](https://sampl-docker-documentation.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/sampl-container-infra/badge/?version=latest)](http://docs.samplchallenges.org/en/latest/?badge=latest)
 
 This is the primary documentation for creating and submitting docker containers for SAMPL challenges.
 
@@ -6,6 +6,7 @@ This is the primary documentation for creating and submitting docker containers 
 To build the documentation, execute
 
 ```bash
+$ pipenv shell
 $ cd docs
 $ make html
 ```

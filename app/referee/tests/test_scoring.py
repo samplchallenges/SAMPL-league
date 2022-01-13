@@ -9,15 +9,14 @@ from core import filecache, models
 from referee import scoring
 
 
-def test_score_submission(
+def test_score_submission_run(
     smiles_molw_config,
     evaluations,
     evaluation_scores,
 ):
     submission_run = smiles_molw_config.submission_run
-    submission = submission_run.submission
 
-    scoring.score_submission(submission.pk, submission_run.pk)
+    scoring.score_submission_run(submission_run)
 
     score_type = models.ScoreType.objects.get(
         challenge=smiles_molw_config.challenge, key="rmse"
@@ -58,6 +57,7 @@ def test_score_evaluation_args(
     submission_run = smiles_molw_config.submission_run
     challenge = submission_run.submission.challenge
     scoring_container = challenge.scoremaker.container
+    evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
 
     for k, v in custom_string_args.items():
         models.ContainerArg.objects.create(
@@ -73,12 +73,6 @@ def test_score_evaluation_args(
 
     evaluation = evaluations[0]
     assert evaluation.input_element.is_public
-    evaluation_score_types = {
-        score_type.key: score_type
-        for score_type in challenge.scoretype_set.filter(
-            level=models.ScoreType.Level.EVALUATION
-        )
-    }
 
     with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:
         mock_wrapper.run = fake_run
@@ -96,3 +90,35 @@ def test_score_evaluation_args(
         assert kwargs == expected_kwargs
         file_kwargs = call_args.kwargs["file_kwargs"]
         assert file_kwargs == expected_file_kwargs
+
+
+def test_score_submission_run_failure(
+    smiles_molw_config,
+    evaluations,
+    evaluation_scores,
+):
+    fake_run = Mock(return_value=[], side_effect=Exception("Planned Exception"))
+
+    submission_run = smiles_molw_config.submission_run
+    with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:
+        mock_wrapper.run = fake_run
+        with pytest.raises(scoring.ScoringFailureException):
+            scoring.score_submission_run(submission_run)
+
+
+def test_score_evaluation_failure(smiles_molw_config, evaluations):
+    with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:
+        _evaluation_failure(smiles_molw_config, evaluations, mock_wrapper)
+
+
+def _evaluation_failure(smiles_molw_config, evaluations, mock_wrapper):
+    fake_run = Mock(return_value=[], side_effect=Exception("Planned Exception"))
+    mock_wrapper.run = fake_run
+    submission_run = smiles_molw_config.submission_run
+    challenge = submission_run.submission.challenge
+    scoring_container = challenge.scoremaker.container
+    evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
+    evaluation = evaluations[0]
+
+    with pytest.raises(scoring.ScoringFailureException):
+        scoring.score_evaluation(scoring_container, evaluation, evaluation_score_types)

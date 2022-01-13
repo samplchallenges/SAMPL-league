@@ -55,15 +55,21 @@ jobs:
         run: |
           python -m pip install --upgrade pipenv wheel
       - id: cache-pipenv
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         with:
           path: ~/.local/share/virtualenvs
-          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}-${{ hashFiles('**/Pipfile') }}
 
       - name: Install dependencies
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
           pipenv install --dev --deploy
+
+      - name: Install evergiven locally
+        run: |
+          pipenv run pip uninstall -y ever-given
+          pipenv install -e ../ever_given/
+
       - name: Run test suite
         run: |
           pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given
@@ -73,7 +79,7 @@ jobs:
           RDS_PASSWORD: postgres
           RDS_PORT: 5432
           RDS_USERNAME: sampl_user
-          DJANGO_SETTINGS_MODULE: sampl.settings_dev
+          DJANGO_SETTINGS_MODULE: sampl.settings_test
 
       - name: Upload test coverage
         uses: codecov/codecov-action@v2.1.0

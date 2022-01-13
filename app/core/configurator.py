@@ -2,7 +2,8 @@
 Constants for submission details
 """
 
-DRAFT_MODE_DETAILS = """In draft mode, submissions may be incomplete."""
+DRAFT_MODE_DETAILS = """Use draft mode if you would like to test your container/submission before formal submission. In draft mode, fields below may be left incomplete. Once you are happy with your submission, you must uncheck draft mode before finalizing your submission."""
+
 
 NAME_DETAILS = """Please provide an informal but informative name of the method used.
 The name must not exceed 40 characters."""
@@ -36,6 +37,10 @@ If you used a microstate other than the challenge provided microstate (`SMXX_mic
 
 Use as many lines of text as you need."""
 
+NOTES_DETAILS = """Submission Annotations and Notes-to-self.
+Please place any extra notes or annotations about your submission or submission run here. This section is only intended for notes-to-self, and will be disregarded by challenge administrators.
+Unlike other sections, you may modify this section after the challenge has concluded.
+"""
 
 RANKED_DETAILS = """All submissions must either be ranked or non-ranked.
 Only one ranked submission per participant is allowed.
