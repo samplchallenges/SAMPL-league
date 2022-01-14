@@ -12,7 +12,7 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-with open("/etc/sampl_rds_config.json", "r") as fp:
+with open("/etc/sampl_rds_config.json") as fp:
     rds_config = json.load(fp)
 
 for key, value in rds_config.items():
