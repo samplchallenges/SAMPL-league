@@ -115,9 +115,3 @@ settings:
     Notification Topic Name: null
   aws:elasticbeanstalk:xray:
     XRayEnabled: 'false'
-  aws:rds:dbinstance:
-    DBAllocatedStorage: '10'
-    DBDeletionPolicy: Snapshot
-    DBInstanceClass: db.t2.micro
-    DBSnapshotIdentifier: null
-    MultiAZDatabase: 'false'
