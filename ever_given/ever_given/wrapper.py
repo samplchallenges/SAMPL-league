@@ -3,6 +3,7 @@ import shlex
 import sys
 from pathlib import Path
 import subprocess
+import os
 
 import docker
 
@@ -134,7 +135,10 @@ def run(
 
 
 def run_container(container_uri, command, inputdir_map=None, output_dir=None):
-    client = get_authenticated_client()
+    if os.environ['DJANGO_SETTINGS_MODULE']=='sampl.settings_prod':
+        client = get_authenticated_client()
+    else:
+        client = docker.from_env()
     volumes = {}
     for inputdir, guest_input_dir in inputdir_map.items():
         volumes[str(inputdir)] = {"bind": str(guest_input_dir), "mode": "ro"}
