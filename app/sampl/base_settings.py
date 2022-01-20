@@ -1,6 +1,8 @@
 """
 Django settings for SAMPL project.
 """
+import subprocess
+
 
 # Custom settings for SAMPL
 VISUALIZE_DASK_GRAPH = False
