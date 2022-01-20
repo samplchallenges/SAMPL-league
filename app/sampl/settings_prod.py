@@ -90,3 +90,5 @@ LOGGING = {
         },
     },
 }
+
+LOGIN_TO_AWS = True
