@@ -103,9 +103,15 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 LOGIN_TO_AWS = False
 
+
 def run_aws_login():
     if LOGIN_TO_AWS:
-        login_command = subprocess.run(["aws ecr get-login --no-include-email --region us-east-2"], shell=True, capture_output=True, check=True)
+        login_command = subprocess.run(
+            ["aws ecr get-login --no-include-email --region us-east-2"],
+            shell=True,
+            capture_output=True,
+            check=True,
+        )
         subprocess.run(login_command.stdout, shell=True, check=True)
 
 
