@@ -69,17 +69,6 @@ def _convert_file_kwargs(file_kwargs):
     return dirpaths, final_file_kwargs
 
 
-def get_authenticated_client():
-    """
-    Authenticate docker client to pull from aws ECR registry
-    returns a docker client
-    Note: we just login every time instead of checking if our 12hr login has expired
-    """
-    login_command = subprocess.run(["aws ecr get-login --no-include-email --region us-east-2"], shell=True, capture_output=True, check=True)
-    subprocess.run(login_command.stdout, shell=True, check=True)
-    return docker.from_env()
-
-
 def run(
     container_uri,
     command="",
@@ -90,6 +79,7 @@ def run(
     output_file_keys=None,
     log_handler=None,
     cancel_requested_func=None,
+    aws_login=None
 ):
     """
     kwargs will be passed to container as --key=value
@@ -110,7 +100,7 @@ def run(
     final_command = prepare_commandline(command, final_kwargs)
 
     running_container = run_container(
-        container_uri, final_command, input_dir_map, output_dir=output_dir
+        container_uri, final_command, input_dir_map, output_dir=output_dir, aws_login=aws_login
     )
 
     try:
@@ -134,11 +124,12 @@ def run(
         running_container.remove()
 
 
-def run_container(container_uri, command, inputdir_map=None, output_dir=None):
-    if os.environ['DJANGO_SETTINGS_MODULE']=='sampl.settings_prod':
-        client = get_authenticated_client()
-    else:
-        client = docker.from_env()
+def run_container(container_uri, command, inputdir_map=None, output_dir=None, aws_login=None):
+    if aws_login:
+        aws_login()
+        
+    client = docker.from_env()
+
     volumes = {}
     for inputdir, guest_input_dir in inputdir_map.items():
         volumes[str(inputdir)] = {"bind": str(guest_input_dir), "mode": "ro"}

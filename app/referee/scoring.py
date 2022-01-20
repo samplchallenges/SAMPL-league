@@ -6,6 +6,8 @@ import ever_given.wrapper
 
 from core import models
 
+from django.conf import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -75,6 +77,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
 
+    print('EVALUATION HERE:', settings.AWS_LOGIN_FUNCTION)
     try:
         for key, score_value in ever_given.wrapper.run(
             container.uri,
@@ -82,6 +85,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
             file_kwargs=file_kwargs,
             kwargs=kwargs,
             log_handler=models.Evaluation.LogHandler(evaluation),
+            aws_login=settings.AWS_LOGIN_FUNCTION
         ):
             if key in evaluation_score_types:
                 models.EvaluationScore.objects.create(
