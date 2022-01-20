@@ -101,6 +101,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 LOGIN_TO_AWS = False
 
+
 def run_aws_login():
     if LOGIN_TO_AWS:
         login_command = subprocess.run(
