@@ -2,9 +2,8 @@ import json
 import logging
 import tempfile
 
-from django.conf import settings
-
 import ever_given.wrapper
+from django.conf import settings
 
 from core import models
 
@@ -84,7 +83,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
             file_kwargs=file_kwargs,
             kwargs=kwargs,
             log_handler=models.Evaluation.LogHandler(evaluation),
-            aws_login=settings.AWS_LOGIN_FUNCTION
+            aws_login=settings.AWS_LOGIN_FUNCTION,
         ):
             if key in evaluation_score_types:
                 models.EvaluationScore.objects.create(
