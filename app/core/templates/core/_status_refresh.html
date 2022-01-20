@@ -1,4 +1,10 @@
 {{ status }}
 {% if not is_finished %}
-<a class="btn btn-warning mb-2" href="">Refresh Status</a>
+<a class="btn btn-info mb-2" href="">Refresh Status</a>
+{% if submission_run_id %}
+<form action="{% url 'submissionrun-cancel' submission_run_id %}" method=POST>
+  {% csrf_token %}
+  <input type=submit class="btn btn-warning mb-2" value="Cancel">
+</form>
+{% endif %}
 {% endif %}

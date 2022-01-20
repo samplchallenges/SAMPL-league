@@ -1,15 +1,22 @@
 # pylint: disable=unused-argument, unused-variable
+
+from unittest.mock import patch
+
 import pytest
 
 from core.forms import ContainerForm, SubmissionForm
+from core.tests import mocktime
 
 
+@patch("django.utils.timezone.now", mocktime.active)
 @pytest.mark.django_db
 def test_create(challenge, user):
+    assert challenge.is_active()
     submission_form = SubmissionForm()
     assert not submission_form.is_valid()
     container_form = ContainerForm()
     assert not container_form.is_valid()
+
     container_form = ContainerForm(
         data={
             "container-name": "My Container",
@@ -18,7 +25,6 @@ def test_create(challenge, user):
             "container-label": "foo",
         }
     )
-    print(container_form.errors)
     assert container_form.is_valid()
     container = container_form.save(commit=False)
     container.user = user

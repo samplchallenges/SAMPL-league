@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument, unused-variable
 import os.path
+import re
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -11,6 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db import models as django_models
 
 from core import models
+from core.tests import mocktime
 
 TEST_DATA_PATH = Path(__file__).parent / "data"
 
@@ -72,6 +74,19 @@ def test_input_element(input_elements, benzene_from_mol):
     assert relative_path == Path(expected_path)
 
 
+@pytest.mark.parametrize(
+    ["mocknow", "compareval"],
+    [
+        (mocktime.inactive_before, False),
+        (mocktime.active, True),
+        (mocktime.inactive_after, False),
+    ],
+)
+def test_challenge(challenge, mocknow, compareval):
+    with patch("django.utils.timezone.now", mocknow):
+        assert challenge.is_active() == compareval
+
+
 def test_load_prediction_file(
     container_factory, submission_factory, submission_run_factory, benzene_from_mol
 ):
@@ -110,12 +125,18 @@ def test_load_prediction_file(
 def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):
     container = draft_submission.container
     assert container.custom_args() == {"stringarg": "hello world"}
+    filepath = os.path.join(
+        settings.MEDIA_ROOT,
+        "container_args/{}/{}/filearg/example.*.txt".format(
+            container.user_id, container.id
+        ),
+    )
+    assert re.match(filepath, container.custom_file_args()["filearg"])
 
-    assert container.custom_file_args() == {
-        "filearg": os.path.join(
-            settings.MEDIA_ROOT,
-            "container_args/{}/{}/filearg/example.txt".format(
-                container.user_id, container.id
-            ),
-        )
-    }
+
+def test_cancel_requested(draft_submission, submission_run_factory):
+    submission_run = submission_run_factory(draft_submission)
+    submission_run.status = models.Status.CANCEL_PENDING
+    submission_run.save()
+
+    assert submission_run.check_cancel_requested()

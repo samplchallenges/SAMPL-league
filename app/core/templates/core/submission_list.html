@@ -5,6 +5,7 @@
   <thead>
     <tr>
       <th scope="col">Challenge</th>
+      <th scope="col">Challenge Status</th>
       <th scope="col">Name</th>
       <th scope="col">Container</th>
       <th scope="col">Last Run</th>
@@ -14,22 +15,22 @@
   {% for submission in submission_list %}
   <tr>
     <td>{{ submission.challenge }}</td>
-  <td>
-    {% include 'core/_submission_list_elem.html' with submission=submission only %}
-  </td>
-  <td>
-    {{ submission.container.name }}
-  </td>
-  <td>
-    {{ submission.last_public_run.status }}, {{ submission.last_public_run.updated_at }}
-  </td>
-</tr>
-{% endfor %}
+    {% if submission.challenge.is_active %}
+      <td class="active-status">OPEN</td>
+    {% else %}
+      <td class="inactive-status">CLOSED</td>
+    {% endif %}
+    <td>
+      {% include 'core/_submission_list_elem.html' with submission=submission only %}
+    </td>
+    <td>
+      {{ submission.container.name }}
+    </td>
+    <td>
+      {{ submission.last_public_run.status }}, {{ submission.last_public_run.updated_at }}
+    </td>
+  </tr>
+  {% endfor %}
 </tbody>
 </table>
-<div class="row">
-  <div class="col">
-    <a class="btn btn-primary" role="button" href="{% url 'submission-add' %}">New Submission</a>
-  </div>
-</div>
 {% endblock %}

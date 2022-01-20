@@ -2,10 +2,21 @@
     width: unset;
     display: inline;
 }
+
 .arg-field div {
     display: inline;
 }
 
 .arg-field td {
     vertical-align: top;
+}
+
+.active-status {
+  font-weight: bold;
+  color: green;
+}
+
+.inactive-status {
+  font-weight: bold;
+  color: red;
 }

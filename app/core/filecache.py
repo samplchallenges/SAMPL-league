@@ -46,3 +46,15 @@ def preserve_local_copy(field_file, filepath):
     if not os.path.exists(local_path):
         logger.debug("Copying local file %s into %s", filepath, local_path)
         shutil.copyfile(filepath, local_path)
+
+
+def delete_local_cache(field_file):
+    local_path = _local_cache_path(field_file)
+    if os.path.exists(local_path):
+        # Only delete if using remote storage (e.g. S3!)
+        try:
+            _filepath = field_file.path
+            logger.debug("Will not delete local copy as we don't have remote storage")
+        except NotImplementedError:
+            logger.debug("Deleting local copy as we have remote storage")
+            os.remove(local_path)

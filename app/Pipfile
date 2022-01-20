@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "3.2.8"
+django = "4.0"
 psycopg2-binary = "*"
 django-crispy-forms = "*"
 django-storages = "*"
@@ -13,13 +13,13 @@ dask = "*"
 distributed = "*"
 docker = "*"
 six = "*"
-ever-given = "0.0.5"
+ever-given = "0.0.8"
 sampl = {path = "."}
 rollbar = "*"
 jupyterlab = "*"
 
 [dev-packages]
-black = "==21.7b0"
+black = "==21.12b0"
 isort = "*"
 pylint = "*"
 pytest = "*"
@@ -29,6 +29,10 @@ pytest-django = "*"
 bokeh = ">=0.13.0"
 pytest-cov = "*"
 pytest-xdist = {extras = ["psutil"], version = "*"}
+django-debug-toolbar = "*"
+# For local development
+#ever-given = {editable = true, path = "./../ever_given"}
+#sampl = {editable = true, path = "."}
 
 [requires]
 python_version = "3.8"

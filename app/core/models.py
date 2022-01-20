@@ -2,13 +2,14 @@ import logging
 import os.path
 import time
 from collections import namedtuple
+from functools import cached_property
 
 import django.contrib.auth.models as auth_models
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.db import models
+from django.db import models, transaction
 from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils import timezone
@@ -28,11 +29,12 @@ class Status(models.TextChoices):
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     CANCELLED = "CANCELLED"
+    CANCEL_PENDING = "CANCEL_PENDING"
 
 
 class StatusMixin:
     def is_finished(self):
-        return self.status in (Status.SUCCESS, Status.FAILURE)
+        return self.status in (Status.SUCCESS, Status.FAILURE, Status.CANCELLED)
 
 
 class Timestamped(models.Model):
@@ -42,6 +44,55 @@ class Timestamped(models.Model):
     class Meta:
         abstract = True
         get_latest_by = ("created_at",)
+
+
+def _timestamped_log(log):
+    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
+
+
+class Logged(Timestamped, StatusMixin):
+    log_stdout = models.TextField(blank=True)
+    log_stderr = models.TextField(blank=True)
+
+    log_handler = None
+
+    class Meta:
+        abstract = True
+
+    class LogHandler:
+        def __init__(self, instance):
+            self.instance_id = instance.pk
+            self.cls = type(instance)
+
+        @property
+        def _update(self):
+            return self.cls.objects.filter(pk=self.instance_id).update
+
+        def handle_stdout(self, log):
+            self._update(
+                log_stdout=Concat(
+                    models.F("log_stdout"), models.Value(_timestamped_log(log))
+                )
+            )
+
+        def handle_stderr(self, log):
+            self._update(
+                log_stderr=Concat(
+                    models.F("log_stderr"), models.Value(_timestamped_log(log))
+                )
+            )
+
+    def append(self, stdout=None, stderr=None):
+        update_fields = []
+        if stdout is not None:
+            self.log_stdout = Concat(models.F("log_stdout"), models.Value(stdout))
+            update_fields.append("log_stdout")
+        if stderr is not None:
+            self.log_stderr = Concat(models.F("log_stderr"), models.Value(stderr))
+            update_fields.append("log_stderr")
+
+        if update_fields:
+            self.save(update_fields=update_fields)
 
 
 class Challenge(Timestamped):
@@ -54,6 +105,9 @@ class Challenge(Timestamped):
 
     def __str__(self):
         return str(self.name)
+
+    def is_active(self):
+        return self.end_at > timezone.now() and self.start_at < timezone.now()
 
     def __load_output_types(self):
         output_types = self.valuetype_set.filter(is_input_flag=False)
@@ -76,6 +130,18 @@ class Challenge(Timestamped):
         if self.__output_types_dict is None:
             self.__load_output_types()
         return self.__output_types_dict.get(key)
+
+    @cached_property
+    def score_types(self):
+        score_types = {
+            ScoreType.Level.EVALUATION: {},
+            ScoreType.Level.SUBMISSION_RUN: {},
+        }
+
+        for score_type in self.scoretype_set.all():
+            score_types[score_type.level][score_type.key] = score_type
+
+        return score_types
 
 
 class Container(Timestamped):
@@ -153,23 +219,49 @@ class Submission(Timestamped):
     )
     ranked = models.BooleanField(default=True, help_text=configurator.RANKED_DETAILS)
 
+    notes = models.TextField(
+        help_text=configurator.NOTES_DETAILS, blank=True, null=True
+    )
+
+    NONDRAFT_FIELD_NAMES = [
+        "ranked",
+        "category",
+        "url",
+        "compute_time",
+        "computing_and_hardware",
+        "software",
+        "method",
+    ]
+    DETAIL_FIELD_NAMES = [*NONDRAFT_FIELD_NAMES, "notes"]
+
     def __str__(self):
         return f"{self.user}: {self.challenge}: {self.name}"
 
     def get_absolute_url(self):
         return reverse("submission", kwargs={"pk": self.pk})
 
+    @property
+    def missing_fields(self):
+        return [
+            field_name
+            for field_name in self.NONDRAFT_FIELD_NAMES
+            if getattr(self, field_name) in (None, "")
+        ]
+
+    @property
+    def details(self):
+        return [
+            (field_name, getattr(self, field_name))
+            for field_name in self.DETAIL_FIELD_NAMES
+            if getattr(self, field_name) not in (None, "")
+        ]
+
     def clean(self):
         super().clean()
         if not self.draft_mode:
             # All fields
-            for field in self._meta.get_fields(include_parents=False):
-                if isinstance(field, models.fields.Field) and not isinstance(
-                    field, models.BooleanField
-                ):
-                    if not getattr(self, field.attname):
-                        self.draft_mode = True
-                        break
+            if self.missing_fields:
+                self.draft_mode = True
 
     def clone(self):
         """
@@ -194,6 +286,22 @@ class Submission(Timestamped):
 
     def last_private_run(self):
         return self.last_run(is_public=False)
+
+    def create_run(self, *, is_public):
+        digest = self.container.digest
+        if digest is None:
+            digest = "nodigest"
+        submission_run = self.submissionrun_set.create(
+            digest=digest,
+            is_public=is_public,
+            status=Status.PENDING,
+        )
+        for element_id in self.challenge.inputelement_set.filter(
+            is_public=is_public
+        ).values_list("id", flat=True):
+            submission_run.evaluation_set.create(input_element_id=element_id)
+
+        return submission_run
 
 
 def _container_file_location(instance, filename):
@@ -230,7 +338,7 @@ class ContainerArg(Timestamped):
         return os.path.basename(self.file_value.name)
 
 
-class SubmissionRun(Timestamped, StatusMixin):
+class SubmissionRun(Logged):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     digest = models.CharField(max_length=255)
     is_public = models.BooleanField(default=False)
@@ -238,6 +346,22 @@ class SubmissionRun(Timestamped, StatusMixin):
 
     def __str__(self):
         return f"{self.submission}:{self.digest}, status {self.status}"
+
+    def check_cancel_requested(self):
+        status = SubmissionRun.objects.values_list("status", flat=True).get(pk=self.id)
+        return status == Status.CANCEL_PENDING
+
+    def mark_for_cancel(self):
+        with transaction.atomic():
+            SubmissionRun.objects.filter(pk=self.id).update(
+                status=Status.CANCEL_PENDING
+            )
+            Evaluation.objects.filter(
+                submission_run_id=self.id, status=Status.PENDING
+            ).update(status=Status.CANCELLED)
+            Evaluation.objects.filter(
+                submission_run_id=self.id, status=Status.RUNNING
+            ).update(status=Status.CANCEL_PENDING)
 
     def completion(self):
         completed = self.evaluation_set.filter(
@@ -258,16 +382,12 @@ class InputElement(Timestamped):
     class Meta:
         unique_together = ["challenge", "name"]
 
-    def all_values(self):
-        """
-        Returns a pair of key: value dicts, where the first dict is regular values
-        and the second is file values
-        """
+    @classmethod
+    def all_element_values(cls, input_values):
         file_values = {}
         values = {}
-        for input_value in self.inputvalue_set.select_related(
-            "value_type", "value_type__content_type"
-        ).all():
+
+        for input_value in input_values:
             value_type = input_value.value_type
             key = value_type.key
             content_type = value_type.content_type
@@ -276,6 +396,16 @@ class InputElement(Timestamped):
             else:
                 values[key] = input_value.value
         return values, file_values
+
+    def all_values(self):
+        """
+        Returns a pair of key: value dicts, where the first dict is regular values
+        and the second is file values
+        """
+        input_values = self.inputvalue_set.select_related(
+            "value_type", "value_type__content_type"
+        ).all()
+        return self.all_element_values(input_values)
 
     def __str__(self):
         return f"{self.name}, is public? {self.is_public}"
@@ -348,47 +478,15 @@ class InputValue(ValueParentMixin):
             )
 
 
-def _timestamped_log(log):
-    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
-
-
-class Evaluation(Timestamped, StatusMixin):
+class Evaluation(Logged):
     submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
     status = models.CharField(
         max_length=25, choices=Status.choices, default=Status.PENDING
     )
-    log_stdout = models.TextField(blank=True)
-    log_stderr = models.TextField(blank=True)
-
-    log_handler = None
 
     class Meta:
         unique_together = ["submission_run", "input_element"]
-
-    class LogHandler:
-        def __init__(self, evaluation):
-            self.evaluation_id = evaluation.pk
-
-        def handle_stdout(self, log):
-            Evaluation.objects.filter(pk=self.evaluation_id).update(
-                log_stdout=Concat(
-                    models.F("log_stdout"), models.Value(_timestamped_log(log))
-                )
-            )
-
-        def handle_stderr(self, log):
-            Evaluation.objects.filter(pk=self.evaluation_id).update(
-                log_stderr=Concat(
-                    models.F("log_stderr"), models.Value(_timestamped_log(log))
-                )
-            )
-
-    def append(self, stdout=None, stderr=None):
-        if stdout is not None:
-            self.log_stdout = Concat(models.F("log_stdout"), models.Value(stdout))
-        if stderr is not None:
-            self.log_stderr = Concat(models.F("log_stderr"), models.Value(stderr))
 
     def mark_started(self, kwargs, file_kwargs):
         self.append(
@@ -402,6 +500,12 @@ class Evaluation(Timestamped, StatusMixin):
 
     def __str__(self):
         return f"{self.submission_run}:, status {self.status}"
+
+    def cleanup_local_outputs(self, output_file_keys):
+        for prediction in self.prediction_set.filter(
+            value_type__key__in=output_file_keys
+        ):
+            filecache.delete_local_cache(prediction.value)
 
 
 class ScoreType(Timestamped):

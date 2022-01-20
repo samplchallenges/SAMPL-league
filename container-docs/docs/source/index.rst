@@ -15,6 +15,7 @@ Welcome to SAMPL's Docker documentation!
 
    docker
    conda
+   admin_tasks
 
 
 

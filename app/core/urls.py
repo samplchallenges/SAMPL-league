@@ -9,6 +9,7 @@ from .views.submission import (
     SubmissionDelete,
     SubmissionDetail,
     SubmissionList,
+    cancel_submissionrun_view,
     edit_submission_view,
     submit_submission_view,
 )
@@ -26,6 +27,11 @@ urlpatterns = [
         name="download-input",
     ),
     path(
+        "download_output/<int:pk>/",
+        file_downloads.download_output_file,
+        name="download-output",
+    ),
+    path(
         "download_arg/<int:pk>/",
         file_downloads.download_container_arg_file,
         name="download-arg",
@@ -34,6 +40,11 @@ urlpatterns = [
     path("submission/<int:pk>/", SubmissionDetail.as_view(), name="submission-detail"),
     path(
         "submission/<int:pk>/submit/", submit_submission_view, name="submission-submit"
+    ),
+    path(
+        "submissionrun/<int:pk>/cancel/",
+        cancel_submissionrun_view,
+        name="submissionrun-cancel",
     ),
     path("submission/add/", edit_submission_view, name="submission-add"),
     path(
