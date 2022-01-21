@@ -121,7 +121,7 @@ def _score_submission_run(container, submission_run, score_types):
             file_kwargs=file_kwargs,
             kwargs=kwargs,
             aws_login_func=settings.AWS_LOGIN_FUNCTION,
-            aws_login_bool=settings.LOGIN_TO_AWS
+            aws_login_bool=settings.LOGIN_TO_AWS,
         ):
             if key in submission_run_score_types:
                 models.SubmissionRunScore.objects.create(
