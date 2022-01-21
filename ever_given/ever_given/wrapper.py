@@ -123,7 +123,7 @@ def run(
 
 
 def run_container(container_uri, command, inputdir_map=None, output_dir=None, aws_login_func=None):
-    if aws_login:
+    if aws_login_func:
         aws_login()
     client = docker.from_env()
     volumes = {}
