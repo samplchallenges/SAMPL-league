@@ -83,8 +83,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
             file_kwargs=file_kwargs,
             kwargs=kwargs,
             log_handler=models.Evaluation.LogHandler(evaluation),
-            aws_login_func=settings.AWS_LOGIN_FUNCTION,
-            aws_login_bool=settings.LOGIN_TO_AWS,
+            aws_login_func=settings.AWS_LOGIN_FUNCTION if settings.LOGIN_TO_AWS else None
         ):
             if key in evaluation_score_types:
                 models.EvaluationScore.objects.create(
@@ -120,8 +119,7 @@ def _score_submission_run(container, submission_run, score_types):
             command,
             file_kwargs=file_kwargs,
             kwargs=kwargs,
-            aws_login_func=settings.AWS_LOGIN_FUNCTION,
-            aws_login_bool=settings.LOGIN_TO_AWS,
+            aws_login_func=settings.AWS_LOGIN_FUNCTION if settings.LOGIN_TO_AWS else None
         ):
             if key in submission_run_score_types:
                 models.SubmissionRunScore.objects.create(
