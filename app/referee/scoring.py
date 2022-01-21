@@ -84,7 +84,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
             kwargs=kwargs,
             log_handler=models.Evaluation.LogHandler(evaluation),
             aws_login_func=settings.AWS_LOGIN_FUNCTION,
-            aws_login_bool=settings.LOGIN_AWS
+            aws_login_bool=settings.LOGIN_AWS,
         ):
             if key in evaluation_score_types:
                 models.EvaluationScore.objects.create(
