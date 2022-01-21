@@ -144,7 +144,7 @@ def run_container(container_uri, command, inputdir_map=None, output_dir=None, aw
         volumes=volumes,
         network_disabled=True,
         network_mode="none",
-        remove=True,
+        remove=False,
         detach=True,
     )
     return running_container
