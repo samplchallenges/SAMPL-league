@@ -124,7 +124,7 @@ def run(
 
 def run_container(container_uri, command, inputdir_map=None, output_dir=None, aws_login_func=None):
     if aws_login_func:
-        aws_login()
+        aws_login_func()
     client = docker.from_env()
     volumes = {}
     for inputdir, guest_input_dir in inputdir_map.items():
