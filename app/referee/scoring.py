@@ -115,7 +115,7 @@ def _score_submission_run(container, submission_run, score_types):
         command = "score-submissionrun"
         matched_keys = set()
         for key, value in ever_given.wrapper.run(
-            container.uri, command, file_kwargs=file_kwargs, kwargs=kwargs
+            container.uri, command, file_kwargs=file_kwargs, kwargs=kwargs, aws_login_func=settings.AWS_LOGIN_FUNCTION
         ):
             if key in submission_run_score_types:
                 models.SubmissionRunScore.objects.create(
