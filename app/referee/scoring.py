@@ -3,6 +3,7 @@ import logging
 import tempfile
 
 import ever_given.wrapper
+from django.conf import settings
 
 from core import models
 
@@ -82,6 +83,8 @@ def score_evaluation(container, evaluation, evaluation_score_types):
             file_kwargs=file_kwargs,
             kwargs=kwargs,
             log_handler=models.Evaluation.LogHandler(evaluation),
+            aws_login_func=settings.AWS_LOGIN_FUNCTION,
+            aws_login_bool=settings.LOGIN_TO_AWS,
         ):
             if key in evaluation_score_types:
                 models.EvaluationScore.objects.create(
@@ -113,7 +116,12 @@ def _score_submission_run(container, submission_run, score_types):
         command = "score-submissionrun"
         matched_keys = set()
         for key, value in ever_given.wrapper.run(
-            container.uri, command, file_kwargs=file_kwargs, kwargs=kwargs
+            container.uri,
+            command,
+            file_kwargs=file_kwargs,
+            kwargs=kwargs,
+            aws_login_func=settings.AWS_LOGIN_FUNCTION,
+            aws_login_bool=settings.LOGIN_TO_AWS,
         ):
             if key in submission_run_score_types:
                 models.SubmissionRunScore.objects.create(

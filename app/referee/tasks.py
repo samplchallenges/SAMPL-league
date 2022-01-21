@@ -122,6 +122,8 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                 output_file_keys=output_file_keys,
                 log_handler=models.Evaluation.LogHandler(evaluation),
                 cancel_requested_func=submission_run.check_cancel_requested,
+                aws_login_func=settings.AWS_LOGIN_FUNCTION,
+                aws_login_bool=settings.LOGIN_TO_AWS,
             )
 
             for key, value in parsed_results:
