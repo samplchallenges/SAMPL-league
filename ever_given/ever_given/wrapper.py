@@ -77,8 +77,6 @@ def run(
     output_file_keys=None,
     log_handler=None,
     cancel_requested_func=None,
-    aws_login_func=None,
-    aws_login_bool=None,
 ):
     """
     kwargs will be passed to container as --key=value
@@ -99,7 +97,7 @@ def run(
     final_command = prepare_commandline(command, final_kwargs)
 
     running_container = run_container(
-        container_uri, final_command, input_dir_map, output_dir=output_dir, aws_login_func=aws_login_func, aws_login_bool=aws_login_bool
+        container_uri, final_command, input_dir_map, output_dir=output_dir
     )
 
     try:
@@ -122,9 +120,8 @@ def run(
             print(f"Container status is {running_container.status}", file=sys.stderr)
         running_container.remove()
 
-def run_container(container_uri, command, inputdir_map=None, output_dir=None, aws_login_func=None, aws_login_bool=None):
-    if aws_login_func and aws_login_bool:
-        aws_login_func(aws_login_bool)
+
+def run_container(container_uri, command, inputdir_map=None, output_dir=None):
     client = docker.from_env()
     volumes = {}
     for inputdir, guest_input_dir in inputdir_map.items():
