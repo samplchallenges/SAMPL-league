@@ -1,7 +1,6 @@
 """
 Django settings for SAMPL project.
 """
-import subprocess
 
 # Custom settings for SAMPL
 VISUALIZE_DASK_GRAPH = False
@@ -99,19 +98,3 @@ STATIC_URL = "/static/"
 STATIC_ROOT = "static"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
-
-LOGIN_TO_AWS = False
-
-
-def run_aws_login(login_to_aws):
-    if login_to_aws:
-        login_command = subprocess.run(
-            ["aws ecr get-login --no-include-email --region us-east-2"],
-            shell=True,
-            capture_output=True,
-            check=True,
-        )
-        subprocess.run(login_command.stdout, shell=True, check=True)
-
-
-AWS_LOGIN_FUNCTION = run_aws_login
