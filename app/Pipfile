@@ -13,7 +13,7 @@ dask = "*"
 distributed = "*"
 docker = "*"
 six = "*"
-ever-given = "==0.0.9"
+ever-given = "0.0.9"
 sampl = {path = "."}
 rollbar = "*"
 jupyterlab = "*"
