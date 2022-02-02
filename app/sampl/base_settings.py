@@ -104,13 +104,18 @@ LOGIN_TO_AWS = False
 
 
 def run_aws_login():
-    login_command = subprocess.run(
-        ["aws ecr get-login --no-include-email --region us-east-2"],
+    login_password = subprocess.run(
+        ["aws ecr get-login-password --no-include-email --region us-east-2 --profile sampl_pull"],
         shell=True,
         capture_output=True,
         check=True,
     )
-    subprocess.run(login_command.stdout, shell=True, check=True)
+    login_command = "docker login --username AWS 103125031445.dkr.ecr.us-east-2.amazonaws.com --password {}".format(login_password)
+    subprocess.run(
+        [login_command], 
+        shell=True, 
+        check=True
+    )
 
 
 AWS_LOGIN_FUNCTION = run_aws_login
