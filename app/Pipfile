@@ -13,11 +13,10 @@ dask = "*"
 distributed = "*"
 docker = "*"
 six = "*"
-ever-given = "0.0.9"
+ever-given = "0.0.8"
 sampl = {path = "."}
 rollbar = "*"
 jupyterlab = "*"
-ipython = "<8.0"
 
 [dev-packages]
 black = "==21.12b0"
