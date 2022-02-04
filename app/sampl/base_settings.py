@@ -105,9 +105,7 @@ LOGIN_TO_AWS = False
 
 def run_aws_login():
     login_password = subprocess.run(
-        [
-            "aws ecr get-login-password --region us-east-2"
-        ],
+        ["aws ecr get-login-password --region us-east-2"],
         shell=True,
         capture_output=True,
         check=True,
