@@ -82,8 +82,7 @@ def cancel_submissionrun_view(request, pk):
 def submit_submission_view(request, pk):
     if request.method != "POST":
         return HttpResponseBadRequest()
-    submission = get_object_or_404(
-        Submission, pk=pk, user=request.user)
+    submission = get_object_or_404(Submission, pk=pk, user=request.user)
 
     if settings.REMOTE_SCHEDULER:
         referee.tasks.enqueue_submission(submission)

@@ -1,11 +1,12 @@
 import time
+
 import click
 
-from core.models import SubmissionRun, Status
+from core.models import Status, SubmissionRun
 from referee.tasks import submit_submission_run
 
-
 JOB_SUBMITTER_LIFETIME = 600
+
 
 @click.command()
 def check_for_submission_runs():

@@ -21,8 +21,8 @@ def enqueue_submission(submission):
     Records in the database that we want the job submitter to call
     submit_submission_run
     """
-    #submission.status = AWAITING_SUBMITTER
-    #submission.save(update_fields=["status"])
+    # submission.status = AWAITING_SUBMITTER
+    # submission.save(update_fields=["status"])
     for is_public in (True, False):
         submission.create_run(is_public=is_public, remote=True)
 
@@ -62,7 +62,7 @@ def _trigger_submission_run(submission, delayed_conditional, *, is_public):
     return _run(submission_run, delayed_conditional)
 
 
-def _run(submission_run,  delayed_conditional):
+def _run(submission_run, delayed_conditional):
     evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
