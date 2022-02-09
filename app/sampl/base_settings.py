@@ -7,6 +7,7 @@ import subprocess
 VISUALIZE_DASK_GRAPH = False
 DASK_SCHEDULER_URL = "localhost:8786"
 ENABLE_REGISTRATION = False  # Disables self-registration
+REMOTE_SCHEDULER = False
 # End of custom settings for SAMPL
 
 ALLOWED_HOSTS = []

@@ -15,6 +15,18 @@ from . import scoring
 logger = logging.getLogger(__name__)
 
 
+def enqueue_submission(submission):
+    """
+    Runs on the webapp in an environment that can't talk to the scheduler.
+    Records in the database that we want the job submitter to call
+    submit_submission_run
+    """
+    #submission.status = AWAITING_SUBMITTER
+    #submission.save(update_fields=["status"])
+    for is_public in (True, False):
+        submission.create_run(is_public=is_public, remote=True)
+
+
 def run_and_score_submission(client, submission):
     """
     Runs public and private, plus scoring
@@ -35,8 +47,22 @@ def run_and_score_submission(client, submission):
     return future
 
 
+def submit_submission_run(submission_run):
+    delayed_conditional = dask.delayed(True)
+    delayed_conditional = _run(submission_run, delayed_conditional)
+    future = client.submit(delayed_conditional.compute)  # pylint:disable=no-member
+    logger.info("Future key: %s", future.key)
+
+    dd.fire_and_forget(future)
+    return future
+
+
 def _trigger_submission_run(submission, delayed_conditional, *, is_public):
-    submission_run = submission.create_run(is_public=is_public)
+    submission_run = submission.create_run(is_public=is_public, remote=False)
+    return _run(submission_run, delayed_conditional)
+
+
+def _run(submission_run,  delayed_conditional):
     evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
