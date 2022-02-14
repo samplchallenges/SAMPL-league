@@ -100,6 +100,8 @@ STATIC_ROOT = "static"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
+REMOTE_SCHEDULER = False
+
 LOGIN_TO_AWS = False
 
 
