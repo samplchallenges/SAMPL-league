@@ -54,7 +54,7 @@ def test_run_element_mol(molfile_molw_config, benzene_from_mol):
     )
 
     prediction = _run_and_check_evaluation(submission_run, evaluation)
-    assert pytest.approx(prediction.value, 78.046950192)
+    assert prediction.value == pytest.approx(78.046950192)
 
 
 def test_run_element_custom(
@@ -211,7 +211,7 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     evaluation = submission_run.evaluation_set.get()
     assert evaluation.status == models.Status.SUCCESS
     prediction = evaluation.prediction_set.get()
-    assert pytest.approx(prediction.value, 78.046950192)
+    assert prediction_value == pytest.approx(78.046950192)
 
 
 def test_cancel_evaluation_before_run(molfile_molw_config, benzene_from_mol):
