@@ -54,7 +54,7 @@ def test_run_element_mol(molfile_molw_config, benzene_from_mol):
     )
 
     prediction = _run_and_check_evaluation(submission_run, evaluation)
-    assert pytest.approx(prediction.value, 78.046950192)
+    assert prediction.value == pytest.approx(78.046950192)
 
 
 def test_run_element_custom(
@@ -143,7 +143,7 @@ def file_container(challenge_factory, user, db):
     )
 
 
-def test_run_files(file_container, elem_factory, file_answer_key_factory):
+def test_run_files(file_container, elem_factory, file_answer_key_factory, float_answer_key_factory):
     challenge = file_container.challenge
     scoring_container = models.Container.objects.create(
         name="subtraction container",
@@ -176,6 +176,13 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
         key="conformation",
         description="3D output MOL file",
     )
+    molweight_type = models.ValueType.objects.create(
+        challenge=challenge,
+        is_input_flag=False,
+        content_type=ContentType.objects.get_for_model(models.FloatValue),
+        key="molWeight",
+        description="Molecular Weight",
+    )
 
     submission = models.Submission.objects.create(
         name="Conformation Submission",
@@ -196,7 +203,9 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     benzene_answer = file_answer_key_factory(
         challenge, benzene_from_mol, coordsfile_type, "Conformer3D_CID_241.mdl"
     )
-
+    molweight_answer = float_answer_key_factory(
+        challenge, benzene_from_mol, molweight_type, 78.046950192
+    )
     evaluation = models.Evaluation.objects.create(
         input_element=benzene_from_mol, submission_run=submission_run
     )
@@ -210,8 +219,8 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     assert submission_run.evaluation_set.count() == 1
     evaluation = submission_run.evaluation_set.get()
     assert evaluation.status == models.Status.SUCCESS
-    prediction = evaluation.prediction_set.get()
-    assert pytest.approx(prediction.value, 78.046950192)
+    prediction = prediction = evaluation.prediction_set.get(value_type__key="molWeight")
+    assert prediction.value == pytest.approx(78.046950192)
 
 
 def test_cancel_evaluation_before_run(molfile_molw_config, benzene_from_mol):
