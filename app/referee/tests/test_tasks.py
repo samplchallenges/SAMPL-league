@@ -211,8 +211,8 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     evaluation = submission_run.evaluation_set.get()
     assert evaluation.status == models.Status.SUCCESS
     prediction = evaluation.prediction_set.get()
-    #print(evaluation.prediction_set.get.__doc__)
-    #print(evaluation.prediction_set.get.__code__.co_varnames)
+    # print(evaluation.prediction_set.get.__doc__)
+    # print(evaluation.prediction_set.get.__code__.co_varnames)
     print(evaluation.prediction_set.get(content_type="float value"))
     # print(evaluation.prediction_set.get.__doc__)
     # print(evaluation.prediction_set.get.__code__.co_varnames)
