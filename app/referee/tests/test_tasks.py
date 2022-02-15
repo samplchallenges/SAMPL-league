@@ -215,6 +215,7 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     print(dir(prediction))
     print(type(prediction.value))
     print(prediction.value)
+    print(prediction.value.__dict__)
     assert prediction.value == pytest.approx(78.046950192)
 
 
