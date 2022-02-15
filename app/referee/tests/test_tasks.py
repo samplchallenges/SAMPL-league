@@ -176,7 +176,13 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
         key="conformation",
         description="3D output MOL file",
     )
-
+    molWeight_type = models.ValueType.objects.create(
+        challenge=challenge,
+        is_input_flag=False,
+        content_type=ContentType.objects.get_for_model(models.FloatValue),
+        key="molWeight",
+        description="Molecular Weight",
+    )
     submission = models.Submission.objects.create(
         name="Conformation Submission",
         user=file_container.user,
@@ -213,15 +219,7 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     print(submission_run.evaluation_set.all())
     assert evaluation.status == models.Status.SUCCESS
     prediction = evaluation.prediction_set.get()
-    # print(evaluation.prediction_set.get.__doc__)
-    # print(evaluation.prediction_set.get.__code__.co_varnames)
     print(evaluation.prediction_set.all())
-    # print(evaluation.prediction_set.get("molWeight").value)
-    # print(evaluation.prediction_set.get.__doc__)
-    # print(evaluation.prediction_set.get.__code__.co_varnames)
-    print(evaluation.prediction_set.get())
-    print(type(evaluation.prediction_set.get()))
-    print(evaluation.prediction_set.__dict__)
     assert prediction.value == pytest.approx(78.046950192)
 
 
