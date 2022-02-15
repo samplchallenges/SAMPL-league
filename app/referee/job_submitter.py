@@ -1,21 +1,19 @@
 import os
-import sys
 import subprocess
+import sys
 import time
 
+import django
 from dask.distributed import Client
 
-import django
 django.setup()
 from django.conf import settings
 
-from core.models import Status, SubmissionRun
 import referee.tasks as rt
+from core.models import Status, SubmissionRun
 
-
-JOB_SUBMITTER_LIFETIME = 3600 # seconds
-CHECK_INTERVAL = 120 # seconds
-
+JOB_SUBMITTER_LIFETIME = 3600  # seconds
+CHECK_INTERVAL = 120  # seconds
 
 
 def _resubmit_check_for_submission_runs_job():
@@ -25,18 +23,20 @@ def _resubmit_check_for_submission_runs_job():
     print("resubmitted job to queue")
     sys.stdout.flush()
 
+
 def inc(x):
     return x + 1
 
-def check_for_submission_runs(): 
+
+def check_for_submission_runs():
     time_started = time.time()
     num_intervals = 1
 
     client = Client(settings.DASK_SCHEDULER_URL)
-    #x_val = 10
-    #print("Client created")
-    #print("\tinit: x_val = {} should be 10".format(x_val))
-    #sys.stdout.flush()
+    # x_val = 10
+    # print("Client created")
+    # print("\tinit: x_val = {} should be 10".format(x_val))
+    # sys.stdout.flush()
 
     # Any jobs that status.PENDING or status.RUNNING at this point are no longer queued, and need
     # to be re-queued at start up
@@ -51,18 +51,17 @@ def check_for_submission_runs():
         pass
 
     while time.time() - time_started + CHECK_INTERVAL < JOB_SUBMITTER_LIFETIME:
-        
-        #print("check interval {}".format(num_intervals))
-        #print("\ttime:", time.time() - time_started)
-        #x = client.submit(inc, x_val)
-        #x_val = x.result()
-        #print("\tresult: x_val = {} should be 10 + {}".format(x_val, num_intervals))
-        #sys.stdout.flush()
 
-        #import urllib.request
-        #external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
-        #print("\texternal ip:", external_ip)
+        # print("check interval {}".format(num_intervals))
+        # print("\ttime:", time.time() - time_started)
+        # x = client.submit(inc, x_val)
+        # x_val = x.result()
+        # print("\tresult: x_val = {} should be 10 + {}".format(x_val, num_intervals))
+        # sys.stdout.flush()
 
+        # import urllib.request
+        # external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+        # print("\texternal ip:", external_ip)
 
         print("\tprinting pending submissions")
         for run in SubmissionRun.objects.filter(status=Status.CANCELLED):
@@ -77,9 +76,8 @@ def check_for_submission_runs():
         time.sleep(CHECK_INTERVAL)
         sys.stdout.flush()
         num_intervals += 1
-    
 
-    _resubmit_check_for_submission_runs_job() 
+    _resubmit_check_for_submission_runs_job()
     print("exiting this execution")
 
 

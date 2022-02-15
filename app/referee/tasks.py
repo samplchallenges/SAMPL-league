@@ -114,10 +114,12 @@ def _run_evaluations(submission_run, conditional):
         for evaluation in submission_run.evaluation_set.all()
     ]
 
+
 def print_hello_world():
     logger.info("Printing:...")
     logger.info("Hello world!")
     return True
+
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
@@ -145,7 +147,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
     try:
-        '''
+        """
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
             output_dir = None
@@ -180,7 +182,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation,
             evaluation_score_types,
         )
-        '''
+        """
         print_hello_world()
         evaluation.status = models.Status.SUCCESS
     except CancelledException:
