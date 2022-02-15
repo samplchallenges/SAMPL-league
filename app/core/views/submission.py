@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseBadRequest
@@ -6,7 +7,6 @@ from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
-from django.conf import settings
 
 import referee
 import referee.tasks
@@ -83,7 +83,7 @@ def cancel_submissionrun_view(request, pk):
 def submit_submission_view(request, pk):
     if request.method != "POST":
         return HttpResponseBadRequest()
-    submission = Submission.objects.get_object_or_404(pk=pk, user=request.user)
+    submission = get_object_or_404(Submission, pk=pk, user=request.user)
     # verifies that user matches
     if settings.REMOTE_SCHEDULER:
         referee.tasks.enqueue_submission(submission)
