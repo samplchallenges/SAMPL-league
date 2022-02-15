@@ -224,7 +224,7 @@ def test_run_files(
     print(submission_run.evaluation_set.all())
     assert evaluation.status == models.Status.SUCCESS
     # prediction = evaluation.prediction_set.get()
-    print(evaluation.prediction_set.all().filter("molWeight"))
+    print(evaluation.prediction_set.all().filter(key="molWeight"))
     assert prediction.value == pytest.approx(78.046950192)
 
 
