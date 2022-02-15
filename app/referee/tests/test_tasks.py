@@ -209,6 +209,8 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     delayed.compute(scheduler="synchronous")
     assert submission_run.evaluation_set.count() == 1
     evaluation = submission_run.evaluation_set.get()
+
+    print(submission_run.evaluation_set.all())
     assert evaluation.status == models.Status.SUCCESS
     prediction = evaluation.prediction_set.get()
     # print(evaluation.prediction_set.get.__doc__)
