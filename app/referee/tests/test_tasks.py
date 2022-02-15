@@ -214,7 +214,7 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     # print(evaluation.prediction_set.get.__doc__)
     # print(evaluation.prediction_set.get.__code__.co_varnames)
     print(evaluation.prediction_set.all())
-    #print(evaluation.prediction_set.get("molWeight").value)
+    # print(evaluation.prediction_set.get("molWeight").value)
     # print(evaluation.prediction_set.get.__doc__)
     # print(evaluation.prediction_set.get.__code__.co_varnames)
     print(evaluation.prediction_set.get())
