@@ -221,7 +221,7 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory, float_
 
     print(submission_run.evaluation_set.all())
     assert evaluation.status == models.Status.SUCCESS
-    prediction = evaluation.prediction_set.get()
+    #prediction = evaluation.prediction_set.get()
     print(evaluation.prediction_set.all())
     assert prediction.value == pytest.approx(78.046950192)
 
