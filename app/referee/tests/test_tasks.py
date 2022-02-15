@@ -211,11 +211,8 @@ def test_run_files(file_container, elem_factory, file_answer_key_factory):
     evaluation = submission_run.evaluation_set.get()
     assert evaluation.status == models.Status.SUCCESS
     prediction = evaluation.prediction_set.get()
-    print(prediction.__dict__)
-    print(dir(prediction))
-    print(type(prediction.value))
-    print(prediction.value)
-    print(prediction.value.__dict__)
+    print(evaluation.prediction_set)
+    print(evaluation.prediction_set.__dict__)
     assert prediction.value == pytest.approx(78.046950192)
 
 
