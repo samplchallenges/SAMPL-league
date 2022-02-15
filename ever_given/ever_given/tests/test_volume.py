@@ -20,4 +20,4 @@ def test_run_inputfile_only():
 
     assert set(results.keys()) == {"numAtoms", "numBonds", "molWeight"}
     molWeight = float(results["molWeight"].strip())
-    assert pytest.approx(molWeight, 78.046950192)
+    assert molWeight == pytest.approx(78.046950192)
