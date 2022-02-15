@@ -21,9 +21,9 @@ pip freeze > envout
 
 #django-admin runserver >> django-server.log 2>&1 &
 
-dask-scheduler --host 0.0.0.0:8786  >> dask-scheduler.log 2>&1 &
+pipenv run dask-scheduler --host 0.0.0.0:8786  >> dask-scheduler.log 2>&1 &
 
-dask-worker --nthreads 1 --nprocs 1 --preload daskworkerinit.py 127.0.0.1:8786 >> dask-worker.log 2>&1 &
+pipenv run dask-worker --nthreads 1 --nprocs 1 --preload daskworkerinit.py 127.0.0.1:8786 >> dask-worker.log 2>&1 &
 
 pipenv run python referee/job_submitter.py >> outfile 2>&1
 

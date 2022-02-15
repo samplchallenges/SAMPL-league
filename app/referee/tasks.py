@@ -48,7 +48,9 @@ def run_and_score_submission(client, submission):
 def submit_submission_run(client, submission_run):
     delayed_conditional = dask.delayed(True)
     delayed_conditional = _run(submission_run, delayed_conditional)
+    print(delayed_conditional)
     future = client.submit(delayed_conditional.compute)  # pylint:disable=no-member
+    print(future)
     logger.info("Future key: %s", future.key)
 
     dd.fire_and_forget(future)
@@ -95,7 +97,13 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
 
 
 def _run_evaluations(submission_run, conditional):
-    
+    print("in _run_evaluations")
+    for evaluation in submission_run.evaluation_set.all():
+        evaluation.status = models.Status.PENDING
+        evaluation.save(update_fields=["status"])
+    for evaluation in submission_run.evaluation_set.all():
+        print(evaluation)
+
     return [
         run_evaluation(
             submission_run.submission.id,
@@ -106,9 +114,14 @@ def _run_evaluations(submission_run, conditional):
         for evaluation in submission_run.evaluation_set.all()
     ]
 
+def print_hello_world():
+    logger.info("Printing:...")
+    logger.info("Hello world!")
+    return True
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
+    print("in run_evaluation")
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     challenge = submission.challenge
@@ -132,6 +145,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
     try:
+        '''
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
             output_dir = None
@@ -166,6 +180,8 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation,
             evaluation_score_types,
         )
+        '''
+        print_hello_world()
         evaluation.status = models.Status.SUCCESS
     except CancelledException:
         evaluation.status = models.Status.CANCELLED

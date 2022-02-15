@@ -53,7 +53,7 @@ ROLLBAR = {
     "branch": "main",
     "root": str(BASE_DIR),
 }
-
+'''
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -93,4 +93,5 @@ LOGGING = {
         },
     },
 }
+'''
 LOGIN_TO_AWS = True
