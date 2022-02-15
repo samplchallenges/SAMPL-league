@@ -143,7 +143,9 @@ def file_container(challenge_factory, user, db):
     )
 
 
-def test_run_files(file_container, elem_factory, file_answer_key_factory, float_answer_key_factory):
+def test_run_files(
+    file_container, elem_factory, file_answer_key_factory, float_answer_key_factory
+):
     challenge = file_container.challenge
     scoring_container = models.Container.objects.create(
         name="subtraction container",
