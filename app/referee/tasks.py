@@ -115,33 +115,66 @@ def _run_evaluations(submission_run, conditional):
     ]
 
 def print_hello_world():
-    logger.info("Printing:...")
-    logger.info("Hello world!")
-    return True
+    import subprocess
+    import os
+    pyfile = "/data/homezvol0/osatom/print_hello_world.py"
+    print("FILE EXISTS:", os.path.exists(pyfile))
+    os.system(f"python {pyfile}")
+    result = subprocess.check_output(f"python {pyfile}", shell=True)
+    
+    return result
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
     print("in run_evaluation")
+    import sys
+    sys.stdout.flush()
+    print("before submission get")
+    sys.stdout.flush()
     submission = models.Submission.objects.get(pk=submission_id)
+    print("after submission get")
+    sys.stdout.flush()
+    print("submission:", submission)
     container = submission.container
+    print("container:", container)
+    sys.stdout.flush()
     challenge = submission.challenge
+    print("challenge:", challenge)
+    sys.stdout.flush()
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
-
+    print("sub run:", submission_run) 
+    sys.stdout.flush()
     if not conditional or submission_run.check_cancel_requested():
         models.Evaluation.objects.filter(pk=evaluation_id).update(
             status=models.Status.CANCELLED
         )
         return models.Status.CANCELLED
-
+    print("after conditional checking for cancel")
+    sys.stdout.flush()
     evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
-
+    print("eval score type:", evaluation_score_types)
+    sys.stdout.flush()
     evaluation = submission_run.evaluation_set.get(pk=evaluation_id)
+    print("evaluation:", evaluation)
+    sys.stdout.flush()
     element = evaluation.input_element
-
+    print("element:", element)
+    print("element dict:", element.__dict__)
+    sys.stdout.flush()
     output_file_keys = challenge.output_file_keys()
-
-    kwargs, file_kwargs = element.all_values()
+    print("out file keys:", output_file_keys)
+    sys.stdout.flush()
+    try:
+        kwargs, file_kwargs = element.all_values()
+    except Exception as e:
+        print(e)
+        sys.stdout.flush()
+        return
+    print("before mark_started")
+    sys.stdout.flush()
     evaluation.mark_started(kwargs, file_kwargs)
+    print("mark_started: done")
+    sys.stdout.flush()
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
     try:
@@ -181,7 +214,10 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation_score_types,
         )
         '''
-        print_hello_world()
+        output = print_hello_world()
+        evaluation.append(stdout=str(output))
+        evaluation.append(stderr=str(output))
+        
         evaluation.status = models.Status.SUCCESS
     except CancelledException:
         evaluation.status = models.Status.CANCELLED

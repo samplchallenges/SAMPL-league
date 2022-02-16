@@ -66,7 +66,7 @@ def check_for_submission_runs():
 
         print("\tprinting pending submissions")
         for run in SubmissionRun.objects.filter(status=Status.CANCELLED):
-            if run.id != 501:
+            if run.id != 523:
                 continue
             print("\t\t", run)
             run.status = Status.PENDING
