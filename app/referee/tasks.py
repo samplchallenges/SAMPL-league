@@ -116,13 +116,14 @@ def _run_evaluations(submission_run, conditional):
 
 
 def print_hello_world():
-    import subprocess
     import os
+    import subprocess
+
     pyfile = "/data/homezvol0/osatom/print_hello_world.py"
     print("FILE EXISTS:", os.path.exists(pyfile))
     os.system(f"python {pyfile}")
     result = subprocess.check_output(f"python {pyfile}", shell=True)
-    
+
     return result
 
 
@@ -130,6 +131,7 @@ def print_hello_world():
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
     print("in run_evaluation")
     import sys
+
     sys.stdout.flush()
     print("before submission get")
     sys.stdout.flush()
@@ -144,7 +146,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
     print("challenge:", challenge)
     sys.stdout.flush()
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
-    print("sub run:", submission_run) 
+    print("sub run:", submission_run)
     sys.stdout.flush()
     if not conditional or submission_run.check_cancel_requested():
         models.Evaluation.objects.filter(pk=evaluation_id).update(
@@ -219,7 +221,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
         output = print_hello_world()
         evaluation.append(stdout=str(output))
         evaluation.append(stderr=str(output))
-        
+
         evaluation.status = models.Status.SUCCESS
     except CancelledException:
         evaluation.status = models.Status.CANCELLED
