@@ -18,6 +18,7 @@ sampl = {path = "."}
 rollbar = "*"
 jupyterlab = "*"
 ipython = "<8.0"
+dask-jobqueue = "*"
 
 [dev-packages]
 black = "*"

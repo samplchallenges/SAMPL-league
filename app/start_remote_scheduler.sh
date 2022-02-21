@@ -5,26 +5,30 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --account=DMOBLEY_LAB
-#SBATCH --error=pop.e
 #SBATCH --time=01:00:00
-#SBATCH --mem-per-cpu=4000
+#SBATCH --mem-per-cpu=1000
 #SBATCH --mail-type=FAIL
+#SBATCH --error=/data/homezvol0/osatom/sampl-app-extras/logs/start_remote_scheduler.sh.e
+#SBATCH --output=/data/homezvol0/osatom/sampl-app-extras/logs/start_remote_scheduler.sh.o
+#SBATCH --open-mode=append
+
+echo JOB ID: $SLURM_JOBID
+echo JOB ID: $SLURM_JOBID 1>&2
 
 . ~/.bashrc
 
-cd $SLURM_SUBMIT_DIR
+cd /data/homezvol0/osatom/SAMPL-league/app
+echo cd SAMPL-league/app
+
+echo activating environment
 pipenv shell
 
-source setlocal.sh
+echo setting environment variables
+source /data/homezvol0/osatom/sampl-app-extras/env/setlocal.sh
 
 pip freeze > envout
 
-#django-admin runserver >> django-server.log 2>&1 &
-
-pipenv run dask-scheduler --host 0.0.0.0:8786  >> /data/homezvol0/osatom/sampl-app-extras/logs/dask-scheduler.log 2>&1 &
-
-pipenv run dask-worker --nthreads 1 --nprocs 1 --preload daskworkerinit.py 127.0.0.1:8786 >> /data/homezvol0/osatom/sampl-app-extras/logs/dask-worker.log 2>&1 &
-
+echo running job_submitter.py
 pipenv run python referee/job_submitter.py >> outfile 2>&1
 
 exit 0
