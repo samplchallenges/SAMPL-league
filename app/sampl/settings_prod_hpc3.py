@@ -3,6 +3,7 @@ from .settings_prod import *  # lgtm [py/polluting-import]
 BASE_DIR = Path("/data/homezvol0/osatom/")
 MEDIA_ROOT = BASE_DIR / "sampl-app-extras/media"
 LOGS_ROOT = BASE_DIR / "sampl-app-extras/logs"
+SAMPL_ROOT = BASE_DIR / "SAMPL-league/"
 
 # This settings file is on the dask workers, scheduler, and for the job that submits dask tasks
 REMOTE_SCHEDULER = False
@@ -11,11 +12,10 @@ REMOTE_SCHEDULER = False
 # Dask SLURMCluster Settings
 MINIMUM_WORKERS = 0 
 MAXIMUM_WORKERS = 1 
-JOB_SUBMITTER_LIFETIME = 60*6 # in seconds (1 hr)
+
+# HPC3 Job Submitter Settings
+JOB_SUBMITTER_LIFETIME = 60*60 # in seconds (1 hr)
 CHECK_INTERVAL = 60 # in seconds (5 min)
-
-
-
 
 
 LOGGING = {
@@ -51,6 +51,11 @@ LOGGING = {
             "propagate": False,
         },
         "ever_given": {
+            "handlers": ["file", "rollbar"],
+            "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+        "job_submitter": {
             "handlers": ["file", "rollbar"],
             "level": os.getenv("SAMPL_LOG_LEVEL", "INFO"),
             "propagate": False,

@@ -15,13 +15,16 @@ from django.conf import settings
 import referee.tasks as rt
 from core.models import Status, SubmissionRun
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("job_submitter")
 logger.setLevel(logging.DEBUG)
 
 
 def _resubmit_check_for_submission_runs_job():
-    scheduler_submission_script = settings.BASE_DIR / "SAMPL-league/app/start_remote_scheduler.sh"
-    jobid = subprocess.check_output(f"sbatch {scheduler_submission_script}")
+    scheduler_submission_script = settings.SAMPL_ROOT / "app/start_remote_scheduler.sh"
+    jobid = subprocess.check_output(
+                f"sbatch {scheduler_submission_script}",
+                shell = True
+            )
     return jobid
 
 
@@ -44,33 +47,38 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
             logger.debug(f"Added run={run.id}")
             run.status = Status.PENDING
             run.save(update_fields=["status"])
-            
+            for evaluation in run.evaluation_set.all():
+                if evaluation.status == Status.CANCELLED:
+                    evaluation.status = Status.PENDING
+                    evaluation.save(update_fields=["status"])
             rt.submit_submission_run(client, run)
         time.sleep(check_interval)
         n += 1
 
 
 def reset_unfinished_to_pending_submission():
-    for run in SubmissionRun.objects.filter(status=Status.PENDING):
-        if run.id != 545 and run.id != 547:
-            continue
-        logger.debug(f"Resetting back to CANCELLED: {run.id}")
-        run.status = Status.CANCELLED
-        run.save(update_fields=["status"])
-        rt.submit_submission_run(client, run)
-    
+    for submission_run in SubmissionRun.objects.filter(status=Status.PENDING):
+        logger.debug(f"Resetting PENDING back to PENDING_REMOTE: {submission_run.id}")
+        submission_run.status = Status.CANCELLED #Status.PENDING_REMOTE
+        submission_run.save(update_fields=["status"])
+        for evaluation in submission_run.evaluation_set.all():
+            if evaluation.status == Status.RUNNING:
+                logger.debug(f"   Resetting RUNNING back to PENDING: {evaluation.id}") 
+                evaluation.status = Status.PENDING
+                evaluation.save(update_fields=["status"])
 
 if __name__ == "__main__":
     start_time = time.time()
-    logger.info(f"Starting job_submitter.py at {start_time}")
+    logger.info(f"Starting job_submitter.py at {time.ctime(start_time)}")
 
-    jobqueue_config_file = settings.BASE_DIR / "SAMPL-league/app/referee/jobqueue.yaml"
-    cluster = start_cluster(jobqueue_config_file)
+    jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
     
+    cluster = start_cluster(jobqueue_config_file)
+
     logger.debug(f"Min: {settings.MINIMUM_WORKERS}; Max: {settings.MAXIMUM_WORKERS}") 
     cluster.adapt(
-        minimum=settings.MINIMUM_WORKERS, 
-        maximum=settings.MAXIMUM_WORKERS
+        minimum_jobs=settings.MINIMUM_WORKERS, 
+        maximum_jobs=settings.MAXIMUM_WORKERS
     )
 
     client = Client(cluster)

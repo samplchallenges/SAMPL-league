@@ -46,7 +46,6 @@ def run_and_score_submission(client, submission):
 
 
 def submit_submission_run(client, submission_run):
-    logger.info("in submit_submission_run")
     delayed_conditional = dask.delayed(True)
     delayed_conditional = _run(submission_run, delayed_conditional)
     future = client.submit(delayed_conditional.compute)  # pylint:disable=no-member
@@ -62,15 +61,12 @@ def _trigger_submission_run(submission, delayed_conditional, *, is_public):
 
 
 def _run(submission_run, delayed_conditional):
-    print("in _run")
     evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses):
-    print("in check_and_score")
-    """
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     uniq_statuses = set(evaluation_statuses)
     if not delayed_conditional:
@@ -94,35 +90,24 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
         return False
     submission_run.append(stdout="Running check_and_score")
     scoring.score_submission_run(submission_run)
-    """
     return True
 
 
 def _run_evaluations(submission_run, conditional):
-    print("in _run_evaluations")
+    statuses = []
     for evaluation in submission_run.evaluation_set.all():
-        evaluation.status = models.Status.PENDING
-        evaluation.save(update_fields=["status"])
-        #logger.info(str(evaluation))
-
-    return [
-        run_evaluation(
-            submission_run.submission.id,
-            evaluation.id,
-            submission_run.id,
-            conditional=conditional,
-        )
-        for evaluation in submission_run.evaluation_set.all()
-    ]
+        if evaluation.status == models.Status.PENDING:
+            statuses.append(run_evaluation(submission_run.submission.id,evaluation.id,submission_run.id,conditional=conditional,))
+    return statuses
 
 
 # NEW STARTS
 def print_hello_world():
-    print("in print_hello_world")
+    logging.info("in print_hello_world")
     import os
     import subprocess
     pyfile = "/data/homezvol0/osatom/print_hello_world.py"
-    logger.info("FILE EXISTS:", os.path.exists(pyfile))
+    logger.info(f"FILE EXISTS: {os.path.exists(pyfile)}")
     result = subprocess.check_output(f"python {pyfile}", shell=True)
 
     return result
@@ -130,8 +115,6 @@ def print_hello_world():
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
-    print("In run_evaluation")
-    # I think these gets are the ones causing issues because Dask can't decode the binary
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     challenge = submission.challenge
