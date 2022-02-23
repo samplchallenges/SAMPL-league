@@ -3,12 +3,12 @@
 jobqueue:
   slurm:
     name: dskworker
-    
+
     # Dask worker options
     cores: 1                   # Total number of cores per job
     memory: '2 GB'              # Total amount of memory per job
     processes: 1                # Number of Python processes per job
-    
+
     #interface: null             # Network interface to use like eth0 or ib0
     death_timeout: 60           # Number of seconds to wait if a worker can not find a scheduler
     #local_directory: null       # Location of fast local storage like /scratch or $TMPDIR
@@ -27,9 +27,8 @@ jobqueue:
     job_extra: [
       "--error=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker-%j.err",
       "--output=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker-%j.out",
-      #"--open-mode=append",      
+      #"--open-mode=append",
     ]
     #log-directory: null
 
     scheduler_options: {}
-
