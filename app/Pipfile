@@ -19,6 +19,7 @@ rollbar = "*"
 jupyterlab = "*"
 ipython = "<8.0"
 dask-jobqueue = "*"
+awscli = "*"
 
 [dev-packages]
 black = "*"

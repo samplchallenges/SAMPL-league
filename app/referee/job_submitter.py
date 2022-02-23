@@ -41,16 +41,10 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     logger.debug(f"Checking for submissions every {check_interval} seconds over {job_lifetime} seconds")
     while time.time() - start_time + (1.5*check_interval) < job_lifetime:
         logger.debug(f"Checking for submission runs n={n}")
-        for run in SubmissionRun.objects.filter(status=Status.CANCELLED):
-            if run.id < 549 or run.id % 2 == 0:
-                continue
+        for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
             logger.debug(f"Added run={run.id}")
             run.status = Status.PENDING
             run.save(update_fields=["status"])
-            for evaluation in run.evaluation_set.all():
-                if evaluation.status == Status.CANCELLED:
-                    evaluation.status = Status.PENDING
-                    evaluation.save(update_fields=["status"])
             rt.submit_submission_run(client, run)
         time.sleep(check_interval)
         n += 1
@@ -59,13 +53,14 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
 def reset_unfinished_to_pending_submission():
     for submission_run in SubmissionRun.objects.filter(status=Status.PENDING):
         logger.debug(f"Resetting PENDING back to PENDING_REMOTE: {submission_run.id}")
-        submission_run.status = Status.CANCELLED #Status.PENDING_REMOTE
+        submission_run.status = Status.PENDING_REMOTE
         submission_run.save(update_fields=["status"])
         for evaluation in submission_run.evaluation_set.all():
             if evaluation.status == Status.RUNNING:
                 logger.debug(f"   Resetting RUNNING back to PENDING: {evaluation.id}") 
                 evaluation.status = Status.PENDING
                 evaluation.save(update_fields=["status"])
+
 
 if __name__ == "__main__":
     start_time = time.time()

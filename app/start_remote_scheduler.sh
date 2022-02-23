@@ -24,9 +24,6 @@ echo JOB ID: $SLURM_JOBID 1>&2
 echo CD into SAMPL-league/app
 cd /data/homezvol0/osatom/SAMPL-league/app
 
-echo Activating environment
-pipenv shell
-
 echo Setting environment variables
 source /data/homezvol0/osatom/sampl-app-extras/env/setlocal.sh
 
