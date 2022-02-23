@@ -97,7 +97,14 @@ def _run_evaluations(submission_run, conditional):
     statuses = []
     for evaluation in submission_run.evaluation_set.all():
         if evaluation.status == models.Status.PENDING:
-            statuses.append(run_evaluation(submission_run.submission.id,evaluation.id,submission_run.id,conditional=conditional,))
+            statuses.append(
+                run_evaluation(
+                    submission_run.submission.id,
+                    evaluation.id,
+                    submission_run.id,
+                    conditional=conditional,
+                )
+            )
     return statuses
 
 
@@ -106,12 +113,16 @@ def print_hello_world():
     logging.info("in print_hello_world")
     import os
     import subprocess
+
     pyfile = "/data/homezvol0/osatom/print_hello_world.py"
     logger.info(f"FILE EXISTS: {os.path.exists(pyfile)}")
     result = subprocess.check_output(f"python {pyfile}", shell=True)
 
     return result
+
+
 # NEW ENDS
+
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
@@ -128,9 +139,9 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
     evaluation = submission_run.evaluation_set.get(pk=evaluation_id)
     element = evaluation.input_element
     output_file_keys = challenge.output_file_keys()
-    
+
     kwargs, file_kwargs = element.all_values()
-    
+
     evaluation.mark_started(kwargs, file_kwargs)
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
@@ -177,7 +188,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation,
             evaluation_score_types,
         )
-        
+
         evaluation.status = models.Status.SUCCESS
     except CancelledException:
         evaluation.status = models.Status.CANCELLED

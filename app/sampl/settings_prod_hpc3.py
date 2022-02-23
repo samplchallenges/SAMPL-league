@@ -10,12 +10,12 @@ REMOTE_SCHEDULER = False
 
 
 # Dask SLURMCluster Settings
-MINIMUM_WORKERS = 0 
-MAXIMUM_WORKERS = 1 
+MINIMUM_WORKERS = 0
+MAXIMUM_WORKERS = 1
 
 # HPC3 Job Submitter Settings
-JOB_SUBMITTER_LIFETIME = 60*60 # in seconds (1 hr)
-CHECK_INTERVAL = 60 # in seconds (5 min)
+JOB_SUBMITTER_LIFETIME = 60 * 60  # in seconds (1 hr)
+CHECK_INTERVAL = 60  # in seconds (5 min)
 
 
 LOGGING = {
