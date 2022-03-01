@@ -105,6 +105,8 @@ def _run_evaluations(submission_run, conditional):
                     conditional=conditional,
                 )
             )
+        else: 
+            statuses.append(evaluation.status)
     return statuses
 
 
@@ -115,12 +117,10 @@ def print_hello_world():
     import subprocess
 
     pyfile = "/data/homezvol0/osatom/print_hello_world.py"
-    logger.info(f"FILE EXISTS: {os.path.exists(pyfile)}")
+    logger.info("FILE EXISTS: %d", os.path.exists(pyfile))
     result = subprocess.check_output(f"python {pyfile}", shell=True)
 
     return result
-
-
 # NEW ENDS
 
 
@@ -135,6 +135,10 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             status=models.Status.CANCELLED
         )
         return models.Status.CANCELLED
+    if submission_run.status == models.Status.PENDING:
+        submission_run.status = models.Status.RUNNING
+        submission_run.save(update_fields=["status"])
+
     evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
     evaluation = submission_run.evaluation_set.get(pk=evaluation_id)
     element = evaluation.input_element
@@ -149,13 +153,12 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
             output_dir = None
-            """
+            
             # NEW STARTS
-            output = print_hello_world()
-            evaluation.append(stdout=str(output))
-            evaluation.append(stderr=str(output))
+            #output = print_hello_world()
+            #evaluation.append(stdout=str(output))
+            #evaluation.append(stderr=str(output))
             # NEW ENDS
-            """
 
             if output_file_keys:
                 output_dir = dirpath / "output"
@@ -188,6 +191,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation,
             evaluation_score_types,
         )
+            #"""
 
         evaluation.status = models.Status.SUCCESS
     except CancelledException:

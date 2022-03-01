@@ -19,7 +19,7 @@ logger = logging.getLogger("job_submitter")
 logger.setLevel(logging.DEBUG)
 
 
-def _resubmit_check_for_submission_runs_job():
+def resubmit_check_for_submission_runs_job():
     scheduler_submission_script = settings.SAMPL_ROOT / "app/start_remote_scheduler.sh"
     jobid = subprocess.check_output(f"sbatch {scheduler_submission_script}", shell=True)
     return jobid
@@ -35,40 +35,39 @@ def start_cluster(jobqueue_config_file):
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     n = 0
     logger.debug(
-        f"Checking for submissions every {check_interval} seconds over {job_lifetime} seconds"
+        "Checking for submissions every %d seconds over %d seconds"
     )
     while time.time() - start_time + (1.5 * check_interval) < job_lifetime:
-        logger.debug(f"Checking for submission runs n={n}")
+        logger.debug("Checking for submission runs n=%d", n)
         for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
-            logger.debug(f"Added run={run.id}")
+            logger.debug("Added run=%d", run.id)
             run.status = Status.PENDING
-            run.save(update_fields=["status"])
             rt.submit_submission_run(client, run)
         time.sleep(check_interval)
         n += 1
 
 
 def reset_unfinished_to_pending_submission():
-    for submission_run in SubmissionRun.objects.filter(status=Status.PENDING):
-        logger.debug(f"Resetting PENDING back to PENDING_REMOTE: {submission_run.id}")
+    for submission_run in SubmissionRun.objects.filter(Q(status=Status.PENDING) | Q(status=Status.RUNNING)):
+        logger.debug("Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d", submission_run.id)
         submission_run.status = Status.PENDING_REMOTE
         submission_run.save(update_fields=["status"])
         for evaluation in submission_run.evaluation_set.all():
             if evaluation.status == Status.RUNNING:
-                logger.debug(f"   Resetting RUNNING back to PENDING: {evaluation.id}")
+                logger.debug("   Resetting RUNNING back to PENDING: %d", evaluation.id)
                 evaluation.status = Status.PENDING
                 evaluation.save(update_fields=["status"])
 
 
 if __name__ == "__main__":
     start_time = time.time()
-    logger.info(f"Starting job_submitter.py at {time.ctime(start_time)}")
+    logger.info("Starting job_submitter.py at %s", time.ctime(start_time))
 
     jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
 
     cluster = start_cluster(jobqueue_config_file)
 
-    logger.debug(f"Min: {settings.MINIMUM_WORKERS}; Max: {settings.MAXIMUM_WORKERS}")
+    logger.debug("Min: %d; Max: %d", settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS)
     cluster.adapt(
         minimum_jobs=settings.MINIMUM_WORKERS, maximum_jobs=settings.MAXIMUM_WORKERS
     )
@@ -90,5 +89,5 @@ if __name__ == "__main__":
     # pending submission to queue so next instance of scheduler will requeue them
     reset_unfinished_to_pending_submission()
 
-    jobid = _resubmit_check_for_submission_runs_job()
-    logger.info(f"Resubmitting start_remote_scheduler.sh - JOB ID: {jobid}")
+    jobid = resubmit_check_for_submission_runs_job()
+    logger.info("Resubmitting start_remote_scheduler.sh - JOB ID: %d", jobid)

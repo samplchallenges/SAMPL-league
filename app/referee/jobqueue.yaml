@@ -25,8 +25,8 @@ jobqueue:
     #job-cpu: null
     #job-mem: null
     job_extra: [
-      "--error=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker-%j.err",
-      "--output=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker-%j.out",
+      "--error=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker/dask-worker-%j.err",
+      "--output=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker/dask-worker-%j.out",
       #"--open-mode=append",
     ]
     #log-directory: null
