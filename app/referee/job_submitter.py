@@ -34,9 +34,7 @@ def start_cluster(jobqueue_config_file):
 
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     n = 0
-    logger.debug(
-        "Checking for submissions every %d seconds over %d seconds"
-    )
+    logger.debug("Checking for submissions every %d seconds over %d seconds")
     while time.time() - start_time + (1.5 * check_interval) < job_lifetime:
         logger.debug("Checking for submission runs n=%d", n)
         for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
@@ -48,8 +46,13 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
 
 
 def reset_unfinished_to_pending_submission():
-    for submission_run in SubmissionRun.objects.filter(Q(status=Status.PENDING) | Q(status=Status.RUNNING)):
-        logger.debug("Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d", submission_run.id)
+    for submission_run in SubmissionRun.objects.filter(
+        Q(status=Status.PENDING) | Q(status=Status.RUNNING)
+    ):
+        logger.debug(
+            "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
+            submission_run.id,
+        )
         submission_run.status = Status.PENDING_REMOTE
         submission_run.save(update_fields=["status"])
         for evaluation in submission_run.evaluation_set.all():
