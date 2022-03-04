@@ -105,7 +105,7 @@ def _run_evaluations(submission_run, conditional):
                     conditional=conditional,
                 )
             )
-        else: 
+        else:
             statuses.append(evaluation.status)
     return statuses
 
@@ -121,6 +121,8 @@ def print_hello_world():
     result = subprocess.check_output(f"python {pyfile}", shell=True)
 
     return result
+
+
 # NEW ENDS
 
 
@@ -153,11 +155,11 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
             output_dir = None
-            
+
             # NEW STARTS
-            #output = print_hello_world()
-            #evaluation.append(stdout=str(output))
-            #evaluation.append(stderr=str(output))
+            # output = print_hello_world()
+            # evaluation.append(stdout=str(output))
+            # evaluation.append(stderr=str(output))
             # NEW ENDS
 
             if output_file_keys:
@@ -191,7 +193,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation,
             evaluation_score_types,
         )
-            #"""
+        # """
 
         evaluation.status = models.Status.SUCCESS
     except CancelledException:
