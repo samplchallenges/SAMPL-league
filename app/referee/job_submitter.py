@@ -21,7 +21,9 @@ logger.setLevel(logging.DEBUG)
 
 def resubmit_check_for_submission_runs_job():
     scheduler_submission_script = settings.SAMPL_ROOT / "app/start_remote_scheduler.sh"
-    jobid_sub_bytes = subprocess.check_output(f"sbatch {scheduler_submission_script}", shell=True)
+    jobid_sub_bytes = subprocess.check_output(
+        f"sbatch {scheduler_submission_script}", shell=True
+    )
     # jobid_sub_bytes is a bytes string that looks like b'Submitted batch job 11163505\n'
     return str(jobid_sub_bytes)
 
@@ -49,12 +51,17 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
 def reset_unfinished_to_pending_submission():
     for status in [Status.PENDING, Status.RUNNING]:
         for submission_run in SubmissionRun.objects.filter(status=status):
-            logger.debug("Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d", submission_run.id)
+            logger.debug(
+                "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
+                submission_run.id,
+            )
             submission_run.status = Status.PENDING_REMOTE
             submission_run.save(update_fields=["status"])
             for evaluation in submission_run.evaluation_set.all():
                 if evaluation.status == Status.RUNNING:
-                    logger.debug("   Resetting RUNNING back to PENDING: %d", evaluation.id)
+                    logger.debug(
+                        "   Resetting RUNNING back to PENDING: %d", evaluation.id
+                    )
                     evaluation.status = Status.PENDING
                     evaluation.save(update_fields=["status"])
 
