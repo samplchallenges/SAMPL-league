@@ -7,7 +7,9 @@ from django.core.management import call_command
 from django.db import transaction
 
 from core import models
-from referee import scoring, tasks
+from referee import scoring, tasks, job_submitter
+
+import time
 
 
 @pytest.mark.django_db(transaction=True)
@@ -221,7 +223,7 @@ def test_run_files(
     assert submission_run.evaluation_set.count() == 1
     evaluation = submission_run.evaluation_set.get()
     assert evaluation.status == models.Status.SUCCESS
-    prediction = prediction = evaluation.prediction_set.get(value_type__key="molWeight")
+    prediction = evaluation.prediction_set.get(value_type__key="molWeight")
     assert prediction.value == pytest.approx(78.046950192)
 
 
@@ -252,3 +254,59 @@ def test_cancel_submission_before_run(molfile_molw_config, benzene_from_mol):
     result = delayed_conditional.compute(scheduler="synchronous")
     assert result is False
     assert submission.last_public_run().status == models.Status.CANCELLED
+
+@pytest.mark.django_db(transaction=True)
+def test_submit_submission_run(client):
+    processes = True
+    if processes:
+        transaction.commit()
+        call_command("migrate", "core", "zero", interactive=False)
+        call_command("migrate", "core", interactive=False)
+        call_command("sample_data")
+        transaction.commit()
+    else:
+        call_command("sample_data")
+
+    submission = models.Submission.objects.first()
+    tasks.enqueue_submission(submission)
+
+    cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+    dask_client = dd.Client(cluster)
+
+    for submission_run in models.SubmissionRun.objects.filter(status=models.Status.PENDING_REMOTE):
+        submission_run.status = models.Status.PENDING
+        submission_run.save(update_fields=["status"])
+        future = tasks.submit_submission_run(dask_client, submission_run)
+        result = future.result()
+        print(submission_run.status)
+        assert result
+
+
+@pytest.mark.django_db(transaction=True)
+def test_check_for_submission_runs(client):
+    processes = True
+    if processes:
+        transaction.commit()
+        call_command("migrate", "core", "zero", interactive=False)
+        call_command("migrate", "core", interactive=False)
+        call_command("sample_data")
+        transaction.commit()
+    else:
+        call_command("sample_data")
+
+    submission = models.Submission.objects.first()
+    tasks.enqueue_submission(submission)
+
+    cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+    dask_client = dd.Client(cluster)
+
+    job_submitter.check_for_submission_runs(time.time(), dask_client, 3, 15)
+
+    submission_run = models.SubmissionRun.objects.get(pk=2)
+    assert submission_run.status = models.Status.SUCCESS
+    submission_run = models.SubmissionRun.objects.get(pk=3)
+    assert submission_run.status = models.Status.SUCCESS
+    #submission_run = models.SubmissionRun.objects.first()
+    #assert submission_run.status == models.Status.SUCCESS
+
+

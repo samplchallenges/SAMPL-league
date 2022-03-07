@@ -43,6 +43,7 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
         for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
             logger.debug("Added run=%d", run.id)
             run.status = Status.PENDING
+            run.save(update_fields=["status"])
             rt.submit_submission_run(client, run)
         time.sleep(check_interval)
         n += 1
