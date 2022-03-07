@@ -359,15 +359,9 @@ def test_remote_scheduler(client):
     client.force_login(submission.user)
     container = submission.container
     response = client.post(f"/submission/{submission.pk}/submit/", {})
-    assert response.url == reverse(
-        "submission-detail", kwargs={"pk": submission.pk}
-    )
+    assert response.url == reverse("submission-detail", kwargs={"pk": submission.pk})
     assert response.status_code == 302
     detail_url = response.url
     response = client.get(detail_url)
     public_run = response.context["public_run"]
     assert public_run.status == Status.PENDING_REMOTE
-
-    
-
-

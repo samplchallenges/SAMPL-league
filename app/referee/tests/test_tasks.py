@@ -1,3 +1,4 @@
+import time
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
@@ -7,9 +8,7 @@ from django.core.management import call_command
 from django.db import transaction
 
 from core import models
-from referee import scoring, tasks, job_submitter
-
-import time
+from referee import job_submitter, scoring, tasks
 
 
 @pytest.mark.django_db(transaction=True)
@@ -255,6 +254,7 @@ def test_cancel_submission_before_run(molfile_molw_config, benzene_from_mol):
     assert result is False
     assert submission.last_public_run().status == models.Status.CANCELLED
 
+
 @pytest.mark.django_db(transaction=True)
 def test_submit_submission_run(client):
     processes = True
@@ -273,7 +273,9 @@ def test_submit_submission_run(client):
     cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
     dask_client = dd.Client(cluster)
 
-    for submission_run in models.SubmissionRun.objects.filter(status=models.Status.PENDING_REMOTE):
+    for submission_run in models.SubmissionRun.objects.filter(
+        status=models.Status.PENDING_REMOTE
+    ):
         submission_run.status = models.Status.PENDING
         submission_run.save(update_fields=["status"])
         future = tasks.submit_submission_run(dask_client, submission_run)
@@ -306,7 +308,5 @@ def test_check_for_submission_runs(client):
     assert submission_run.status == models.Status.SUCCESS
     submission_run = models.SubmissionRun.objects.get(pk=3)
     assert submission_run.status == models.Status.SUCCESS
-    #submission_run = models.SubmissionRun.objects.first()
-    #assert submission_run.status == models.Status.SUCCESS
-
-
+    # submission_run = models.SubmissionRun.objects.first()
+    # assert submission_run.status == models.Status.SUCCESS
