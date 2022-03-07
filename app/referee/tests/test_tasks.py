@@ -303,9 +303,9 @@ def test_check_for_submission_runs(client):
     job_submitter.check_for_submission_runs(time.time(), dask_client, 3, 15)
 
     submission_run = models.SubmissionRun.objects.get(pk=2)
-    assert submission_run.status = models.Status.SUCCESS
+    assert submission_run.status == models.Status.SUCCESS
     submission_run = models.SubmissionRun.objects.get(pk=3)
-    assert submission_run.status = models.Status.SUCCESS
+    assert submission_run.status == models.Status.SUCCESS
     #submission_run = models.SubmissionRun.objects.first()
     #assert submission_run.status == models.Status.SUCCESS
 
