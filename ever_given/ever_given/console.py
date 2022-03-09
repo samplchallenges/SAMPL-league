@@ -14,6 +14,7 @@ python evergiven robbason/calc-coords:latest --file-molfile tests/data/ChEBI_167
 
 
 def main():
+    # add in an engine argument for either "singularity" or "docker"
     parser = argparse.ArgumentParser("evergiven")
     parser.add_argument("container_uri")
     parser.add_argument("--command", default="")
@@ -66,6 +67,7 @@ def main():
         command=args.command,
         file_kwargs=file_kwargs,
         kwargs=kwargs,
+        engine_name="singularity",
         output_dir=str(output_dir),
         output_file_keys=output_file_keys,
     ):
