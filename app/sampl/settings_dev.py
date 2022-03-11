@@ -45,4 +45,3 @@ else:
 
 LOGIN_TO_AWS = True
 AWS_LOGIN_FUNCTION = run_aws_login_singularity
-
