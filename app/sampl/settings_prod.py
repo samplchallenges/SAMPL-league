@@ -95,3 +95,4 @@ LOGGING = {
 }
 
 LOGIN_TO_AWS = True
+CONTAINER_ENGINE = "singularity"

@@ -93,13 +93,14 @@ class SingularityEngine(Engine):
         return SingularityContainerInstance(process, container_uri)
 
     @classmethod
-    def make_uri(container_uri, container_type):
-        if container_type == "Docker":
+    def make_uri(cls, container_uri, container_type):
+        print(container_type)
+        if container_type == "docker":
             return f"docker://{container_uri}"
-        elif container_type == "Singularity":
+        elif container_type == "singularity":
             return f"shub://{container_uri}"
         else:
-            raise UnsupportedContainerException
+            raise Exception("Container Type Not Implemented")
 
 def _build_singularity_command(bind_volumes, container_uri, command_list):
     #  TODO: how to decide when to load Nvidia drivers?

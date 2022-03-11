@@ -42,3 +42,7 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+
+LOGIN_TO_AWS = True
+AWS_LOGIN_FUNCTION = run_aws_login_singularity
+

@@ -149,6 +149,12 @@ class Container(Timestamped):
     name = models.CharField(max_length=255)
     user = models.ForeignKey(auth_models.User, on_delete=models.CASCADE)
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    # below needs to be singularity container uri prefix 
+    #  * "docker://"
+    #  * "gh://" (not sure about this one)
+    #  * "shub://" (no longer active)
+    #  * "oci://" (not sure of the use for this one)
+    #  * "library://"
     container_type = models.CharField(
         max_length=255,
         choices=configurator.CONTAINER_TYPE_CHOICES,
