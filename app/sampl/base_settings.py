@@ -117,4 +117,3 @@ AWS_LOGIN_FUNCTION = run_aws_login
 
 CONTAINER_ENGINE_OPTIONS = {"Docker": "docker", "Singularity": "singularity"}
 CONTAINER_ENGINE = CONTAINER_ENGINE_OPTIONS["Docker"]
-

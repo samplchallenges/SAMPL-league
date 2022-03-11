@@ -153,7 +153,7 @@ class Container(Timestamped):
         max_length=255,
         choices=configurator.CONTAINER_TYPE_CHOICES,
         help_text=configurator.CONTAINER_TYPE_DETAILS,
-        null=True
+        null=True,
     )
     registry = models.CharField(max_length=255)
     label = models.CharField(max_length=255)
