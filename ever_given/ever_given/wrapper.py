@@ -21,7 +21,6 @@ def prepare_command_list(command: str, args_dict: typing.Dict[str, str]):
         f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()
     ]
 
-
 def _parse_output(
     host_output_path: typing.Optional[str],
     raw_text: str,
@@ -71,6 +70,11 @@ def _convert_file_kwargs(
         final_file_kwargs[key] = str(dirpaths[dirpath] / basename)
     return dirpaths, final_file_kwargs
 
+def _get_container_uri(container_uri, container_type, engine_name):
+    if engine_name == "singularity":
+        return REGISTERED_ENGINES["singularity"].make_uri(container_uri, container_type)
+    else:
+        return container_uri
 
 def run(
     container_uri: str,
@@ -78,6 +82,7 @@ def run(
     *,
     file_kwargs: typing.Dict[str, str],
     kwargs: typing.Dict[str, str],
+    container_type: str = None,
     engine_name: str = "docker",
     output_dir: str = None,
     output_file_keys: typing.List[str] = None,
@@ -104,6 +109,8 @@ def run(
     final_kwargs.update(final_file_kwargs)
 
     command_list = prepare_command_list(command, final_kwargs)
+
+    container_uri = _get_container_uri(container_uri, container_type, engine_name)
 
     running_container = REGISTERED_ENGINES[engine_name].run_container(
         container_uri,

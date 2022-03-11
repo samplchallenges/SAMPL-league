@@ -75,6 +75,7 @@ def test_clone_submission(client, user, draft_submission):
 def test_create_submission(client, user, challenge):
     form_data = {
         "container-name": "test container",
+        "container-container_type": "Docker",
         "container-challenge": challenge.pk,
         "container-registry": "local",
         "container-label": "package2",
@@ -196,6 +197,7 @@ def test_update_expired_submission(client, user, draft_submission):
     change_challenge.save()
     container_form_data = {
         "name": "UPDATED CONTAINER",
+        "container_type": "Docker",
         "registry": "docker.io",
         "challenge": change_challenge,
         "label": "osatom/adv-tutorial",

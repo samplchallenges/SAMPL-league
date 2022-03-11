@@ -149,6 +149,12 @@ class Container(Timestamped):
     name = models.CharField(max_length=255)
     user = models.ForeignKey(auth_models.User, on_delete=models.CASCADE)
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    container_type = models.CharField(
+        max_length=255,
+        choices=configurator.CONTAINER_TYPE_CHOICES,
+        help_text=configurator.CONTAINER_TYPE_DETAILS,
+        null=True
+    )
     registry = models.CharField(max_length=255)
     label = models.CharField(max_length=255)
     tag = models.CharField(max_length=255, blank=True, null=True)

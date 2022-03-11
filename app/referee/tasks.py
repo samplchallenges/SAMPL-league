@@ -117,6 +117,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             parsed_results = ever_given.wrapper.run(
                 container.uri,
                 kwargs=kwargs,
+                container_type=container.container_type,
                 file_kwargs=file_kwargs,
                 output_dir=output_dir,
                 output_file_keys=output_file_keys,
