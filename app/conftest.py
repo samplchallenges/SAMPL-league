@@ -129,7 +129,7 @@ def container_factory(user, db):
             name="Container1",
             user=user,
             challenge=challenge,
-            container_type="docker",
+            container_type="Docker",
             registry="ghcr.io",
             label=label,
             tag=tag,
@@ -142,7 +142,7 @@ def container_factory(user, db):
 def container(container_factory, challenge):
     return container_factory(
         challenge,
-        label="megosato/calc-molwt",
+        label="robbason/calc-molwt",
         tag="latest",
     )
 
@@ -171,10 +171,10 @@ def scoring_container(challenge, user, db):
     return models.Container.objects.create(
         name="subtraction container",
         user=user,
-        container_type="docker",
+        container_type="Docker",
         challenge=challenge,
         registry="ghcr.io",
-        label="megosato/score-coords",
+        label="robbason/score-coords",
         tag="latest",
     )
 
@@ -289,8 +289,8 @@ def file_answer_key_factory(testing_data_path, db):
 def molfile_molw_config(config_factory):
     return config_factory(
         "molfile_molw",
-        "megosato/calc-molwt",
-        "megosato/score-coords",
+        "robbason/calc-molwt",
+        "robbason/score-coords",
         "molfile",
         models.FileValue,
         "molWeight",
@@ -302,8 +302,8 @@ def molfile_molw_config(config_factory):
 def smiles_molw_config(config_factory):
     return config_factory(
         "smiles_molw",
-        "megosato/calc-molwt",
-        "megosato/score-coords",
+        "robbason/calc-molwt",
+        "robbason/score-coords",
         "smiles",
         models.TextValue,
         "molWeight",

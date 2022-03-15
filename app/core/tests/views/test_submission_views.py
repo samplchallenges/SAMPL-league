@@ -75,7 +75,7 @@ def test_clone_submission(client, user, draft_submission):
 def test_create_submission(client, user, challenge):
     form_data = {
         "container-name": "test container",
-        "container-container_type": "docker",
+        "container-container_type": "Docker",
         "container-challenge": challenge.pk,
         "container-registry": "local",
         "container-label": "package2",
@@ -238,78 +238,77 @@ def test_update_expired_submission(client, user, draft_submission):
         assert getattr(submission, key) == getattr(submission_old, key)
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 @pytest.mark.django_db(transaction=True)
-def test_run_submission(client, container_engine):
+def test_run_submission(client):
 
     # Because we have dask worker in a separate thread, we need to commit our transaction.
     # But the transaction test case will wipe out data from django's ContentTypes
     # So rerun our migrations to re-add our content types
     # Generally we don't run with processes False since it's a less thorough test
     # But for debugging with pdb, it's more convenient
-    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
-        processes = True
-        if processes:
-            transaction.commit()
-            call_command("migrate", "core", "zero", interactive=False)
-            call_command("migrate", "core", interactive=False)
-            call_command("sample_data")
-            transaction.commit()
-        else:
-            call_command("sample_data")
-        submission = Submission.objects.first()
-        client.force_login(submission.user)
 
-        future = None
+    processes = True
+    if processes:
+        transaction.commit()
+        call_command("migrate", "core", "zero", interactive=False)
+        call_command("migrate", "core", interactive=False)
+        call_command("sample_data")
+        transaction.commit()
+    else:
+        call_command("sample_data")
+    submission = Submission.objects.first()
+    client.force_login(submission.user)
 
-        def save_future(l_future):
-            nonlocal future
-            future = l_future
+    future = None
 
-        if processes:
-            cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
-        else:
-            cluster = dd.LocalCluster(n_workers=1, processes=False, threads_per_worker=1)
+    def save_future(l_future):
+        nonlocal future
+        future = l_future
 
-        dask_client = dd.Client(cluster)
+    if processes:
+        cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+    else:
+        cluster = dd.LocalCluster(n_workers=1, processes=False, threads_per_worker=1)
 
-        mock_get_client = Mock(return_value=dask_client)
-        with patch("referee.get_client", mock_get_client):
-            with patch("core.views.submission.ignore_future", save_future):
-                response = client.post(f"/submission/{submission.pk}/submit/", {})
+    dask_client = dd.Client(cluster)
 
-            assert response.status_code == 302
-            assert response.url == reverse(
-                "submission-detail", kwargs={"pk": submission.pk}
-            )
-            detail_url = response.url
-            response = client.get(detail_url)
+    mock_get_client = Mock(return_value=dask_client)
+    with patch("referee.get_client", mock_get_client):
+        with patch("core.views.submission.ignore_future", save_future):
+            response = client.post(f"/submission/{submission.pk}/submit/", {})
 
-            # public_run = response.context["public_run"]
-            # if public_run is not None:
-            #   assert public_run.status in ("PENDING", "SUCCESS")
-            result = future.result()
-            response = client.get(detail_url)
-            public_run = response.context["public_run"]
-            assert public_run.status == "SUCCESS"
-            assert result
+        assert response.status_code == 302
+        assert response.url == reverse(
+            "submission-detail", kwargs={"pk": submission.pk}
+        )
+        detail_url = response.url
+        response = client.get(detail_url)
 
-        cluster.close()
+        # public_run = response.context["public_run"]
+        # if public_run is not None:
+        #   assert public_run.status in ("PENDING", "SUCCESS")
+        result = future.result()
+        response = client.get(detail_url)
+        public_run = response.context["public_run"]
+        assert public_run.status == "SUCCESS"
+        assert result
 
-        evaluation = public_run.evaluation_set.first()
+    cluster.close()
 
-        evaluation_url = reverse("evaluation-detail", kwargs={"pk": evaluation.pk})
+    evaluation = public_run.evaluation_set.first()
 
-        response = client.get(evaluation_url)
-        assert response.context["evaluation"].pk == evaluation.pk
+    evaluation_url = reverse("evaluation-detail", kwargs={"pk": evaluation.pk})
 
-        log_url = reverse("evaluation-log-out", kwargs={"pk": evaluation.pk})
-        response = client.get(log_url)
-        assert response.context["log"] == evaluation.log_stdout
+    response = client.get(evaluation_url)
+    assert response.context["evaluation"].pk == evaluation.pk
 
-        errlog_url = reverse("evaluation-log-err", kwargs={"pk": evaluation.pk})
-        response = client.get(errlog_url)
-        assert response.context["log"] == evaluation.log_stderr
+    log_url = reverse("evaluation-log-out", kwargs={"pk": evaluation.pk})
+    response = client.get(log_url)
+    assert response.context["log"] == evaluation.log_stdout
+
+    errlog_url = reverse("evaluation-log-err", kwargs={"pk": evaluation.pk})
+    response = client.get(errlog_url)
+    assert response.context["log"] == evaluation.log_stderr
 
 
 def test_download_container_arg_file(client, user, draft_submission, custom_file_arg):
