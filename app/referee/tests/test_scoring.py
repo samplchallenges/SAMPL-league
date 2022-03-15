@@ -8,7 +8,6 @@ from django.core.files import File
 from core import filecache, models
 from referee import scoring
 
-
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_score_submission_run(
     smiles_molw_config,
@@ -26,9 +25,7 @@ def test_score_submission_run(
         )
 
         assert models.SubmissionRunScore.objects.count() == 1
-        submission_run_score = models.SubmissionRunScore.objects.get(
-            score_type=score_type
-        )
+        submission_run_score = models.SubmissionRunScore.objects.get(score_type=score_type)
         assert submission_run_score.value == pytest.approx(3.0)
         assert models.EvaluationScore.objects.count() == 2
 
@@ -54,21 +51,11 @@ def _save_file_arg(container, key, file_body):
 
 @pytest.mark.parametrize(
     ["custom_string_args", "custom_file_args", "container_engine"],
-    [
-        [{}, {}, "docker"],
-        [{"foo": "bar"}, {}, "docker"],
-        [{}, {"license": "Hello world"}, "docker"],
-        [{}, {}, "singularity"],
-        [{"foo": "bar"}, {}, "singularity"],
-        [{}, {"license": "Hello world"}, "singularity"],
-    ],
+    [[{}, {}, "docker"], [{"foo": "bar"}, {}, "docker"], [{}, {"license": "Hello world"},"docker"],
+     [{}, {}, "singularity"], [{"foo": "bar"}, {}, "singularity"], [{}, {"license": "Hello world"},"singularity"]],
 )
 def test_score_evaluation_args(
-    smiles_molw_config,
-    evaluations,
-    custom_string_args,
-    custom_file_args,
-    container_engine,
+    smiles_molw_config, evaluations, custom_string_args, custom_file_args, container_engine
 ):
     submission_run = smiles_molw_config.submission_run
     challenge = submission_run.submission.challenge
@@ -107,7 +94,6 @@ def test_score_evaluation_args(
         file_kwargs = call_args.kwargs["file_kwargs"]
         assert file_kwargs == expected_file_kwargs
 
-
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_score_submission_run_failure(
     smiles_molw_config,
@@ -123,7 +109,6 @@ def test_score_submission_run_failure(
             mock_wrapper.run = fake_run
             with pytest.raises(scoring.ScoringFailureException):
                 scoring.score_submission_run(submission_run)
-
 
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_score_evaluation_failure(smiles_molw_config, evaluations, container_engine):

@@ -129,7 +129,7 @@ class Command(BaseCommand):
             name="scorer",
             user=user,
             challenge=challenge,
-            container_type="docker",
+            container_type="docker", 
             registry="ghcr.io",
             label="megosato/score-coords",
             tag="latest",

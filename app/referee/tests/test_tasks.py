@@ -15,7 +15,7 @@ from referee import scoring, tasks
 def test_run_and_score_submission(container_engine):
     # This test will fail if run after another transaction=True test
     # See workaround in tests/test_views.py:test_run_submission
-    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+    with patch('django.conf.settings.CONTAINER_ENGINE', container_engine):
         transaction.commit()
         call_command("migrate", "core", "zero", interactive=False)
         call_command("migrate", "core", interactive=False)
@@ -49,10 +49,9 @@ def _run_and_check_evaluation(submission_run, evaluation):
     prediction = evaluation.prediction_set.get()
     return prediction
 
-
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_run_element_mol(molfile_molw_config, benzene_from_mol, container_engine):
-    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+    with patch('django.conf.settings.CONTAINER_ENGINE', container_engine):
         submission_run = molfile_molw_config.submission_run
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
@@ -61,12 +60,11 @@ def test_run_element_mol(molfile_molw_config, benzene_from_mol, container_engine
         prediction = _run_and_check_evaluation(submission_run, evaluation)
         assert prediction.value == pytest.approx(78.046950192)
 
-
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_run_element_custom(
     molfile_molw_config, benzene_from_mol, container_arg_factory, container_engine
 ):
-    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+    with patch('django.conf.settings.CONTAINER_ENGINE', container_engine):
         submission_run = molfile_molw_config.submission_run
         submission = submission_run.submission
         container = submission.container
@@ -84,12 +82,9 @@ def test_run_element_custom(
         evaluation.refresh_from_db()
         assert "error: unrecognized arguments:" in evaluation.log_stderr
 
-
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
-def test_evaluation_scoring_failure(
-    molfile_molw_config, benzene_from_mol, container_engine
-):
-    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+def test_evaluation_scoring_failure(molfile_molw_config, benzene_from_mol, container_engine):
+    with patch('django.conf.settings.CONTAINER_ENGINE', container_engine):
         submission_run = molfile_molw_config.submission_run
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
@@ -124,12 +119,11 @@ def evaluation_scores(smiles_molw_config, evaluations):
 
     return [_score(evaluation) for evaluation in evaluations]
 
-
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_submission_run_scoring_failure(
     smiles_molw_config, evaluations, evaluation_scores, container_engine
 ):
-    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+    with patch('django.conf.settings.CONTAINER_ENGINE', container_engine):
         submission_run = smiles_molw_config.submission_run
         with patch("referee.scoring._score_submission_run") as mock_score:
             mock_score.side_effect = scoring.ScoringFailureException("Mock failure")
@@ -150,7 +144,7 @@ def file_container(challenge_factory, user, db):
         name="CoordGenContainer",
         user=user,
         challenge=coord_challenge,
-        container_type="docker",
+        container_type="docker", 
         registry="ghcr.io",
         label="megosato/calc-coords",
         tag="latest",
@@ -159,13 +153,9 @@ def file_container(challenge_factory, user, db):
 
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_run_files(
-    file_container,
-    elem_factory,
-    file_answer_key_factory,
-    float_answer_key_factory,
-    container_engine,
+    file_container, elem_factory, file_answer_key_factory, float_answer_key_factory, container_engine,
 ):
-    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+    with patch('django.conf.settings.CONTAINER_ENGINE', container_engine):
         challenge = file_container.challenge
         scoring_container = models.Container.objects.create(
             name="subtraction container",
@@ -183,9 +173,7 @@ def test_run_files(
             challenge=challenge, key="RMSE", level=models.ScoreType.Level.EVALUATION
         )
         models.ScoreType.objects.create(
-            challenge=challenge,
-            key="Avg RMSE",
-            level=models.ScoreType.Level.SUBMISSION_RUN,
+            challenge=challenge, key="Avg RMSE", level=models.ScoreType.Level.SUBMISSION_RUN
         )
         molfile_type = models.ValueType.objects.create(
             challenge=challenge,
@@ -244,17 +232,12 @@ def test_run_files(
         assert submission_run.evaluation_set.count() == 1
         evaluation = submission_run.evaluation_set.get()
         assert evaluation.status == models.Status.SUCCESS
-        prediction = prediction = evaluation.prediction_set.get(
-            value_type__key="molWeight"
-        )
+        prediction = prediction = evaluation.prediction_set.get(value_type__key="molWeight")
         assert prediction.value == pytest.approx(78.046950192)
 
-
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
-def test_cancel_evaluation_before_run(
-    molfile_molw_config, benzene_from_mol, container_engine
-):
-    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+def test_cancel_evaluation_before_run(molfile_molw_config, benzene_from_mol, container_engine):
+    with patch('django.conf.settings.CONTAINER_ENGINE', container_engine):
         submission_run = molfile_molw_config.submission_run
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
@@ -271,12 +254,9 @@ def test_cancel_evaluation_before_run(
         evaluation.refresh_from_db()
         assert evaluation.status == models.Status.CANCELLED
 
-
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
-def test_cancel_submission_before_run(
-    molfile_molw_config, benzene_from_mol, container_engine
-):
-    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+def test_cancel_submission_before_run(molfile_molw_config, benzene_from_mol, container_engine):
+    with patch('django.conf.settings.CONTAINER_ENGINE', container_engine):
         submission = molfile_molw_config.submission_run.submission
         delayed_conditional = tasks._trigger_submission_run(
             submission, True, is_public=True

@@ -121,7 +121,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                 engine_name=settings.CONTAINER_ENGINE,
                 file_kwargs=file_kwargs,
                 output_dir=output_dir,
-                output_file_keys=output_file_keys,
+                output_file_keys=output_file_keys, 
                 log_handler=models.Evaluation.LogHandler(evaluation),
                 cancel_requested_func=submission_run.check_cancel_requested,
                 aws_login_func=settings.AWS_LOGIN_FUNCTION
