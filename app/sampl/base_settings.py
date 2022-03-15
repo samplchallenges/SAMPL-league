@@ -122,7 +122,6 @@ def run_aws_login_singularity():
         shell=True,
     )
 
-
 AWS_LOGIN_FUNCTION = run_aws_login
 
 # container engine is either "docker" or "singularity"
