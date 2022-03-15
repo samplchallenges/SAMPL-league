@@ -14,8 +14,3 @@ class LogHandlerBase:
 
     def handle_stderr(self, log: str) -> None:
         print(log, end="")
-
-class UnsupportedContainerException(Exception):
-    """
-    Raised when container_type is not Docker or Singularity
-    """    
