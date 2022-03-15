@@ -34,11 +34,11 @@ def test_value_registration():
 
 
 def test_container(scoring_container):
-    assert scoring_container.uri == "ghcr.io/robbason/score-coords:latest"
+    assert scoring_container.uri == "ghcr.io/megosato/score-coords:latest"
 
     scoring_container.tag = None
 
-    assert scoring_container.uri == "ghcr.io/robbason/score-coords"
+    assert scoring_container.uri == "ghcr.io/megosato/score-coords"
 
 
 def test_file_value(input_elements, molfile_type):
@@ -98,7 +98,7 @@ def test_load_prediction_file(
         key="conformation",
         description="3D output MOL file",
     )
-    container = container_factory(challenge, "robbason/score-coords", "latest")
+    container = container_factory(challenge, "megosato/score-coords", "latest")
     submission = submission_factory(container)
     submission_run = submission_run_factory(submission)
     evaluation = models.Evaluation.objects.create(

@@ -150,8 +150,9 @@ def edit_submission_view(request, pk=None, clone=False):
                     submission.notes = submission_notes_form.cleaned_data["notes"]
                     submission.save(update_fields=["notes"])
                 return redirect("submission-detail", pk=submission.pk)
-
-        if container_form.is_valid():
+        valid = container_form.is_valid()
+        print("VALID:", valid)
+        if valid:
             challenge = container_form.cleaned_data["challenge"]
             if challenge.is_active():
                 container = container_form.save(commit=False)
@@ -164,7 +165,7 @@ def edit_submission_view(request, pk=None, clone=False):
                     arg_formset = ArgFormSet(
                         request.POST, request.FILES, instance=container
                     )
-                    if arg_formset.is_valid():
+                    if valid:
                         _create_container_args(container, arg_formset)
                         return redirect("submission-detail", pk=submission.pk)
                     else:

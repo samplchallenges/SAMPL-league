@@ -29,10 +29,14 @@ class SingularityContainerInstance(ContainerInstance):
         # FIXED: return pipe.readline() 
         #   * returns an integer that needed to be decoded .decode('utf-8')
         #   * only returned the first line
-        string = ""
-        for ln in pipe.readlines():
-            string += ln.decode('utf-8')
-        return string
+        log_string = ""
+        while True:
+            line = typing.cast(bytes, pipe.readline())
+            if not line:
+                break
+            log_string += line.decode('utf-8')
+            print("logs:", log_string)
+        return [log_string]
 
     def reload(self):
         pass  # don't need this for status, right?
@@ -86,7 +90,6 @@ class SingularityEngine(Engine):
 
 
         command = _build_singularity_command(bind_volumes, container_uri, command_list)
-        print(command)
         process = subprocess.Popen(
             shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
@@ -94,7 +97,6 @@ class SingularityEngine(Engine):
 
     @classmethod
     def make_uri(cls, container_uri, container_type):
-        print(container_type)
         if container_type == "docker":
             return f"docker://{container_uri}"
         elif container_type == "singularity":
@@ -104,13 +106,18 @@ class SingularityEngine(Engine):
 
 def _build_singularity_command(bind_volumes, container_uri, command_list):
     #  TODO: how to decide when to load Nvidia drivers?
-    singularity_cmd = "singularity run --bind "
-    for bind in bind_volumes:
-        singularity_cmd += bind + ","
-    singularity_cmd = singularity_cmd[:-1] + " "
+    singularity_cmd = "singularity run "
+    if bind_volumes and len(bind_volumes) >= 1:
+        singularity_cmd += "--bind "
+        for bind in bind_volumes:
+            singularity_cmd += bind + ","
+        singularity_cmd = singularity_cmd[:-1] + " "
+    
     singularity_cmd += container_uri + " "
+    
     for command in command_list:
         singularity_cmd += str(command) + " "
+    print(singularity_cmd)
     return singularity_cmd
     #raise Exception("not implemented yet")
 

@@ -1,6 +1,6 @@
 import os.path
+import argparse
 
-import click
 from rdkit.Chem.Descriptors import ExactMolWt
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -11,12 +11,7 @@ ATOMCOUNT_KEY = "numAtoms"
 BONDCOUNT_KEY = "numBonds"
 
 
-@click.command()
-@click.option("--output-dir", help="Output Directory", type=click.Path(exists=True))
-@click.option("--molfile", help="MOL File", type=click.Path(exists=True))
-@click.option("--smiles", help="SMILES string")
-@click.argument("smiles_arg", required=False, default=None)
-def calc_coords(output_dir, molfile, smiles, smiles_arg):
+def calc_coords(output_dir, molfile, smiles,):
 
     if not output_dir:
         output_dir = ""
@@ -38,10 +33,22 @@ def calc_coords(output_dir, molfile, smiles, smiles_arg):
         _printinfo(mol)
         return 0
     if not smiles:
-        smiles = smiles_arg
-    if not smiles:
-        click.echo("Must pass SMILES either with --smiles or directly", err=True)
+        click.echo("Must pass SMILES with --smiles", err=True)
         return 1
     mol = Chem.MolFromSmiles(smiles)
     _printinfo(mol)
     return 0
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output-dir', help="Output Directory")
+    parser.add_argument('--molfile', help="MOL File")
+    parser.add_argument('--smiles', help="SMILES string")
+
+    args = parser.parse_args()
+
+    calc_coords(args.output_dir, args.molfile, args.smiles)
+
+
+

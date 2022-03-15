@@ -8,29 +8,31 @@ from django.core.files import File
 from core import filecache, models
 from referee import scoring
 
-
+@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_score_submission_run(
     smiles_molw_config,
     evaluations,
     evaluation_scores,
+    container_engine,
 ):
-    submission_run = smiles_molw_config.submission_run
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        submission_run = smiles_molw_config.submission_run
 
-    scoring.score_submission_run(submission_run)
+        scoring.score_submission_run(submission_run)
 
-    score_type = models.ScoreType.objects.get(
-        challenge=smiles_molw_config.challenge, key="rmse"
-    )
+        score_type = models.ScoreType.objects.get(
+            challenge=smiles_molw_config.challenge, key="rmse"
+        )
 
-    assert models.SubmissionRunScore.objects.count() == 1
-    submission_run_score = models.SubmissionRunScore.objects.get(score_type=score_type)
-    assert submission_run_score.value == pytest.approx(3.0)
-    assert models.EvaluationScore.objects.count() == 2
+        assert models.SubmissionRunScore.objects.count() == 1
+        submission_run_score = models.SubmissionRunScore.objects.get(score_type=score_type)
+        assert submission_run_score.value == pytest.approx(3.0)
+        assert models.EvaluationScore.objects.count() == 2
 
-    evaluation = evaluations[0]
-    assert evaluation.scores.count() == 1
-    score = evaluation.scores.first()
-    assert score.value == pytest.approx(3.0)
+        evaluation = evaluations[0]
+        assert evaluation.scores.count() == 1
+        score = evaluation.scores.first()
+        assert score.value == pytest.approx(3.0)
 
 
 def _save_file_arg(container, key, file_body):
@@ -48,11 +50,12 @@ def _save_file_arg(container, key, file_body):
 
 
 @pytest.mark.parametrize(
-    ["custom_string_args", "custom_file_args"],
-    [[{}, {}], [{"foo": "bar"}, {}], [{}, {"license": "Hello world"}]],
+    ["custom_string_args", "custom_file_args", "container_engine"],
+    [[{}, {}, "docker"], [{"foo": "bar"}, {}, "docker"], [{}, {"license": "Hello world"},"docker"],
+     [{}, {}, "singularity"], [{"foo": "bar"}, {}, "singularity"], [{}, {"license": "Hello world"},"singularity"]],
 )
 def test_score_evaluation_args(
-    smiles_molw_config, evaluations, custom_string_args, custom_file_args
+    smiles_molw_config, evaluations, custom_string_args, custom_file_args, container_engine
 ):
     submission_run = smiles_molw_config.submission_run
     challenge = submission_run.submission.challenge
@@ -78,7 +81,7 @@ def test_score_evaluation_args(
         mock_wrapper.run = fake_run
         scoring.score_evaluation(scoring_container, evaluation, evaluation_score_types)
 
-        expected_args = ("ghcr.io/robbason/score-coords:latest", "score-evaluation")
+        expected_args = ("ghcr.io/megosato/score-coords:latest", "score-evaluation")
         expected_kwargs = {"molWeight_answerkey": 72.0, "molWeight_prediction": 97.08}
         expected_kwargs.update(custom_string_args)
         expected_file_kwargs = custom_file_args_full
@@ -91,24 +94,27 @@ def test_score_evaluation_args(
         file_kwargs = call_args.kwargs["file_kwargs"]
         assert file_kwargs == expected_file_kwargs
 
-
+@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_score_submission_run_failure(
     smiles_molw_config,
     evaluations,
     evaluation_scores,
+    container_engine,
 ):
-    fake_run = Mock(return_value=[], side_effect=Exception("Planned Exception"))
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        fake_run = Mock(return_value=[], side_effect=Exception("Planned Exception"))
 
-    submission_run = smiles_molw_config.submission_run
-    with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:
-        mock_wrapper.run = fake_run
-        with pytest.raises(scoring.ScoringFailureException):
-            scoring.score_submission_run(submission_run)
+        submission_run = smiles_molw_config.submission_run
+        with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:
+            mock_wrapper.run = fake_run
+            with pytest.raises(scoring.ScoringFailureException):
+                scoring.score_submission_run(submission_run)
 
-
-def test_score_evaluation_failure(smiles_molw_config, evaluations):
-    with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:
-        _evaluation_failure(smiles_molw_config, evaluations, mock_wrapper)
+@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+def test_score_evaluation_failure(smiles_molw_config, evaluations, container_engine):
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:
+            _evaluation_failure(smiles_molw_config, evaluations, mock_wrapper)
 
 
 def _evaluation_failure(smiles_molw_config, evaluations, mock_wrapper):

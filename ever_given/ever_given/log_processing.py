@@ -46,12 +46,14 @@ def _read_stdout(
     output_buffer: io.StringIO,
 ):
     for log in container.logs(want_stdout=True, want_stderr=False):
+        print("log:", log)
         out_message_queue.put(log)
         output_buffer.write(log)
 
 
 def _read_stderr(container: ContainerInstance, err_message_queue: queue.Queue):
     for log in container.logs(want_stdout=False, want_stderr=True):
+        print("elog:", log)
         err_message_queue.put(log)
 
 

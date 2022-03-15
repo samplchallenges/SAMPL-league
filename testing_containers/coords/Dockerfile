@@ -1,13 +1,11 @@
 #FROM mcs07/rdkit:latest
-FROM robbason/basepyrd:latest
+FROM ghcr.io/megosato/basepyrd:latest
 
 WORKDIR /opt/app
 
-COPY setup.py coords.py ./
+COPY coords.py ./
 
 ENV PATH="/root/.local/bin:$PATH"
 
-#RUN python3 -m pip install --user openbabel
-RUN python3 -m pip install --user .
 
-ENTRYPOINT ["calc-coords"]
+ENTRYPOINT ["python3", "/opt/app/coords.py"]
