@@ -12,4 +12,3 @@ minimum viable product (MVP) for SAMPL container based workflows
 `attic` old files that can be ignored
 
 `container-docs` documentation on container best practices
-# SAMPL-league-test
