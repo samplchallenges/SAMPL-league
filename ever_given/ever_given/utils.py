@@ -10,7 +10,7 @@ class LogHandlerBase:
     """
 
     def handle_stdout(self, log: str) -> None:
-        print(log, end="")
+        print("stdout", log)
 
     def handle_stderr(self, log: str) -> None:
-        print(log, end="")
+        print("stderr", log)

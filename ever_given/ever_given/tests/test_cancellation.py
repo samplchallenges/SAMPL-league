@@ -8,7 +8,7 @@ from ever_given.log_processing import QUEUE_WAIT_SECONDS, CancelledException
 
 def test_cancellation():
     # Use a slow container so we have time to cancel it
-    container_uri = "ghcr.io/megosato/logging-example:latest"
+    container_uri = "ghcr.io/robbason/logging-example:latest"
     kwargs = {"smiles": "c1cccnc1"}
     start_at = time.time()
     with pytest.raises(CancelledException):
@@ -28,7 +28,7 @@ def test_cancellation():
 
 
 def test_no_cancellation():
-    container_uri = "ghcr.io/megosato/calc-molwt:latest"
+    container_uri = "ghcr.io/robbason/calc-molwt:latest"
     kwargs = {"smiles": "c1cccnc1"}
     results = {
         key: value
