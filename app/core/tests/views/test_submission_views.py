@@ -269,7 +269,9 @@ def test_run_submission(client, container_engine):
         if processes:
             cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
         else:
-            cluster = dd.LocalCluster(n_workers=1, processes=False, threads_per_worker=1)
+            cluster = dd.LocalCluster(
+                n_workers=1, processes=False, threads_per_worker=1
+            )
 
         dask_client = dd.Client(cluster)
 
