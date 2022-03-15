@@ -113,16 +113,7 @@ def run_aws_login():
     )
 
 
-def run_aws_login_singularity():
-    subprocess.run(["export SINGULARITY_DOCKER_USERNAME=AWS"], shell=True)
-    subprocess.run(
-        [
-            "SINGULARITY_DOCKER_PASSWORD=`aws ecr get-login-password --profile sampl_pull --region us-east-2`",
-        ],
-        shell=True,
-    )
-
 AWS_LOGIN_FUNCTION = run_aws_login
 
-# container engine is either "docker" or "singularity"
-CONTAINER_ENGINE = "docker"
+CONTAINER_ENGINE_OPTIONS = {"Docker": "docker", "Singularity": "singularity"}
+CONTAINER_ENGINE = CONTAINER_ENGINE_OPTIONS["Docker"]
