@@ -17,7 +17,7 @@ ever-given = "0.0.9"
 sampl = {path = "."}
 rollbar = "*"
 jupyterlab = "*"
-ipython = "*"
+ipython = "<8.0"
 
 [dev-packages]
 black = "*"
