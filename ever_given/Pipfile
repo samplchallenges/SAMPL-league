@@ -5,14 +5,9 @@ name = "pypi"
 
 [packages]
 ever-given = {editable = true, path = "."}
-docker = "*"
-spython = "*"
 
 [requires]
 python_version = "3.8"
 
 [dev-packages]
 pytest = "*"
-pylint = "*"
-flake8-annotations = "*"
-mypy = "*"

@@ -2,23 +2,26 @@ import io
 import queue
 import threading
 import time
-import typing
 
 QUEUE_WAIT_SECONDS = 2
 
-from .engines.utils import ContainerInstance
-from .utils import CancelledException, LogHandlerBase
+
+class CancelledException(Exception):
+    pass
 
 
-def process_messages(
-    running_container: ContainerInstance,
-    log_handler: LogHandlerBase,
-    cancel_requested_func: typing.Optional[typing.Callable[[], bool]],
-) -> str:
+def process_messages(running_container, log_handler, cancel_requested_func):
+    if log_handler is None:
+        log_handler = PrintLogHandler()
 
-    output_buffer = io.StringIO()
-    err_message_queue: "queue.Queue[str]" = queue.Queue()
-    out_message_queue: "queue.Queue[str]" = queue.Queue()
+    if not (
+        hasattr(log_handler, "handle_stdout") and hasattr(log_handler, "handle_stderr")
+    ):
+        raise TypeError("log_handler must have handle_stdout and handle_stderr methods")
+
+    output_buffer = io.BytesIO()
+    err_message_queue = queue.Queue()
+    out_message_queue = queue.Queue()
     out_thread = threading.Thread(
         target=_read_stdout,
         name="stdout",
@@ -35,37 +38,32 @@ def process_messages(
     ):
         _handle(log_handler, err_message_queue, out_message_queue)
         if cancel_requested_func is not None:
-            _check_cancel(running_container, cancel_requested_func, log_handler)
+            _check_cancel(cancel_requested_func, log_handler)
 
     return output_buffer.getvalue()
 
 
-def _read_stdout(
-    container: ContainerInstance,
-    out_message_queue: queue.Queue,
-    output_buffer: io.StringIO,
-):
-    for log in container.logs(want_stdout=True, want_stderr=False):
+class PrintLogHandler:
+    def handle_stdout(self, log):
+        print("stdout", log)
+
+    def handle_stderr(self, log):
+        print("stderr", log)
+
+
+def _read_stdout(container, out_message_queue, output_buffer):
+    for log in container.logs(stdout=True, stderr=False, stream=True):
         out_message_queue.put(log)
         output_buffer.write(log)
 
 
-def _read_stderr(container: ContainerInstance, err_message_queue: queue.Queue):
-    for log in container.logs(want_stdout=False, want_stderr=True):
+def _read_stderr(container, err_message_queue):
+    for log in container.logs(stdout=False, stderr=True, stream=True):
         err_message_queue.put(log)
 
 
-def _handle(
-    log_handler: LogHandlerBase,
-    err_message_queue: queue.Queue,
-    out_message_queue: queue.Queue,
-) -> None:
-    """
-    Runs from a loop in the main thread. Look in message queues for inputs
-    and pass them to log_handler
-    Timeout after a couple of seconds on each queue so we  can check the other queue
-    and then check whether we should cancel.
-    """
+def _handle(log_handler, err_message_queue, out_message_queue):
+
     try:
         while True:
             log = out_message_queue.get(timeout=QUEUE_WAIT_SECONDS)
@@ -82,13 +80,8 @@ def _handle(
         pass
 
 
-def _check_cancel(
-    container: ContainerInstance,
-    cancel_requested_func: typing.Callable[[], bool],
-    log_handler: LogHandlerBase,
-) -> None:
+def _check_cancel(cancel_requested_func, log_handler):
     should_cancel = cancel_requested_func()
     if should_cancel:
-        log_handler.handle_stderr("Cancel requested\n")
-        container.kill()
+        log_handler.handle_stderr(b"Cancel requested\n")
         raise CancelledException()

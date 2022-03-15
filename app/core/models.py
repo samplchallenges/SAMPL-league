@@ -14,7 +14,6 @@ from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from ever_given.utils import LogHandlerBase
 
 from . import configurator, filecache
 
@@ -48,7 +47,7 @@ class Timestamped(models.Model):
 
 
 def _timestamped_log(log):
-    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log])
+    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
 
 
 class Logged(Timestamped, StatusMixin):
@@ -60,7 +59,7 @@ class Logged(Timestamped, StatusMixin):
     class Meta:
         abstract = True
 
-    class LogHandler(LogHandlerBase):
+    class LogHandler:
         def __init__(self, instance):
             self.instance_id = instance.pk
             self.cls = type(instance)
@@ -671,7 +670,7 @@ class GenericValue(models.Model):
 VALUE_PARENT_CLASSES = (Solution, InputValue)
 
 
-def register_value_model(ValueModel):  # pylint: disable=invalid-name
+def register_value_model(ValueModel):
     """
     Solution's value_object can only point to a
     value model registered with this decorator
