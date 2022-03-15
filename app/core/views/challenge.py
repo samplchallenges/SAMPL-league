@@ -37,7 +37,7 @@ def _input_elements(challenge):
         args_dict = kwargs
         for k, v in file_kwargs.items():
             args_dict[k] = os.path.basename(v)
-        element_dict["container_args"] = ever_given.wrapper.prepare_command_list(
+        element_dict["container_args"] = ever_given.wrapper.prepare_commandline(
             "", args_dict
         )
     return list(elements.values()), list(input_types.values())

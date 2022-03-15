@@ -1,14 +1,17 @@
+import click
 from rdkit.Chem.Descriptors import ExactMolWt
 from rdkit.Chem import MolFromSmiles, MolFromMolFile
-
-import argparse
 
 MOLW_KEY = "molWeight"
 ATOMCOUNT_KEY = "numAtoms"
 BONDCOUNT_KEY = "numBonds"
 
 
-def calc_mol_wt(molfile, smiles):
+@click.command()
+@click.option("--molfile", help="MOL File")
+@click.option("--smiles", help="SMILES string")
+@click.argument("smiles_arg", required=False, default=None)
+def calc_mol_wt(molfile, smiles, smiles_arg):
 
     def _printinfo(mol):
         print(MOLW_KEY, ExactMolWt(mol))
@@ -20,16 +23,10 @@ def calc_mol_wt(molfile, smiles):
         _printinfo(mol)
         return 0
     if not smiles:
+        smiles = smiles_arg
+    if not smiles:
         click.echo("Must pass SMILES either with --smiles or directly", err=True)
         return 1
     mol = MolFromSmiles(smiles)
     _printinfo(mol)
     return 0
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--molfile', help="MOL File")
-    parser.add_argument('--smiles', help="SMILES string")
-    args = parser.parse_args()
-
-    calc_mol_wt(args.molfile, args.smiles)

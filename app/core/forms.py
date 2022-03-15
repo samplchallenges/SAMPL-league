@@ -16,7 +16,7 @@ class ContainerForm(forms.ModelForm):
 
     class Meta:
         model = Container
-        fields = ["name", "challenge", "container_type", "registry", "label", "tag"]
+        fields = ["name", "challenge", "registry", "label", "tag"]
         widgets = {"challenge": forms.HiddenInput()}
 
 

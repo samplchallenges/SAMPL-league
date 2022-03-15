@@ -1,9 +1,11 @@
-FROM ghcr.io/megosato/basepyrd:latest
+FROM robbason/basepyrd:latest
 
 WORKDIR /opt/app
 
-COPY score.py ./
+COPY setup.py score.py ./
 
 ENV PATH="/root/.local/bin:$PATH"
 
-ENTRYPOINT ["python3", "/opt/app/score.py"]
+RUN python3 -m pip install --user .
+
+ENTRYPOINT ["score"]

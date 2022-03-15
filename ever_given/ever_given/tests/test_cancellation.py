@@ -1,22 +1,14 @@
 import time
 
 import pytest
-import subprocess
-import shlex
 
 import ever_given.wrapper
 from ever_given.log_processing import QUEUE_WAIT_SECONDS, CancelledException
 
 
-
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
-def test_cancellation(container_engine):
+def test_cancellation():
     # Use a slow container so we have time to cancel it
-    container_uri = "ghcr.io/megosato/logging-example:latest"
-    if container_engine == "singularity":
-        command = f"singularity pull docker://{container_uri}"
-        subprocess.Popen(shlex.split(command), shell=True)
-
+    container_uri = "ghcr.io/robbason/logging-example:latest"
     kwargs = {"smiles": "c1cccnc1"}
     start_at = time.time()
     with pytest.raises(CancelledException):
@@ -26,8 +18,6 @@ def test_cancellation(container_engine):
                 container_uri,
                 kwargs=kwargs,
                 file_kwargs={},
-                container_type="docker",
-                engine_name=container_engine,
                 cancel_requested_func=lambda: True,
             )
         }
@@ -36,9 +26,9 @@ def test_cancellation(container_engine):
     # in log_processing
     assert end_at - start_at < QUEUE_WAIT_SECONDS * 2 + 2
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
-def test_no_cancellation(container_engine):
-    container_uri = "ghcr.io/megosato/calc-molwt:latest"
+
+def test_no_cancellation():
+    container_uri = "ghcr.io/robbason/calc-molwt:latest"
     kwargs = {"smiles": "c1cccnc1"}
     results = {
         key: value
@@ -46,8 +36,6 @@ def test_no_cancellation(container_engine):
             container_uri,
             kwargs=kwargs,
             file_kwargs={},
-            container_type="docker",
-            engine_name=container_engine,
             cancel_requested_func=lambda: False,
         )
     }
