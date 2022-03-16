@@ -16,14 +16,14 @@ def test_cancellation(container_engine):
     container_type = "docker"
     if container_engine == "singularity":
         command = f"singularity pull docker://{container_uri}"
-        subprocess.Popen(shlex.split(command), shell=True)
+        subprocess.Popen(command, shell=True)
         container_uri = "logging-example_latest.sif"
         container_type = "singularity"
         import os
         print(os.path.exists("logging-example_latest.sif"))
     if container_engine == "docker":
         command = f"docker pull {container_uri}"
-        subprocess.Popen(shlex.split(command), shell=True)
+        subprocess.Popen(command, shell=True)
 
     kwargs = {"smiles": "c1cccnc1"}
 
