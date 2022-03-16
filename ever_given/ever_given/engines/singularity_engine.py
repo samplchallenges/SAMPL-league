@@ -35,7 +35,6 @@ class SingularityContainerInstance(ContainerInstance):
             if not line:
                 break
             log_string += line.decode('utf-8')
-            print("logs:", log_string)
         return [log_string]
 
     def reload(self):

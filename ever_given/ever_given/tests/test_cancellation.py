@@ -16,7 +16,7 @@ def test_cancellation(container_engine):
     if container_engine == "singularity":
         command = f"singularity pull docker://{container_uri}"
         subprocess.Popen(shlex.split(command), shell=True)
-
+        container_uri = "logging-example_latest.sif"
     kwargs = {"smiles": "c1cccnc1"}
     start_at = time.time()
     with pytest.raises(CancelledException):
