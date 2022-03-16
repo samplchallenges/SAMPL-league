@@ -114,12 +114,17 @@ def run_aws_login():
 
 
 def run_aws_login_singularity():
-    subprocess.run(["export SINGULARITY_DOCKER_USERNAME=AWS"], shell=True)
+    subprocess.run(
+        ["export SINGULARITY_DOCKER_USERNAME=AWS"],
+        shell=True,
+        check=True,
+    )
     subprocess.run(
         [
             "SINGULARITY_DOCKER_PASSWORD=`aws ecr get-login-password --profile sampl_pull --region us-east-2`",
         ],
         shell=True,
+        check=True,
     )
 
 

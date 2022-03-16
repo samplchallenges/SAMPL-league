@@ -73,6 +73,12 @@ jobs:
           pipenv run pip uninstall -y ever-given
           pipenv install -e ../ever_given/
 
+      - name: Install Singularity
+        uses: eWaterCycle/setup-singularity@v7
+        with:
+          singularity-version: 3.7.2 # same version as hpc3
+
+
       - name: Run test suite
         run: |
           pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given
