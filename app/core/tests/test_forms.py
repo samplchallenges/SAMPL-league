@@ -20,7 +20,6 @@ def test_create(challenge, user):
     container_form = ContainerForm(
         data={
             "container-name": "My Container",
-            "container-container_type": "docker",
             "container-challenge": challenge,
             "container-registry": "docker",
             "container-label": "foo",

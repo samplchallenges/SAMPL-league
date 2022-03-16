@@ -1,12 +1,14 @@
 #FROM mcs07/rdkit:latest
-FROM ghcr.io/megosato/basepyrd:latest
+FROM robbason/basepyrd:latest
 
 WORKDIR /opt/app
 
-COPY molwt.py ./
+COPY setup.py molwt.py ./
 
 #RUN apt update && apt install -y python3-pip && apt clean
 
 ENV PATH="/root/.local/bin:$PATH"
 
-ENTRYPOINT ["python3", "/opt/app/molwt.py"]
+RUN python3 -m pip install --user .
+
+ENTRYPOINT ["calc-mw"]

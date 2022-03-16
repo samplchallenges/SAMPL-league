@@ -2,57 +2,53 @@ import copy
 import shlex
 import sys
 from pathlib import Path
-import typing
 
-from .engines import GUEST_OUTPUT_DIR, REGISTERED_ENGINES
+import docker
 
 from . import log_processing
-from .utils import LogHandlerBase
 
 GUEST_INPUT_DIR = Path("/mnt") / "inputs"
+GUEST_OUTPUT_DIR = Path("/mnt") / "outputs"
 
 
-def _guest_input_path(filename: str) -> Path:
+def _guest_input_path(filename):
     return GUEST_INPUT_DIR / Path(filename).name
 
 
-def prepare_command_list(command: str, args_dict: typing.Dict[str, str]):
-    return [command] + [
-        f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()
-    ]
+def prepare_commandline(command, args_dict):
+    return (
+        command
+        + " "
+        + " ".join(
+            [f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()]
+        )
+    )
 
-def _parse_output(
-    host_output_path: typing.Optional[str],
-    raw_text: str,
-    output_file_keys: typing.Optional[typing.List[str]],
-) -> typing.Dict[str, str]:
+
+def _parse_output(host_path, raw_text, output_file_keys):
     result = {}
-    for line in raw_text.splitlines():
+    for line in raw_text.decode("utf-8").splitlines():
         lineparts = line.split(maxsplit=1)
         if len(lineparts) == 2:
             key, value = lineparts
             value = value.strip()
             if output_file_keys and key in output_file_keys:
-                if host_output_path is None:
-                    raise ValueError("output path not set but output files expected")
-                print(host_output_path, key, value)
-                result[key] = _convert_guest_to_host_path(host_output_path, value)
+                print(host_path, key, value)
+                result[key] = _convert_guest_to_host_path(host_path, value)
             else:
                 result[key] = value
 
     return result
 
 
-def _convert_guest_to_host_path(host_path: str, filepath: str) -> str:
-    abs_filepath = GUEST_OUTPUT_DIR / filepath
-    relative_path = abs_filepath.relative_to(GUEST_OUTPUT_DIR)
+def _convert_guest_to_host_path(host_path, filepath):
+    filepath = GUEST_OUTPUT_DIR / filepath
+    relative_path = filepath.relative_to(GUEST_OUTPUT_DIR)
     # so we don't care whether container outputs relative or absolute paths
     return str(Path(host_path) / relative_path)
 
 
-def _convert_file_kwargs(
-    file_kwargs: typing.Dict[str, str]
-) -> typing.Tuple[typing.Dict[Path, Path], typing.Dict[str, str]]:
+def _convert_file_kwargs(file_kwargs):
     """
     file_kwargs has key: path, where path is on the host
     generate a dict of host: guest path mappings that can be used to generate bind commands and return a file_kwargs pointing to the files with corresponding paths that are accessible to the container
@@ -70,24 +66,17 @@ def _convert_file_kwargs(
         final_file_kwargs[key] = str(dirpaths[dirpath] / basename)
     return dirpaths, final_file_kwargs
 
-def _get_container_uri(container_uri, container_type, engine_name):
-    if engine_name == "singularity":
-        return REGISTERED_ENGINES["singularity"].make_uri(container_uri, container_type)
-    else:
-        return container_uri
 
 def run(
-    container_uri: str,
-    command: str = "",
+    container_uri,
+    command="",
     *,
-    file_kwargs: typing.Dict[str, str],
-    kwargs: typing.Dict[str, str],
-    container_type: str = None,
-    engine_name: str = "docker",
-    output_dir: str = None,
-    output_file_keys: typing.List[str] = None,
-    log_handler: LogHandlerBase = None,
-    cancel_requested_func: typing.Callable[[], bool] = None,
+    file_kwargs,
+    kwargs,
+    output_dir=None,
+    output_file_keys=None,
+    log_handler=None,
+    cancel_requested_func=None,
     aws_login_func=None,
 ):
     """
@@ -101,23 +90,15 @@ def run(
     command is optional
     Iterate over key/values of results.
     """
-    if log_handler is None:
-        log_handler = LogHandlerBase()
 
-    inputdir_map, final_file_kwargs = _convert_file_kwargs(file_kwargs)
+    input_dir_map, final_file_kwargs = _convert_file_kwargs(file_kwargs)
     final_kwargs = copy.deepcopy(kwargs)
     final_kwargs.update(final_file_kwargs)
 
-    command_list = prepare_command_list(command, final_kwargs)
+    final_command = prepare_commandline(command, final_kwargs)
 
-    container_uri = _get_container_uri(container_uri, container_type, engine_name)
-
-    running_container = REGISTERED_ENGINES[engine_name].run_container(
-        container_uri,
-        command_list,
-        inputdir_map=inputdir_map,
-        output_dir=output_dir,
-        aws_login_func=aws_login_func,
+    running_container = run_container(
+        container_uri, final_command, input_dir_map, output_dir=output_dir, aws_login_func=aws_login_func
     )
 
     try:
@@ -128,13 +109,37 @@ def run(
         yield from _parse_output(output_dir, result, output_file_keys).items()
     finally:
         running_container.reload()
-        if running_container.status() != "exited":
-            log_handler.handle_stderr("Killing running container\n")
+        if running_container.status != "exited":
+            if log_handler is not None:
+                log_handler.handle_stderr(b"Killing running container\n")
             running_container.kill()
             running_container.reload()
-            status = running_container.status()
-            log_handler.handle_stderr(
-                f"After killing running container, status is {status}\n"
-            )
-            print(f"Container status is {status}", file=sys.stderr)
+            if log_handler is not None:
+                log_handler.handle_stderr(
+                    f"After killing running container, status is {running_container.status}\n".encode()
+                )
+            print(f"Container status is {running_container.status}", file=sys.stderr)
         running_container.remove()
+
+def run_container(container_uri, command, inputdir_map=None, output_dir=None, aws_login_func=None):
+    if aws_login_func:
+        aws_login_func()
+    client = docker.from_env()
+    volumes = {}
+    for inputdir, guest_input_dir in inputdir_map.items():
+        volumes[str(inputdir)] = {"bind": str(guest_input_dir), "mode": "ro"}
+    if output_dir:
+        output_dir = Path(output_dir).resolve()
+        volumes[str(output_dir)] = {"bind": str(GUEST_OUTPUT_DIR), "mode": "rw"}
+        command = f" --output-dir {GUEST_OUTPUT_DIR} {command}"
+
+    running_container = client.containers.run(
+        container_uri,
+        command,
+        volumes=volumes,
+        network_disabled=True,
+        network_mode="none",
+        remove=False,
+        detach=True,
+    )
+    return running_container
