@@ -17,7 +17,7 @@ ever-given = "0.0.9"
 sampl = {path = "."}
 rollbar = "*"
 jupyterlab = "*"
-ipython = "<8.0"
+ipython = "*"
 
 [dev-packages]
 black = "*"
@@ -34,6 +34,7 @@ django-debug-toolbar = "*"
 # For local development
 #ever-given = {editable = true, path = "./../ever_given"}
 #sampl = {editable = true, path = "."}
+pre-commit = "*"
 
 [requires]
 python_version = "3.8"
