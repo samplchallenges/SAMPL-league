@@ -99,7 +99,7 @@ class SingularityEngine(Engine):
         if container_type == "docker":
             return f"docker://{container_uri}"
         elif container_type == "singularity":
-            return f"shub://{container_uri}"
+            return f"{container_uri}"
         else:
             raise Exception("Container Type Not Implemented")
 

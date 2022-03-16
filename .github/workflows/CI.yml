@@ -81,7 +81,7 @@ jobs:
 
       - name: Run test suite
         run: |
-          pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given
+          pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s ../ever_given
         env:
           RDS_HOSTNAME: localhost
           RDS_DB_NAME: sampl

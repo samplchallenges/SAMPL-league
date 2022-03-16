@@ -13,12 +13,18 @@ from ever_given.log_processing import QUEUE_WAIT_SECONDS, CancelledException
 def test_cancellation(container_engine):
     # Use a slow container so we have time to cancel it
     container_uri = "ghcr.io/megosato/logging-example:latest"
+    container_type = "docker"
     if container_engine == "singularity":
         command = f"singularity pull docker://{container_uri}"
         subprocess.Popen(shlex.split(command), shell=True)
         container_uri = "logging-example_latest.sif"
+        container_type = "singularity"
+        import os
+        os.path.exists("logging-example_latest.sif")
     kwargs = {"smiles": "c1cccnc1"}
+
     start_at = time.time()
+
     with pytest.raises(CancelledException):
         results = {
             key: value
@@ -26,7 +32,7 @@ def test_cancellation(container_engine):
                 container_uri,
                 kwargs=kwargs,
                 file_kwargs={},
-                container_type="docker",
+                container_type=container_type,
                 engine_name=container_engine,
                 cancel_requested_func=lambda: True,
             )
