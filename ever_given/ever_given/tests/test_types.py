@@ -25,20 +25,6 @@ def test_docker_container(container_engine):
     assert molWeight == pytest.approx(79.04219916)
 
 
-def _download_sif():
-    container_uri = "ghcr.io/megosato/calc-molwt:latest"
-    container_type = "docker"
-    try:
-        command = f"singularity pull docker://{container_uri}"
-        proc = subprocess.Popen(command, shell=True, check=True)
-        proc.wait()
-    except subprocess.CalledProcessError as e:
-        if "Image file already exists" not in e:
-            raise e
-    finally:
-        return "calc-molwt_latest.sif"
-
-
 def test_singularity_sif_container_docker_engine():
     container_sif = _download_sif()
     kwargs = {"smiles": "c1cccnc1"}
@@ -55,7 +41,11 @@ def test_singularity_sif_container_docker_engine():
         }
 
 def test_singularity_sif_container_singularity_engine():
-    container_sif = _download_sif()
+    container_uri = "ghcr.io/megosato/calc-molwt:latest" 
+    command = f"singularity pull docker://{container_uri}"
+    proc = subprocess.Popen(command, shell=True, check=True)
+    proc.wait()
+    container_sif = "calc-molwt_latest.sif"
     kwargs = {"smiles": "c1cccnc1"}
     results = {
         key: value
