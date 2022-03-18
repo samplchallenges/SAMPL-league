@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+awscli = "*"
 django = "4.0"
 psycopg2-binary = "*"
 django-crispy-forms = "*"
