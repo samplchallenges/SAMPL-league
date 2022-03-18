@@ -28,11 +28,15 @@ def test_docker_container(container_engine):
 def _download_sif():
     container_uri = "ghcr.io/megosato/calc-molwt:latest"
     container_type = "docker"
-    command = f"singularity pull docker://{container_uri}"
-    proc = subprocess.Popen(command, shell=True)
-    proc.wait()
-    return container_sif
-
+    try:
+        command = f"singularity pull docker://{container_uri}"
+        proc = subprocess.Popen(command, shell=True, check=True)
+        proc.wait()
+    except subprocess.CalledProcessError as e:
+        if "Image file already exists" not in e:
+            raise e
+    finally:
+        return "calc-molwt_latest.sif"
 
 
 def test_singularity_sif_container_docker_engine():
@@ -51,15 +55,12 @@ def test_singularity_sif_container_docker_engine():
         }
 
 def test_singularity_sif_container_singularity_engine():
-    container_uri_rel = _download_sif()
-    container_uri_abs = os.path.join(os.path.dirname(__file__), container_uri_rel)
-    from os import listdir
-    print(listdir(os.path.dirname(__file__)))
+    container_sif = _download_sif()
     kwargs = {"smiles": "c1cccnc1"}
     results = {
         key: value
         for key, value in ever_given.wrapper.run(
-            container_uri_abs,
+            container_sif,
             kwargs=kwargs,
             container_type="singularity_sif",
             engine_name="singularity",
