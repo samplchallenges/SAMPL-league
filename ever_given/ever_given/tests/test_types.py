@@ -36,14 +36,13 @@ def _download_sif():
 
 
 def test_singularity_sif_container_docker_engine():
-    container_uri_rel = _download_sif()
-    container_uri_abs = os.path.join(os.path.dirname(__file__), container_uri_rel)
+    container_sif = _download_sif()
     kwargs = {"smiles": "c1cccnc1"}
     with pytest.raises(ValueError):
         results = {
             key: value
             for key, value in ever_given.wrapper.run(
-                container_uri_abs,
+                container_sif,
                 kwargs=kwargs,
                 container_type="singularity_sif",
                 engine_name="docker",
