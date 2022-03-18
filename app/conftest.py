@@ -129,7 +129,7 @@ def container_factory(user, db):
             name="Container1",
             user=user,
             challenge=challenge,
-            container_type="docker",
+            container_type=models.ContainerType.DOCKER,
             registry="ghcr.io",
             label=label,
             tag=tag,
@@ -171,7 +171,7 @@ def scoring_container(challenge, user, db):
     return models.Container.objects.create(
         name="subtraction container",
         user=user,
-        container_type="docker",
+        container_type=models.ContainerType.DOCKER,
         challenge=challenge,
         registry="ghcr.io",
         label="megosato/score-coords",

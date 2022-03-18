@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.forms import ContainerForm, SubmissionForm
-from core.models import Challenge, Status, Submission
+from core.models import Challenge, ContainerType, Status, Submission
 from core.tests import mocktime
 
 
@@ -75,7 +75,7 @@ def test_clone_submission(client, user, draft_submission):
 def test_create_submission(client, user, challenge):
     form_data = {
         "container-name": "test container",
-        "container-container_type": "docker",
+        "container-container_type": ContainerType.DOCKER,
         "container-challenge": challenge.pk,
         "container-registry": "local",
         "container-label": "package2",
@@ -238,7 +238,9 @@ def test_update_expired_submission(client, user, draft_submission):
         assert getattr(submission, key) == getattr(submission_old, key)
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"], [[ContainerType.DOCKER], [ContainerType.SINGULARITY]]
+)
 @pytest.mark.django_db(transaction=True)
 def test_run_submission(client, container_engine):
 

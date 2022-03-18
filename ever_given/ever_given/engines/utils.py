@@ -49,6 +49,7 @@ class Engine(abc.ABC):
     @abc.abstractmethod
     def run_container(
         cls,
+        container_type: str,
         container_uri: str,
         command_list: typing.List[str],
         *,

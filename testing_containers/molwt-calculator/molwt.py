@@ -30,6 +30,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--molfile', help="MOL File")
     parser.add_argument('--smiles', help="SMILES string")
+    parser.add_argument('--output-dir', help="Output Dir")
     args = parser.parse_args()
 
     calc_mol_wt(args.molfile, args.smiles)

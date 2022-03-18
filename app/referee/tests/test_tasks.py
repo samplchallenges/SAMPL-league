@@ -11,7 +11,10 @@ from referee import scoring, tasks
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_run_and_score_submission(container_engine):
     # This test will fail if run after another transaction=True test
     # See workaround in tests/test_views.py:test_run_submission
@@ -50,7 +53,10 @@ def _run_and_check_evaluation(submission_run, evaluation):
     return prediction
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_run_element_mol(molfile_molw_config, benzene_from_mol, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         submission_run = molfile_molw_config.submission_run
@@ -62,7 +68,10 @@ def test_run_element_mol(molfile_molw_config, benzene_from_mol, container_engine
         assert prediction.value == pytest.approx(78.046950192)
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_run_element_custom(
     molfile_molw_config, benzene_from_mol, container_arg_factory, container_engine
 ):
@@ -85,7 +94,10 @@ def test_run_element_custom(
         assert "error: unrecognized arguments:" in evaluation.log_stderr
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_evaluation_scoring_failure(
     molfile_molw_config, benzene_from_mol, container_engine
 ):
@@ -125,7 +137,10 @@ def evaluation_scores(smiles_molw_config, evaluations):
     return [_score(evaluation) for evaluation in evaluations]
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_submission_run_scoring_failure(
     smiles_molw_config, evaluations, evaluation_scores, container_engine
 ):
@@ -150,14 +165,17 @@ def file_container(challenge_factory, user, db):
         name="CoordGenContainer",
         user=user,
         challenge=coord_challenge,
-        container_type="docker",
+        container_type=models.ContainerType.DOCKER,
         registry="ghcr.io",
         label="megosato/calc-coords",
         tag="latest",
     )
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_run_files(
     file_container,
     elem_factory,
@@ -171,7 +189,7 @@ def test_run_files(
             name="subtraction container",
             user=file_container.user,
             challenge=challenge,
-            container_type="docker",
+            container_type=models.ContainerType.DOCKER,
             registry="ghcr.io",
             label="megosato/score-coords",
             tag="latest",
@@ -250,7 +268,10 @@ def test_run_files(
         assert prediction.value == pytest.approx(78.046950192)
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_cancel_evaluation_before_run(
     molfile_molw_config, benzene_from_mol, container_engine
 ):
@@ -272,7 +293,10 @@ def test_cancel_evaluation_before_run(
         assert evaluation.status == models.Status.CANCELLED
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_cancel_submission_before_run(
     molfile_molw_config, benzene_from_mol, container_engine
 ):

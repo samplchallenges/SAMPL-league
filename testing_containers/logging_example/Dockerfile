@@ -1,13 +1,10 @@
 #FROM mcs07/rdkit:latest
-FROM robbason/basepyrd:latest
+FROM ghcr.io/megosato/basepyrd:latest
 
 WORKDIR /opt/app
 
-COPY setup.py logging_example.py ./
+COPY logging_example.py ./
 
 ENV PATH="/root/.local/bin:$PATH"
 
-#RUN python3 -m pip install --user openbabel
-RUN python3 -m pip install --user .
-
-ENTRYPOINT ["calc-coords"]
+ENTRYPOINT ["python3", "/opt/app/logging_example.py"]

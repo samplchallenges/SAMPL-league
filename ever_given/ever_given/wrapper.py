@@ -82,7 +82,7 @@ def run(
     *,
     file_kwargs: typing.Dict[str, str],
     kwargs: typing.Dict[str, str],
-    container_type: str = None,
+    container_type: str = "docker",
     engine_name: str = "docker",
     output_dir: str = None,
     output_file_keys: typing.List[str] = None,
@@ -113,6 +113,7 @@ def run(
     container_uri = _get_container_uri(container_uri, container_type, engine_name)
 
     running_container = REGISTERED_ENGINES[engine_name].run_container(
+        container_type,
         container_uri,
         command_list,
         inputdir_map=inputdir_map,

@@ -8,7 +8,7 @@ import os
 from .utils import ContainerInstance, Engine, GUEST_OUTPUT_DIR
 
 AFTER_TERMINATE_WAIT = 5  # Seconds to wait after 'terminate' signal before 'kill'
-
+SINGULARITY_CONTAINER_TYPES = ["docker", "singularity", "singularity_sif"]
 
 class SingularityContainerInstance(ContainerInstance):
     def __init__(self, process: subprocess.Popen, container_uri):
@@ -29,13 +29,14 @@ class SingularityContainerInstance(ContainerInstance):
         # FIXED: return pipe.readline() 
         #   * returns an integer that needed to be decoded .decode('utf-8')
         #   * only returned the first line
-        log_string = ""
+        log_string_list = typing.cast([str], [])
+
         while True:
             line = typing.cast(bytes, pipe.readline())
             if not line:
                 break
-            log_string += line.decode('utf-8')
-        return [log_string]
+            log_string_list.append(line.decode('utf-8'))
+        return log_string_list
 
     def reload(self):
         pass  # don't need this for status, right?
@@ -48,8 +49,7 @@ class SingularityContainerInstance(ContainerInstance):
             self.process.kill()
 
     def remove(self):
-        print(self.container_uri)
-        
+        pass 
         #raise Exception("Not yet implemented")
         # self.container.remove()
 
@@ -60,7 +60,6 @@ class SingularityContainerInstance(ContainerInstance):
         #print(output)
          
     def status(self):
-        #print("status:", self.process.poll())
         return self.process.poll()
 
 
@@ -70,6 +69,7 @@ class SingularityEngine(Engine):
     @classmethod
     def run_container(
         cls,
+        container_type,
         container_uri,
         command_list,
         *,
@@ -77,8 +77,11 @@ class SingularityEngine(Engine):
         output_dir=None,
         aws_login_func=None,
     ):
+        # Check the container type
+        if container_type not in SINGULARITY_CONTAINER_TYPES:
+            raise ValueError(f"Container type {container_type} not supported by singularity engine")
         if aws_login_func:
-            aws_login_func()
+            aws_login_func("singularity")
         bind_volumes = []
         for inputdir, guest_input_dir in inputdir_map.items():
             bind_volumes.append(f"{inputdir}:{guest_input_dir}") #:ro")
@@ -100,6 +103,8 @@ class SingularityEngine(Engine):
             return f"docker://{container_uri}"
         elif container_type == "singularity":
             return f"shub://{container_uri}"
+        elif container_type == "singularity_sif":
+            return container_uri
         else:
             raise Exception("Container Type Not Implemented")
 
@@ -116,7 +121,5 @@ def _build_singularity_command(bind_volumes, container_uri, command_list):
     
     for command in command_list:
         singularity_cmd += str(command) + " "
-    print(singularity_cmd)
     return singularity_cmd
-    #raise Exception("not implemented yet")
 

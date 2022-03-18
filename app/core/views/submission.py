@@ -151,7 +151,6 @@ def edit_submission_view(request, pk=None, clone=False):
                     submission.save(update_fields=["notes"])
                 return redirect("submission-detail", pk=submission.pk)
         valid = container_form.is_valid()
-        print("VALID:", valid)
         if valid:
             challenge = container_form.cleaned_data["challenge"]
             if challenge.is_active():

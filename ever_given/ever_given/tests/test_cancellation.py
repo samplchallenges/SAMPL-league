@@ -1,5 +1,5 @@
 import time
-
+import os
 import pytest
 import subprocess
 import shlex
@@ -17,7 +17,8 @@ def test_cancellation(container_engine):
         proc = subprocess.Popen(command, shell=True)
         proc.wait()
         container_uri = "logging-example_latest.sif"
-        container_type = "singularity"
+        container_type = "singularity_sif"
+        assert os.path.exists(container_uri)
     if container_engine == "docker":
         command = f"docker pull {container_uri}"
         proc = subprocess.Popen(command, shell=True)

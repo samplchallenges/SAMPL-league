@@ -7,6 +7,8 @@ from django.conf import settings
 
 from core import models
 
+from . import utils
+
 logger = logging.getLogger(__name__)
 
 
@@ -85,7 +87,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
             log_handler=models.Evaluation.LogHandler(evaluation),
             container_type=container.container_type,
             engine_name=settings.CONTAINER_ENGINE,
-            aws_login_func=settings.AWS_LOGIN_FUNCTION
+            aws_login_func=utils.get_aws_credential_function(container.uri)
             if settings.LOGIN_TO_AWS
             else None,
         ):
@@ -125,7 +127,7 @@ def _score_submission_run(container, submission_run, score_types):
             kwargs=kwargs,
             container_type=container.container_type,
             engine_name=settings.CONTAINER_ENGINE,
-            aws_login_func=settings.AWS_LOGIN_FUNCTION
+            aws_login_func=utils.get_aws_credential_function(container.uri)
             if settings.LOGIN_TO_AWS
             else None,
         ):

@@ -5,6 +5,7 @@ import docker  # type: ignore
 
 from .utils import ContainerInstance, Engine, GUEST_OUTPUT_DIR
 
+DOCKER_CONTAINER_TYPES = ["docker"]
 
 class DockerContainerInstance(ContainerInstance):
     def __init__(self, client, container):
@@ -37,6 +38,7 @@ class DockerEngine(Engine):
     @classmethod
     def run_container(
         cls,
+        container_type: str,
         container_uri: str,
         command_list: typing.List[str],
         *,
@@ -44,8 +46,10 @@ class DockerEngine(Engine):
         output_dir: str = None,
         aws_login_func=None,
     ) -> DockerContainerInstance:
+        if container_type not in DOCKER_CONTAINER_TYPES:
+            raise ValueError(f"Container type: {container_type} not supported by Docker Engine")
         if aws_login_func:
-            aws_login_func()
+            aws_login_func("docker")
         command = " ".join(command_list)
         client = docker.from_env()
         volumes = {}
@@ -56,7 +60,6 @@ class DockerEngine(Engine):
             output_dir = str(Path(output_dir).resolve())
             volumes[output_dir] = {"bind": str(GUEST_OUTPUT_DIR), "mode": "rw"}
             command = f" --output-dir {GUEST_OUTPUT_DIR} {command}"
-
         docker_container = client.containers.run(
             container_uri,
             command,
@@ -66,5 +69,4 @@ class DockerEngine(Engine):
             remove=False,
             detach=True,
         )
-
         return DockerContainerInstance(client, docker_container)

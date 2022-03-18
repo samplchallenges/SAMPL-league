@@ -10,7 +10,7 @@ from ever_given.log_processing import CancelledException
 
 from core import models
 
-from . import scoring
+from . import scoring, utils
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                 output_file_keys=output_file_keys,
                 log_handler=models.Evaluation.LogHandler(evaluation),
                 cancel_requested_func=submission_run.check_cancel_requested,
-                aws_login_func=settings.AWS_LOGIN_FUNCTION
+                aws_login_func=utils.get_aws_credential_function(container.uri)
                 if settings.LOGIN_TO_AWS
                 else None,
             )

@@ -145,6 +145,12 @@ class Challenge(Timestamped):
         return score_types
 
 
+class ContainerType(models.TextChoices):
+    DOCKER = "docker"
+    SINGULARITY = "singularity"
+    SINGULARITY_SIF = "singularity_sif"
+
+
 class Container(Timestamped):
     name = models.CharField(max_length=255)
     user = models.ForeignKey(auth_models.User, on_delete=models.CASCADE)
@@ -157,7 +163,7 @@ class Container(Timestamped):
     #  * "library://"
     container_type = models.CharField(
         max_length=255,
-        choices=configurator.CONTAINER_TYPE_CHOICES,
+        choices=ContainerType.choices,
         help_text=configurator.CONTAINER_TYPE_DETAILS,
         null=True,
     )

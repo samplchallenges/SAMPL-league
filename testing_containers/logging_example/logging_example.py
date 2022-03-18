@@ -5,8 +5,8 @@ stdout and stderr
 import os.path
 import sys
 import time
+import argparse
 
-import click
 from rdkit.Chem.Descriptors import ExactMolWt
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -24,12 +24,7 @@ def mprint(*args, **kwargs):
     print(*args, **kwargs)
 
 
-@click.command()
-@click.option("--output-dir", help="Output Directory", type=click.Path(exists=True))
-@click.option("--molfile", help="MOL File", type=click.Path(exists=True))
-@click.option("--smiles", help="SMILES string")
-@click.argument("smiles_arg", required=False, default=None)
-def calc_coords(output_dir, molfile, smiles, smiles_arg):
+def calc_coords(output_dir, molfile, smiles):
     mprint("Starting coords")
     _p()
     mprint("Error message #1", file=sys.stderr)
@@ -64,11 +59,22 @@ def calc_coords(output_dir, molfile, smiles, smiles_arg):
         _printinfo(mol)
         return 0
     if not smiles:
-        smiles = smiles_arg
-    if not smiles:
-        click.echo("Must pass SMILES either with --smiles or directly", err=True)
+        mprint("Must pass SMILES with --smiles", file=sys.stderr)
         return 1
     mol = Chem.MolFromSmiles(smiles)
     mprint("Error message #3", file=sys.stderr)
     _printinfo(mol)
     return 0
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output-dir', help='Output Directory')
+    parser.add_argument('--molfile', help='MOL File')
+    parser.add_argument('--smiles', help='SMILES string')
+
+    args = parser.parse_args()
+
+    calc_coords(args.output_dir, args.molfile, args.smiles)
+
+

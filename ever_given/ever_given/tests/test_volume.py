@@ -8,6 +8,7 @@ import ever_given.wrapper
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_run_inputfile_only(container_engine):
     test_mdlfile_rel = "data/ChEBI_16716.mdl"
+    print(os.path.dirname(__file__))
     test_mdlfile_abs = os.path.join(os.path.dirname(__file__), test_mdlfile_rel)
     container_uri = "ghcr.io/megosato/calc-molwt:latest"
     file_kwargs = {"molfile": test_mdlfile_abs}
@@ -21,7 +22,7 @@ def test_run_inputfile_only(container_engine):
             file_kwargs=file_kwargs
         )
     }
-
+    
     assert set(results.keys()) == {"numAtoms", "numBonds", "molWeight"}
     molWeight = float(results["molWeight"].strip())
     assert molWeight == pytest.approx(78.046950192)

@@ -9,7 +9,10 @@ from core import filecache, models
 from referee import scoring
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_score_submission_run(
     smiles_molw_config,
     evaluations,
@@ -55,12 +58,12 @@ def _save_file_arg(container, key, file_body):
 @pytest.mark.parametrize(
     ["custom_string_args", "custom_file_args", "container_engine"],
     [
-        [{}, {}, "docker"],
-        [{"foo": "bar"}, {}, "docker"],
-        [{}, {"license": "Hello world"}, "docker"],
-        [{}, {}, "singularity"],
-        [{"foo": "bar"}, {}, "singularity"],
-        [{}, {"license": "Hello world"}, "singularity"],
+        [{}, {}, models.ContainerType.DOCKER],
+        [{"foo": "bar"}, {}, models.ContainerType.DOCKER],
+        [{}, {"license": "Hello world"}, models.ContainerType.DOCKER],
+        [{}, {}, models.ContainerType.SINGULARITY],
+        [{"foo": "bar"}, {}, models.ContainerType.SINGULARITY],
+        [{}, {"license": "Hello world"}, models.ContainerType.SINGULARITY],
     ],
 )
 def test_score_evaluation_args(
@@ -108,7 +111,10 @@ def test_score_evaluation_args(
         assert file_kwargs == expected_file_kwargs
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_score_submission_run_failure(
     smiles_molw_config,
     evaluations,
@@ -125,7 +131,10 @@ def test_score_submission_run_failure(
                 scoring.score_submission_run(submission_run)
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+)
 def test_score_evaluation_failure(smiles_molw_config, evaluations, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:

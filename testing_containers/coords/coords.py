@@ -1,5 +1,6 @@
 import os.path
 import argparse
+import sys
 
 from rdkit.Chem.Descriptors import ExactMolWt
 from rdkit import Chem
@@ -33,7 +34,7 @@ def calc_coords(output_dir, molfile, smiles,):
         _printinfo(mol)
         return 0
     if not smiles:
-        click.echo("Must pass SMILES with --smiles", err=True)
+        print("Must pass SMILES with --smiles", file=sys.stderr)
         return 1
     mol = Chem.MolFromSmiles(smiles)
     _printinfo(mol)
