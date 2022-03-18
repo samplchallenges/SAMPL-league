@@ -29,7 +29,7 @@ def _download_sif():
     container_sif = "calc-molwt_latest.sif"
     if os.path.exists(container_sif):
         return container_sif
-
+    
     container_uri = "ghcr.io/megosato/calc-molwt:latest"
     container_type = "docker"
     command = f"singularity pull docker://{container_uri}"
@@ -42,6 +42,8 @@ def _download_sif():
 def test_singularity_sif_container_docker_engine():
     container_uri_rel = _download_sif()
     container_uri_abs = os.path.join(os.path.dirname(__file__), container_uri_rel)
+    from os import listdir
+    print(listdir(os.path.dirname(__file__)))
     kwargs = {"smiles": "c1cccnc1"}
     with pytest.raises(ValueError):
         results = {
