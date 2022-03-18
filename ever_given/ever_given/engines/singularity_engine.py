@@ -29,7 +29,7 @@ class SingularityContainerInstance(ContainerInstance):
         # FIXED: return pipe.readline() 
         #   * returns an integer that needed to be decoded .decode('utf-8')
         #   * only returned the first line
-        log_string_list = typing.cast([str], [])
+        log_string_list = typing.cast(typing.List[str], [])
 
         while True:
             line = typing.cast(bytes, pipe.readline())
