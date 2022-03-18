@@ -26,10 +26,6 @@ def test_docker_container(container_engine):
 
 
 def _download_sif():
-    container_sif = "calc-molwt_latest.sif"
-    if os.path.exists(container_sif):
-        return container_sif
-    
     container_uri = "ghcr.io/megosato/calc-molwt:latest"
     container_type = "docker"
     command = f"singularity pull docker://{container_uri}"
