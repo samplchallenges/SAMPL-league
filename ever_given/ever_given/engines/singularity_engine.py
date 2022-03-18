@@ -54,10 +54,9 @@ class SingularityContainerInstance(ContainerInstance):
         # self.container.remove()
 
         #container_sif = os.path.basename(self.container_uri)
-        #command = f"singularity cache clean -N {container_sif}"
-
-        #output = subprocess.run(command, shell=True, capture_output=True)
-        #print(output)
+        #command = f"singularity cache clean "
+        #this removes the entire cache, singularity 3.7.2 does not have a --name option
+        # to remove specific containers
          
     def status(self):
         return self.process.poll()

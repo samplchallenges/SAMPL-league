@@ -78,13 +78,6 @@ jobs:
         with:
           singularity-version: 3.7.2 # same version as hpc3
 
-      - name: Create sampl_pull AWS config file
-        env: 
-          AWS_SAMPL_PULL_CONFIG: ${{secrets.AWS_SAMPL_PULL_CONFIG}}
-        run: |
-          mkdir ~/.aws
-          echo $AWS_SAMPL_PULL_CONFIG >> ~/.aws/config
-
       - name: Run test suite
         run: |
           pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given

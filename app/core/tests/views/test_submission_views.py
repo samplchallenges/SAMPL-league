@@ -197,7 +197,7 @@ def test_update_expired_submission(client, user, draft_submission):
     change_challenge.save()
     container_form_data = {
         "name": "UPDATED CONTAINER",
-        "container_type": "Docker",
+        "container_type": ContainerType.DOCKER,
         "registry": "docker.io",
         "challenge": change_challenge,
         "label": "osatom/adv-tutorial",
@@ -239,7 +239,8 @@ def test_update_expired_submission(client, user, draft_submission):
 
 
 @pytest.mark.parametrize(
-    ["container_engine"], [[ContainerType.DOCKER], [ContainerType.SINGULARITY]]
+    ["container_engine"],
+    [["docker"], ["singularity"]],
 )
 @pytest.mark.django_db(transaction=True)
 def test_run_submission(client, container_engine):

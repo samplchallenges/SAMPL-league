@@ -4,9 +4,6 @@ Constants for submission details
 
 DRAFT_MODE_DETAILS = """Use draft mode if you would like to test your container/submission before formal submission. In draft mode, fields below may be left incomplete. Once you are happy with your submission, you must uncheck draft mode before finalizing your submission."""
 
-CONTAINER_TYPE_OPTIONS = ("docker", "singularity")
-CONTAINER_TYPE_CHOICES = list(zip(CONTAINER_TYPE_OPTIONS, CONTAINER_TYPE_OPTIONS))
-
 CONTAINER_TYPE_DETAILS = """State the type of container image you are submitting `Docker` or `Singularity`."""
 
 NAME_DETAILS = """Please provide an informal but informative name of the method used.

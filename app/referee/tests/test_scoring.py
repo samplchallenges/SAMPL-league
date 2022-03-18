@@ -11,7 +11,7 @@ from referee import scoring
 
 @pytest.mark.parametrize(
     ["container_engine"],
-    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+    [["docker"], ["singularity"]],
 )
 def test_score_submission_run(
     smiles_molw_config,
@@ -58,12 +58,12 @@ def _save_file_arg(container, key, file_body):
 @pytest.mark.parametrize(
     ["custom_string_args", "custom_file_args", "container_engine"],
     [
-        [{}, {}, models.ContainerType.DOCKER],
-        [{"foo": "bar"}, {}, models.ContainerType.DOCKER],
-        [{}, {"license": "Hello world"}, models.ContainerType.DOCKER],
-        [{}, {}, models.ContainerType.SINGULARITY],
-        [{"foo": "bar"}, {}, models.ContainerType.SINGULARITY],
-        [{}, {"license": "Hello world"}, models.ContainerType.SINGULARITY],
+        [{}, {}, "docker"],
+        [{"foo": "bar"}, {}, "docker"],
+        [{}, {"license": "Hello world"}, "docker"],
+        [{}, {}, "singularity"],
+        [{"foo": "bar"}, {}, "singularity"],
+        [{}, {"license": "Hello world"}, "singularity"],
     ],
 )
 def test_score_evaluation_args(
@@ -113,7 +113,7 @@ def test_score_evaluation_args(
 
 @pytest.mark.parametrize(
     ["container_engine"],
-    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+    [["docker"], ["singularity"]],
 )
 def test_score_submission_run_failure(
     smiles_molw_config,
@@ -133,7 +133,7 @@ def test_score_submission_run_failure(
 
 @pytest.mark.parametrize(
     ["container_engine"],
-    [[models.ContainerType.DOCKER], [models.ContainerType.SINGULARITY]],
+    [["docker"], ["singularity"]],
 )
 def test_score_evaluation_failure(smiles_molw_config, evaluations, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
