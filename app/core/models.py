@@ -147,7 +147,7 @@ class Challenge(Timestamped):
 
 class ContainerType(models.TextChoices):
     DOCKER = "docker"
-    # SINGULARITY = "singularity"
+    #SINGULARITY = "singularity"
     SINGULARITY_SIF = "singularity_sif"
 
 
