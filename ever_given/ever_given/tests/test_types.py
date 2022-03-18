@@ -24,30 +24,14 @@ def test_docker_container(container_engine):
     molWeight = float(results["molWeight"].strip())
     assert molWeight == pytest.approx(79.04219916)
 
-
-def _download_sif():
-    container_uri = "calc-molwt_latest.sif"
-    if os.path.exists(container_uri):
-        return container_uri
-
-    container_uri = "ghcr.io/megosato/calc-molwt:latest"
-    container_type = "docker"
-    command = f"singularity pull docker://{container_uri}"
-    proc = subprocess.Popen(command, shell=True)
-    proc.wait()
-    return container_uri
-
-
-
 def test_singularity_sif_container_docker_engine():
-    container_uri_rel = _download_sif()
-    container_uri_abs = os.path.join(os.path.dirname(__file__), container_uri_rel)
+    container_sif = "calc-molwt_latest.sif"
     kwargs = {"smiles": "c1cccnc1"}
     with pytest.raises(ValueError):
         results = {
             key: value
             for key, value in ever_given.wrapper.run(
-                container_uri_abs,
+                container_sif,
                 kwargs=kwargs,
                 container_type="singularity_sif",
                 engine_name="docker",
@@ -56,13 +40,17 @@ def test_singularity_sif_container_docker_engine():
         }
 
 def test_singularity_sif_container_singularity_engine():
-    container_uri_rel = _download_sif()
-    container_uri_abs = os.path.join(os.path.dirname(__file__), container_uri_rel)
+    container_uri = "ghcr.io/megosato/calc-molwt:latest" 
+    command = f"singularity pull docker://{container_uri}"
+    proc = subprocess.Popen(command, shell=True)
+    proc.wait()
+    container_sif = "calc-molwt_latest.sif"
+    assert os.path.exists(container_sif)
     kwargs = {"smiles": "c1cccnc1"}
     results = {
         key: value
         for key, value in ever_given.wrapper.run(
-            container_uri_abs,
+            container_sif,
             kwargs=kwargs,
             container_type="singularity_sif",
             engine_name="singularity",

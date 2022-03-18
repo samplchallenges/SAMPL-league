@@ -23,5 +23,3 @@ DATABASES = {
         "PORT": os.environ["RDS_PORT"],
     }
 }
-
-LOGIN_TO_AWS = True
