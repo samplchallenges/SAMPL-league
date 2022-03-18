@@ -26,7 +26,7 @@ def test_docker_container(container_engine):
 
 
 def test_singularity_sif_container_docker_engine():
-    container_sif = _download_sif()
+    container_sif = "calc-molwt_latest.sif"
     kwargs = {"smiles": "c1cccnc1"}
     with pytest.raises(ValueError):
         results = {
@@ -43,9 +43,10 @@ def test_singularity_sif_container_docker_engine():
 def test_singularity_sif_container_singularity_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
     command = f"singularity pull docker://{container_uri}"
-    proc = subprocess.Popen(command, shell=True, check=True)
+    proc = subprocess.Popen(command, shell=True)
     proc.wait()
     container_sif = "calc-molwt_latest.sif"
+    assert os.path.exists(container_sif)
     kwargs = {"smiles": "c1cccnc1"}
     results = {
         key: value
