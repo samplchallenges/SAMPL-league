@@ -105,8 +105,8 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 CONTAINER_ENGINE = "docker"
 
 
-ECR_BASE_URL = "103125031445.dkr.ecr.us-east-2.amazonaws.com"
-ECR_SAMPLLEAGUE_URL = "103125031445.dkr.ecr.us-east-2.amazonaws.com/sampl-league"
+ECR_BASE_URL = os.environ["ECR_BASE_URL"]
+ECR_SAMPLLEAGUE_URL = os.environ["ECR_SAMPLLEAGUE_URL"]
 
 
 def run_aws_login(container_engine):

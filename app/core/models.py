@@ -147,8 +147,8 @@ class Challenge(Timestamped):
 
 class ContainerType(models.TextChoices):
     DOCKER = "docker"
-    # SINGULARITY = "singularity"
-    SINGULARITY_SIF = "singularity_sif"
+    SINGULARITY_LOCAL = "singularity_local"
+    # TODO: Singularity remote server
 
 
 class Container(Timestamped):

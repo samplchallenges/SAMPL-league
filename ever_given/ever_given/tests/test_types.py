@@ -33,7 +33,7 @@ def test_singularity_sif_container_docker_engine():
             for key, value in ever_given.wrapper.run(
                 container_sif,
                 kwargs=kwargs,
-                container_type="singularity_sif",
+                container_type="singularity_local",
                 engine_name="docker",
                 file_kwargs={}
             )
@@ -52,7 +52,7 @@ def test_singularity_sif_container_singularity_engine():
         for key, value in ever_given.wrapper.run(
             container_sif,
             kwargs=kwargs,
-            container_type="singularity_sif",
+            container_type="singularity_local",
             engine_name="singularity",
             file_kwargs={}
         )

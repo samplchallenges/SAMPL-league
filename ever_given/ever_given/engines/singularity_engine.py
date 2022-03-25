@@ -8,7 +8,7 @@ import os
 from .utils import ContainerInstance, Engine, GUEST_OUTPUT_DIR
 
 AFTER_TERMINATE_WAIT = 5  # Seconds to wait after 'terminate' signal before 'kill'
-SINGULARITY_CONTAINER_TYPES = ["docker", "singularity", "singularity_sif"]
+SINGULARITY_CONTAINER_TYPES = ["docker", "singularity_remote", "singularity_local"]
 
 class SingularityContainerInstance(ContainerInstance):
     def __init__(self, process: subprocess.Popen, container_uri):
@@ -100,9 +100,9 @@ class SingularityEngine(Engine):
     def make_uri(cls, container_uri, container_type):
         if container_type == "docker":
             return f"docker://{container_uri}"
-        elif container_type == "singularity":
+        elif container_type == "singularity_remote":
             return f"shub://{container_uri}"
-        elif container_type == "singularity_sif":
+        elif container_type == "singularity_local":
             return container_uri
         else:
             raise Exception("Container Type Not Implemented")
