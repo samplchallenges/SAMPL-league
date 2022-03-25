@@ -88,6 +88,8 @@ jobs:
           RDS_PORT: 5432
           RDS_USERNAME: sampl_user
           DJANGO_SETTINGS_MODULE: sampl.settings_test
+          ECR_BASE_URL: "103125031445.dkr.ecr.us-east-2.amazonaws.com"
+          ECR_SAMPLLEAGUE_URL: "103125031445.dkr.ecr.us-east-2.amazonaws.com/sampl-league"
 
       - name: Upload test coverage
         uses: codecov/codecov-action@v2.1.0
