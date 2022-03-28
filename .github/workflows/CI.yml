@@ -78,6 +78,16 @@ jobs:
         with:
           singularity-version: 3.7.2 # same version as hpc3
 
+      - name: Pull singularity containers
+        run: |
+          mkdir ../testing_sifs
+          cd ../testing_sifs
+          singularity pull docker://ghcr.io/megosato/logging-example:latest
+          singularity pull docker://ghcr.io/megosato/calc-molwt:latest
+          ls
+          cd ../app
+          ls          
+
       - name: Run test suite
         run: |
           pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given
