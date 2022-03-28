@@ -13,9 +13,7 @@ def test_cancellation(container_engine):
     container_uri = "ghcr.io/megosato/logging-example:latest"
     container_type = "docker"
     if container_engine == "singularity":
-        command = f"singularity pull docker://{container_uri}"
-        subprocess.run([command], shell=True, check=True)
-        container_uri = "logging-example_latest.sif"
+        container_uri = "../../../testing_containers/sifs/logging-example_latest.sif"
         container_type = "singularity_local"
         assert os.path.exists(container_uri)
     if container_engine == "docker":
@@ -46,7 +44,12 @@ def test_cancellation(container_engine):
 
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_no_cancellation(container_engine):
-    container_uri = "ghcr.io/megosato/calc-molwt:latest"
+    if container_engine == "singularity":
+        container_uri = "../../../testing_containers/sifs/calc-molwt_latest.sif"
+        container_type = "singularity_local"
+    if container_engine == "docker":
+        container_uri = "ghcr.io/megosato/calc-molwt:latest"
+        container_type = "docker"
     kwargs = {"smiles": "c1cccnc1"}
     results = {
         key: value
@@ -54,7 +57,7 @@ def test_no_cancellation(container_engine):
             container_uri,
             kwargs=kwargs,
             file_kwargs={},
-            container_type="docker",
+            container_type=container_type,
             engine_name=container_engine,
             cancel_requested_func=lambda: False,
         )

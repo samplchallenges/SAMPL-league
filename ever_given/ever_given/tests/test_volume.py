@@ -8,16 +8,20 @@ import ever_given.wrapper
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_run_inputfile_only(container_engine):
     test_mdlfile_rel = "data/ChEBI_16716.mdl"
-    print(os.path.dirname(__file__))
     test_mdlfile_abs = os.path.join(os.path.dirname(__file__), test_mdlfile_rel)
-    container_uri = "ghcr.io/megosato/calc-molwt:latest"
+    if container_engine == "docker":
+        container_uri = "ghcr.io/megosato/calc-molwt:latest"
+        container_type = "docker"
+    if container_engine == "singularity":
+        container_uri = "../../../testing_containers/sifs/calc-molwt_latest.sif"
+        container_type = "singularity_local"
     file_kwargs = {"molfile": test_mdlfile_abs}
     results = {
         key: value
         for key, value in ever_given.wrapper.run(
             container_uri, 
             kwargs={},
-            container_type="docker",
+            container_type=container_type,
             engine_name=container_engine,
             file_kwargs=file_kwargs
         )
@@ -30,7 +34,13 @@ def test_run_inputfile_only(container_engine):
 
 @pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_run_outputfile_only(tmp_path, container_engine):
-    container_uri = "ghcr.io/megosato/calc-molwt-outfile:latest"
+    
+    if container_engine == "docker":
+        container_uri = "ghcr.io/megosato/calc-molwt-outfile:latest"
+        container_type = "docker"
+    if container_engine == "singularity":
+        container_uri = "../../../testing_containers/sifs/calc-molwt-outfile_latest.sif"
+        container_type = "singularity_local"
     kwargs = {"smiles": "c1cccnc1"}
     results = {
         key: value
@@ -39,7 +49,7 @@ def test_run_outputfile_only(tmp_path, container_engine):
             kwargs=kwargs,
             output_file_keys=["outfile"],
             output_dir=tmp_path,
-            container_type="docker",
+            container_type=container_type,
             engine_name=container_engine,
             file_kwargs={}
         )
