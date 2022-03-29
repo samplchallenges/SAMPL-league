@@ -80,13 +80,11 @@ jobs:
 
       - name: Pull singularity containers
         run: |
-          mkdir ../testing_sifs
-          cd ../testing_sifs
+          mkdir ../testing_containers/sifs/
+          cd ../testing_containers/sifs/
           singularity pull docker://ghcr.io/megosato/logging-example:latest
           singularity pull docker://ghcr.io/megosato/calc-molwt:latest
-          ls
-          cd ../app
-          ls          
+          cd ../../app
 
       - name: Run test suite
         run: |
