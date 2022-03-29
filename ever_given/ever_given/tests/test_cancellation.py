@@ -13,14 +13,14 @@ def test_cancellation(container_engine):
     container_uri = "ghcr.io/megosato/logging-example:latest"
     container_type = "docker"
     if container_engine == "singularity":
-        command = f"singularity pull docker://{container_uri}"
-        subprocess.run([command], shell=True, check=True)
+        command = ["singularity", "pull", f"docker://{container_uri}"]
+        subprocess.run(command, check=True)
         container_uri = "logging-example_latest.sif"
         container_type = "singularity_local"
         assert os.path.exists(container_uri)
     if container_engine == "docker":
-        command = f"docker pull {container_uri}"
-        subprocess.run([command], shell=True, check=True)
+        command = ["docker", "pull", container_uri]
+        subprocess.run(command, shell=True, check=True)
     kwargs = {"smiles": "c1cccnc1"}
 
     start_at = time.time()

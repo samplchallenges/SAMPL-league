@@ -41,9 +41,8 @@ def test_singularity_sif_container_docker_engine():
 
 def test_singularity_sif_container_singularity_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
-    command = f"singularity pull docker://{container_uri}"
-    proc = subprocess.Popen(command, shell=True)
-    proc.wait()
+    command = ["singularity", "pull", f"docker://{container_uri}"]
+    subprocess.run(command, check=True)
     container_sif = "calc-molwt_latest.sif"
     assert os.path.exists(container_sif)
     kwargs = {"smiles": "c1cccnc1"}

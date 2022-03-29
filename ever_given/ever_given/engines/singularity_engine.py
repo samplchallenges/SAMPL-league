@@ -92,7 +92,7 @@ class SingularityEngine(Engine):
 
         command = _build_singularity_command(bind_volumes, container_uri, command_list)
         process = subprocess.Popen(
-            shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         return SingularityContainerInstance(process, container_uri)
 
@@ -109,16 +109,15 @@ class SingularityEngine(Engine):
 
 def _build_singularity_command(bind_volumes, container_uri, command_list):
     #  TODO: how to decide when to load Nvidia drivers?
-    singularity_cmd = "singularity run "
+    singularity_cmd = ["singularity", "run",]
     if bind_volumes and len(bind_volumes) >= 1:
-        singularity_cmd += "--bind "
+        singularity_cmd.append("--bind")
+        bind_str = ""
         for bind in bind_volumes:
-            singularity_cmd += bind + ","
-        singularity_cmd = singularity_cmd[:-1] + " "
+            bind_str += bind + ","
+        singularity_cmd.append(bind_str[:-1])
     
-    singularity_cmd += container_uri + " "
+    singularity_cmd.extend([container_uri] + command_list)
     
-    for command in command_list:
-        singularity_cmd += str(command) + " "
     return singularity_cmd
 

@@ -121,8 +121,15 @@ def run_aws_login(container_engine):
     elif container_engine == "singularity":
         os.environ["SINGULARITY_DOCKER_USERNAME"] = "AWS"
         aws_call = subprocess.run(
-            ["aws ecr get-login-password --region us-east-2 --profile sampl_pull"],
-            shell=True,
+            [
+                "aws",
+                "ecr",
+                "get-login-password",
+                "--region",
+                "us-east-2",
+                "--profile",
+                "sampl_pull",
+            ],
             capture_output=True,
             text=True,
             check=True,
