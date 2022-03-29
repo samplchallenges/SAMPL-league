@@ -87,7 +87,7 @@ class SingularityEngine(Engine):
         if output_dir:
             output_dir = Path(output_dir).resolve()
             bind_volumes.append(f"{output_dir}:{GUEST_OUTPUT_DIR}") #:rw")
-            command_list.append(f"--output-dir {GUEST_OUTPUT_DIR}")
+            command_list.extend(["--output-dir", GUEST_OUTPUT_DIR])
 
 
         command = _build_singularity_command(bind_volumes, container_uri, command_list)
@@ -116,8 +116,6 @@ def _build_singularity_command(bind_volumes, container_uri, command_list):
         for bind in bind_volumes:
             bind_str += bind + ","
         singularity_cmd.append(bind_str[:-1])
-    
-    singularity_cmd.extend([container_uri] + command_list)
-    
-    return singularity_cmd
+    print(singularity_cmd + [container_uri] + command_list) 
+    return singularity_cmd + [container_uri] + command_list
 

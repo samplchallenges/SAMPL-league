@@ -17,7 +17,10 @@ def _guest_input_path(filename: str) -> Path:
 
 
 def prepare_command_list(command: str, args_dict: typing.Dict[str, str]):
-    return [command] + [f"--{key} {shlex.quote(str(value))}" for key, value in args_dict.items()]
+    command_list = [command] if command != "" and command != None else [] 
+    for key, value in args_dict.items():
+        command_list.extend([f"--{key}", shlex.quote(str(value))])
+    return command_list
 
 def _parse_output(
     host_output_path: typing.Optional[str],
