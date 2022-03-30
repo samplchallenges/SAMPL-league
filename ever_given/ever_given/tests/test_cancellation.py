@@ -20,7 +20,7 @@ def test_cancellation(container_engine):
         assert os.path.exists(container_uri)
     if container_engine == "docker":
         command = ["docker", "pull", container_uri]
-        subprocess.run(command, shell=True, check=True)
+        subprocess.run(command, check=True)
     kwargs = {"smiles": "c1cccnc1"}
 
     start_at = time.time()
