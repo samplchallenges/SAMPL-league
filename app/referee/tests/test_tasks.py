@@ -13,9 +13,9 @@ from referee import scoring, tasks
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize(
     ["container_engine"],
-    [["docker"], ["singularity"]],
+    [["singularity"], ["docker"]],
 )
-def test_run_and_score_submission(container_engine):
+def test_run_and_score_submission(client,container_engine):
     # This test will fail if run after another transaction=True test
     # See workaround in tests/test_views.py:test_run_submission
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
@@ -24,15 +24,17 @@ def test_run_and_score_submission(container_engine):
         call_command("migrate", "core", interactive=False)
         call_command("sample_data")
         transaction.commit()
-
-        submission = models.Submission.objects.first()
         cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
         dask_client = dd.Client(cluster)
 
-        print(submission.id, submission)
-        future = tasks.run_and_score_submission(dask_client, submission)
-        result = future.result()
-        assert result
+        mock_get_client = Mock(return_value=dask_client)
+        with patch("referee.get_client", mock_get_client):
+            submission = models.Submission.objects.first()
+            client.force_login(submission.user)
+            print(submission.id, submission)
+            future = tasks.run_and_score_submission(dask_client, submission)
+            result = future.result()
+            assert result
 
 
 def _run_and_check_evaluation(submission_run, evaluation):
