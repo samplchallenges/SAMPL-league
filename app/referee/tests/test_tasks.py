@@ -15,7 +15,7 @@ from referee import scoring, tasks
     ["container_engine"],
     [["singularity"], ["docker"]],
 )
-def test_run_and_score_submission(client,container_engine):
+def test_run_and_score_submission(client, container_engine):
     # This test will fail if run after another transaction=True test
     # See workaround in tests/test_views.py:test_run_submission
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
