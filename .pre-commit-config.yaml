@@ -12,7 +12,7 @@ repos:
   - id: check-useless-excludes
   - id: identity
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.0.1
+  rev: v4.1.0
   hooks:
   - id: trailing-whitespace
   - id: end-of-file-fixer
@@ -20,23 +20,23 @@ repos:
   - id: check-added-large-files
   - id: check-ast
 - repo: https://github.com/psf/black
-  rev: 21.9b0
+  rev: 22.3.0
   hooks:
   - id: black
     args: [--config=app/pyproject-ci.toml]
 - repo: https://github.com/pycqa/isort
-  rev: 5.9.3
+  rev: 5.10.1
   hooks:
   - id: isort
     name: isort (python)
     args: [--settings-file=app/pyproject-ci.toml]
 - repo: https://github.com/pycqa/pylint
-  rev: v2.11.1
+  rev: v2.13.4
   hooks:
   - id: pylint
     args: [--rcfile=app/pyproject-ci.toml]
 - repo: https://github.com/asottile/pyupgrade
-  rev: 'v2.29.0'
+  rev: 'v2.31.1'
   hooks:
   - id: pyupgrade
     args: [--py38-plus]
