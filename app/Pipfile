@@ -14,7 +14,7 @@ dask = "*"
 distributed = "*"
 docker = "*"
 six = "*"
-ever-given = "0.0.9"
+ever-given = "0.0.12"
 sampl = {path = "."}
 rollbar = "*"
 jupyterlab = "*"
@@ -22,6 +22,7 @@ ipython = "*"
 
 [dev-packages]
 black = "*"
+click = "8.0.4" # https://github.com/psf/black/issues/2964
 isort = "*"
 pylint = "*"
 pytest = "*"
