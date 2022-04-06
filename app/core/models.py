@@ -14,6 +14,7 @@ from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from ever_given.utils import LogHandlerBase
 
 from . import configurator, filecache
 
@@ -47,7 +48,7 @@ class Timestamped(models.Model):
 
 
 def _timestamped_log(log):
-    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log.decode("utf-8")])
+    return " ".join([time.strftime("[%c %Z]", time.gmtime()), log])
 
 
 class Logged(Timestamped, StatusMixin):
@@ -59,7 +60,7 @@ class Logged(Timestamped, StatusMixin):
     class Meta:
         abstract = True
 
-    class LogHandler:
+    class LogHandler(LogHandlerBase):
         def __init__(self, instance):
             self.instance_id = instance.pk
             self.cls = type(instance)
@@ -144,10 +145,22 @@ class Challenge(Timestamped):
         return score_types
 
 
+class ContainerType(models.TextChoices):
+    DOCKER = "docker"
+    SINGULARITY_LOCAL = "singularity_local"
+    # TODO: Singularity remote server
+
+
 class Container(Timestamped):
     name = models.CharField(max_length=255)
     user = models.ForeignKey(auth_models.User, on_delete=models.CASCADE)
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    container_type = models.CharField(
+        max_length=255,
+        choices=ContainerType.choices,
+        help_text=configurator.CONTAINER_TYPE_DETAILS,
+        null=True,
+    )
     registry = models.CharField(max_length=255)
     label = models.CharField(max_length=255)
     tag = models.CharField(max_length=255, blank=True, null=True)
@@ -670,7 +683,7 @@ class GenericValue(models.Model):
 VALUE_PARENT_CLASSES = (Solution, InputValue)
 
 
-def register_value_model(ValueModel):
+def register_value_model(ValueModel):  # pylint: disable=invalid-name
     """
     Solution's value_object can only point to a
     value model registered with this decorator

@@ -12,10 +12,13 @@ python evergiven robbason/calc-coords:latest --file-molfile tests/data/ChEBI_167
 (assuming you have installed evergiven into your Python virtualenv and you have built the container in  example_container/coords as robbason/calc-coords using its build.sh)
 """
 
-
 def main():
+    # add in an engine argument for either "singularity" or "docker"
+
     parser = argparse.ArgumentParser("evergiven")
     parser.add_argument("container_uri")
+    parser.add_argument("--container-type", help=f"container_uri's container type", required=True)
+    parser.add_argument("--container-engine", help=f"Container engine to use", required=True)
     parser.add_argument("--command", default="")
     parser.add_argument(
         "--output-keys",
@@ -26,11 +29,13 @@ def main():
 
     if len(unknown) % 2 != 0:
         raise ValueError("Must pass key/value pairs")
+
     for idx in range(len(unknown) // 2):
         arg = unknown[idx * 2]
         orig_arg_without_dashes = arg[2:]
         parser.add_argument(arg, metavar=orig_arg_without_dashes)
     args = parser.parse_args()
+
     # Hacking into argparse internals to map the argument that may have
     # dashes to argparse's output
     ag = parser._optionals
@@ -49,15 +54,17 @@ def main():
         if key.startswith(FILE_PREFIX):
             file_kwargs[key[len(FILE_PREFIX) :]] = value
         else:
-            if key not in ("command", "container_uri", "output_keys"):
+            if key not in ("command", "container_uri", "container_type", "container_engine", "output_keys"):
                 kwargs[key] = value
-    print("container", args.container_uri)
-    print("command?", args.command)
-    print("file kwargs", file_kwargs)
-    print("kwargs", kwargs)
+    print("container:", args.container_uri)
+    print("container type:", args.container_type)
+    print("container engine:", args.container_engine)
+    print("command?:", args.command)
+    print("file kwargs:", file_kwargs)
+    print("kwargs:", kwargs)
     output_file_keys = args.output_keys.split(",")
     output_dir = Path("evergiven_output")
-    print("Putting output into", output_dir)
+    print("Putting output into:", output_dir)
     output_dir.mkdir(exist_ok=True)
     results = {}
 
@@ -66,6 +73,8 @@ def main():
         command=args.command,
         file_kwargs=file_kwargs,
         kwargs=kwargs,
+        container_type=args.container_type.lower(),
+        engine_name=args.container_engine.lower(),
         output_dir=str(output_dir),
         output_file_keys=output_file_keys,
     ):

@@ -119,8 +119,9 @@ class Command(BaseCommand):
             name="crate",
             user=user,
             challenge=challenge,
+            container_type="docker",
             registry="ghcr.io",
-            label="robbason/calc-coords",
+            label="megosato/calc-coords",
             tag="latest",
         )
 
@@ -128,8 +129,9 @@ class Command(BaseCommand):
             name="scorer",
             user=user,
             challenge=challenge,
+            container_type="docker",
             registry="ghcr.io",
-            label="robbason/score-coords",
+            label="megosato/score-coords",
             tag="latest",
         )
 

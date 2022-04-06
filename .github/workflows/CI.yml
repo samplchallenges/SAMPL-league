@@ -4,7 +4,7 @@ name: CI
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
+  # Triggers the workflow on push or pull request events for all branches
   pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
@@ -56,6 +56,13 @@ jobs:
           path: ~/.local/share/virtualenvs
           key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}-${{ hashFiles('**/Pipfile') }}
 
+      - name: Run mypy on ever-given
+        working-directory: ./ever_given
+        run: |
+          pipenv install --dev
+          pipenv run pylint ever_given
+          pipenv run mypy ever_given
+
       - name: Install dependencies
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
@@ -65,6 +72,11 @@ jobs:
         run: |
           pipenv run pip uninstall -y ever-given
           pipenv install -e ../ever_given/
+
+      - name: Install Singularity
+        uses: eWaterCycle/setup-singularity@v7
+        with:
+          singularity-version: 3.7.2 # same version as hpc3
 
       - name: Run test suite
         run: |
@@ -76,6 +88,8 @@ jobs:
           RDS_PORT: 5432
           RDS_USERNAME: sampl_user
           DJANGO_SETTINGS_MODULE: sampl.settings_test
+          ECR_BASE_URL: "103125031445.dkr.ecr.us-east-2.amazonaws.com"
+          ECR_SAMPLLEAGUE_URL: "103125031445.dkr.ecr.us-east-2.amazonaws.com/sampl-league"
 
       - name: Upload test coverage
         uses: codecov/codecov-action@v2.1.0

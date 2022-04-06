@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from core.forms import ContainerForm, SubmissionForm
+from core.models import ContainerType
 from core.tests import mocktime
 
 
@@ -20,6 +21,7 @@ def test_create(challenge, user):
     container_form = ContainerForm(
         data={
             "container-name": "My Container",
+            "container-container_type": ContainerType.DOCKER,
             "container-challenge": challenge,
             "container-registry": "docker",
             "container-label": "foo",

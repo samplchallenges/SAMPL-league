@@ -42,3 +42,6 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+
+LOGIN_TO_AWS = True
+CONTAINER_ENGINE = "docker"

@@ -5,6 +5,9 @@ addopts = "-vv"
 [tool.pylint.format]
 max-line-length = "88"
 
+[tool.pylint.messages_control]
+disable = "missing-class-docstring, missing-function-docstring"
+
 [tool.isort]
 profile = "black"
 skip = "core/migrations/"
