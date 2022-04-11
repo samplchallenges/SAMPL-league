@@ -29,14 +29,15 @@ class SingularityContainerInstance(ContainerInstance):
 
         # FIXED: return pipe.readline()
         #   * returns an integer that needed to be decoded .decode('utf-8')
-        #   * only returned the first line
-        log_string_list = typing.cast(typing.List[str], [])
 
-        while True:
-            line = typing.cast(bytes, pipe.readline())
-            if not line:
-                break
-            yield line.decode("utf-8")
+        #while True:
+        #    line = typing.cast(bytes, pipe.readline())
+        #    if not line:
+        #        break
+        #    yield line.decode("utf-8")
+
+        for line in io.TextIOWrapper(pipe, encoding="utf-8"):
+            yield line
 
     def reload(self):
         pass  # don't need this for status, right?
