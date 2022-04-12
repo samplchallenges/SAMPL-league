@@ -19,24 +19,25 @@ class SingularityContainerInstance(ContainerInstance):
     def logs(self, *, want_stdout: bool, want_stderr: bool):
         if want_stdout and want_stderr:
             raise ValueError("Can't have want_stdout and want_stderr both true")
-        pipe: io.TextIOBase
+        pipe: io.BufferedReader
         if want_stdout:
-            pipe = typing.cast(io.TextIOBase, self.process.stdout)
+            pipe = typing.cast(io.BufferedReader, self.process.stdout)
         elif want_stderr:
-            pipe = typing.cast(io.TextIOBase, self.process.stderr)
+            pipe = typing.cast(io.BufferedReader, self.process.stderr)
         else:
             raise ValueError("Can't have want_stdout and want_stderr both false")
 
         # FIXED: return pipe.readline()
         #   * returns an integer that needed to be decoded .decode('utf-8')
-        #   * only returned the first line
-        log_string_list = typing.cast(typing.List[str], [])
 
-        while True:
-            line = typing.cast(bytes, pipe.readline())
-            if not line:
-                break
-            yield line.decode("utf-8")
+        #while True:
+        #    line = typing.cast(bytes, pipe.readline())
+        #    if not line:
+        #        break
+        #    yield line.decode("utf-8")
+
+        for line in io.TextIOWrapper(pipe, encoding="utf-8"):
+            yield line
 
     def reload(self):
         pass  # don't need this for status, right?
