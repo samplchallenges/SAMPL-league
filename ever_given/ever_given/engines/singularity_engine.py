@@ -37,7 +37,7 @@ class SingularityContainerInstance(ContainerInstance):
         #    yield line.decode("utf-8")
 
         for line in iter(pipe.readline, b''):
-            yield line
+            yield line.decode('utf-8')
 
     def reload(self):
         pass  # don't need this for status, right?
