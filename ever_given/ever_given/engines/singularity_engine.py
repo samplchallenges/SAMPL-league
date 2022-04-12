@@ -36,8 +36,8 @@ class SingularityContainerInstance(ContainerInstance):
         #        break
         #    yield line.decode("utf-8")
 
-        for line in io.TextIOWrapper(pipe, encoding="utf-8", line_buffering=True):
-            yield line
+        for line in iter(pipe.readline, b''):
+            yield line.decode('utf-8')
 
     def reload(self):
         pass  # don't need this for status, right?
