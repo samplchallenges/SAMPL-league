@@ -94,7 +94,7 @@ class SingularityEngine(Engine):
 
         command = _build_singularity_command(bind_volumes, container_uri, command_list)
         process = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            command, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         return SingularityContainerInstance(process, container_uri)
 
