@@ -36,7 +36,7 @@ class SingularityContainerInstance(ContainerInstance):
         #        break
         #    yield line.decode("utf-8")
 
-        for line in io.TextIOWrapper(pipe, encoding="utf-8"):
+        for line in io.TextIOWrapper(pipe, encoding="utf-8", line_buffering=True):
             yield line
 
     def reload(self):
