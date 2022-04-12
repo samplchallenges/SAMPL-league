@@ -19,11 +19,11 @@ class SingularityContainerInstance(ContainerInstance):
     def logs(self, *, want_stdout: bool, want_stderr: bool):
         if want_stdout and want_stderr:
             raise ValueError("Can't have want_stdout and want_stderr both true")
-        pipe: io.TextIOBase
+        pipe: io.BufferedReader
         if want_stdout:
-            pipe = typing.cast(io.TextIOBase, self.process.stdout)
+            pipe = typing.cast(io.BufferedReader, self.process.stdout)
         elif want_stderr:
-            pipe = typing.cast(io.TextIOBase, self.process.stderr)
+            pipe = typing.cast(io.BufferedReader, self.process.stderr)
         else:
             raise ValueError("Can't have want_stdout and want_stderr both false")
 
