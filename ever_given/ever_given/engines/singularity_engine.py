@@ -1,7 +1,6 @@
 import io
 from pathlib import Path
 import subprocess
-import time
 import typing
 import shlex
 import os
@@ -31,14 +30,14 @@ class SingularityContainerInstance(ContainerInstance):
         # FIXED: return pipe.readline()
         #   * returns an integer that needed to be decoded .decode('utf-8')
 
-        # while True:
+        #while True:
         #    line = typing.cast(bytes, pipe.readline())
         #    if not line:
         #        break
         #    yield line.decode("utf-8")
 
-        for line in iter(pipe.readline, b""):
-            yield f"{time.ctime()} >> {line.decode('utf-8')}"
+        for line in iter(pipe.readline, b''):
+            yield line.decode('utf-8')
 
     def reload(self):
         pass  # don't need this for status, right?
