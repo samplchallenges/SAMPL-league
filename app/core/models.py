@@ -70,6 +70,7 @@ class Logged(Timestamped, StatusMixin):
             return self.cls.objects.filter(pk=self.instance_id).update
 
         def handle_stdout(self, log):
+            print(f"[ {time.ctime()} ]-out")
             self._update(
                 log_stdout=Concat(
                     models.F("log_stdout"), models.Value(_timestamped_log(log))
@@ -77,6 +78,7 @@ class Logged(Timestamped, StatusMixin):
             )
 
         def handle_stderr(self, log):
+            print(f"[ {time.ctime()} ]-err")
             self._update(
                 log_stderr=Concat(
                     models.F("log_stderr"), models.Value(_timestamped_log(log))
