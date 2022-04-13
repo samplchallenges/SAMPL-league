@@ -97,4 +97,4 @@ LOGGING = {
 LOGIN_TO_AWS = True
 
 # which container engine to use, must be "docker" or "singularity"
-CONTAINER_ENGINE = "docker"
+CONTAINER_ENGINE = os.environ.get("CONTAINER_ENGINE", "docker")
