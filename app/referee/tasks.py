@@ -10,9 +10,19 @@ from ever_given.log_processing import CancelledException
 
 from core import models
 
-from . import scoring, utils
+from . import scoring
 
 logger = logging.getLogger(__name__)
+
+
+def enqueue_submission(submission):
+    """
+    Runs on the webapp in an environment that can't talk to the scheduler.
+    Records in the database that we want the job submitter to call
+    submit_submission_run
+    """
+    for is_public in (True, False):
+        submission.create_run(is_public=is_public, remote=True)
 
 
 def run_and_score_submission(client, submission):
@@ -35,8 +45,22 @@ def run_and_score_submission(client, submission):
     return future
 
 
+def submit_submission_run(client, submission_run):
+    delayed_conditional = dask.delayed(True)
+    delayed_conditional = _run(submission_run, delayed_conditional)
+    future = client.submit(delayed_conditional.compute)  # pylint:disable=no-member
+    logger.info("Future key: %s", future.key)
+
+    dd.fire_and_forget(future)
+    return future
+
+
 def _trigger_submission_run(submission, delayed_conditional, *, is_public):
-    submission_run = submission.create_run(is_public=is_public)
+    submission_run = submission.create_run(is_public=is_public, remote=False)
+    return _run(submission_run, delayed_conditional)
+
+
+def _run(submission_run, delayed_conditional):
     evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
@@ -66,21 +90,40 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
         return False
     submission_run.append(stdout="Running check_and_score")
     scoring.score_submission_run(submission_run)
-
     return True
 
 
 def _run_evaluations(submission_run, conditional):
+    statuses = []
+    for evaluation in submission_run.evaluation_set.all():
+        if evaluation.status == models.Status.PENDING:
+            statuses.append(
+                run_evaluation(
+                    submission_run.submission.id,
+                    evaluation.id,
+                    submission_run.id,
+                    conditional=conditional,
+                )
+            )
+        else:
+            statuses.append(evaluation.status)
+    return statuses
 
-    return [
-        run_evaluation(
-            submission_run.submission.id,
-            evaluation.id,
-            submission_run.id,
-            conditional=conditional,
-        )
-        for evaluation in submission_run.evaluation_set.all()
-    ]
+
+# NEW STARTS
+def print_hello_world():
+    logging.info("in print_hello_world")
+    import os
+    import subprocess
+
+    pyfile = "/data/homezvol0/osatom/print_hello_world.py"
+    logger.info("FILE EXISTS: %d", os.path.exists(pyfile))
+    result = subprocess.check_output(f"python {pyfile}", shell=True)
+
+    return result
+
+
+# NEW ENDS
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
@@ -89,21 +132,22 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
     container = submission.container
     challenge = submission.challenge
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
-
     if not conditional or submission_run.check_cancel_requested():
         models.Evaluation.objects.filter(pk=evaluation_id).update(
             status=models.Status.CANCELLED
         )
         return models.Status.CANCELLED
+    if submission_run.status == models.Status.PENDING:
+        submission_run.status = models.Status.RUNNING
+        submission_run.save(update_fields=["status"])
 
     evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
-
     evaluation = submission_run.evaluation_set.get(pk=evaluation_id)
     element = evaluation.input_element
-
     output_file_keys = challenge.output_file_keys()
 
     kwargs, file_kwargs = element.all_values()
+
     evaluation.mark_started(kwargs, file_kwargs)
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
@@ -111,20 +155,25 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
             output_dir = None
+
+            # NEW STARTS
+            # output = print_hello_world()
+            # evaluation.append(stdout=str(output))
+            # evaluation.append(stderr=str(output))
+            # NEW ENDS
+
             if output_file_keys:
                 output_dir = dirpath / "output"
                 output_dir.mkdir()
             parsed_results = ever_given.wrapper.run(
                 container.uri,
                 kwargs=kwargs,
-                container_type=container.container_type,
-                engine_name=settings.CONTAINER_ENGINE,
                 file_kwargs=file_kwargs,
                 output_dir=output_dir,
                 output_file_keys=output_file_keys,
                 log_handler=models.Evaluation.LogHandler(evaluation),
                 cancel_requested_func=submission_run.check_cancel_requested,
-                aws_login_func=utils.get_aws_credential_function(container.uri)
+                aws_login_func=settings.AWS_LOGIN_FUNCTION
                 if settings.LOGIN_TO_AWS
                 else None,
             )
@@ -144,6 +193,8 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation,
             evaluation_score_types,
         )
+        # """
+
         evaluation.status = models.Status.SUCCESS
     except CancelledException:
         evaluation.status = models.Status.CANCELLED

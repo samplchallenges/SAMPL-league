@@ -28,6 +28,7 @@ class Status(models.TextChoices):
     FAILURE = "FAILURE"
     SUCCESS = "SUCCESS"
     PENDING = "PENDING"
+    PENDING_REMOTE = "PENDING_REMOTE"
     RUNNING = "RUNNING"
     CANCELLED = "CANCELLED"
     CANCEL_PENDING = "CANCEL_PENDING"
@@ -300,14 +301,15 @@ class Submission(Timestamped):
     def last_private_run(self):
         return self.last_run(is_public=False)
 
-    def create_run(self, *, is_public):
+    def create_run(self, *, is_public, remote=False):
+        status = Status.PENDING_REMOTE if remote else Status.PENDING
         digest = self.container.digest
         if digest is None:
             digest = "nodigest"
         submission_run = self.submissionrun_set.create(
             digest=digest,
             is_public=is_public,
-            status=Status.PENDING,
+            status=status,
         )
         for element_id in self.challenge.inputelement_set.filter(
             is_public=is_public

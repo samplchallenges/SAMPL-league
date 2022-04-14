@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "6695223dbabafd7543114a1d2d30529c2ecc3dc3b02b06d1dc3f7a1eaf1eee08"
+            "sha256": "cf7e2ad972a126986ff6b531382e87e9d032664523825928e3177c4fd3993a11"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -23,14 +23,6 @@
             ],
             "markers": "python_full_version >= '3.6.2'",
             "version": "==3.5.0"
-        },
-        "appnope": {
-            "hashes": [
-                "sha256:02bd91c4de869fbb1e1c50aafc4098827a7a54ab2f39d9dcba6c9547ed920e24",
-                "sha256:265a455292d0bd8a72453494fa24df5a11eb18373a60c7c0430889f22548605e"
-            ],
-            "markers": "sys_platform == 'darwin'",
-            "version": "==0.1.3"
         },
         "argon2-cffi": {
             "hashes": [
@@ -268,6 +260,14 @@
             ],
             "index": "pypi",
             "version": "==2022.5.0"
+        },
+        "dask-jobqueue": {
+            "hashes": [
+                "sha256:435b8a77a95f82326b3b18a3f60358754ea3f7ac4d62950ab8fed0f56f223c71",
+                "sha256:682d7cc0e6b319b6ab83a7a898680c12e9c77ddc77df380b40041290f55d4e79"
+            ],
+            "index": "pypi",
+            "version": "==0.7.3"
         },
         "debugpy": {
             "hashes": [
