@@ -371,4 +371,4 @@ def test_remote_scheduler(client):
     detail_url = response.url
     response = client.get(detail_url)
     public_run = response.context["public_run"]
-    assert public_run.status == Status.
+    assert public_run.status == Status.PENDING_REMOTE
