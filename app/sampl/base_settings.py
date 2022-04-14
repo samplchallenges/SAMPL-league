@@ -110,6 +110,7 @@ CONTAINER_ENGINE = "docker"
 ECR_BASE_URL = os.environ["ECR_BASE_URL"]
 ECR_SAMPLLEAGUE_URL = os.environ["ECR_SAMPLLEAGUE_URL"]
 
+
 def run_aws_login(container_engine):
     if container_engine == "docker":
         subprocess.run(
@@ -144,6 +145,7 @@ def run_aws_logout(container_engine):
     if container_engine == "singularity":
         os.environ["SINGULARITY_DOCKER_USERNAME"] = ""
         os.environ["SINGULARITY_DOCKER_PASSWORD"] = ""
+
 
 LOGIN_TO_AWS = False
 AWS_LOGIN_FUNCTION = run_aws_login
