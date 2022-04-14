@@ -26,16 +26,7 @@ class SingularityContainerInstance(ContainerInstance):
             pipe = typing.cast(io.BufferedReader, self.process.stderr)
         else:
             raise ValueError("Can't have want_stdout and want_stderr both false")
-
-        # FIXED: return pipe.readline()
-        #   * returns an integer that needed to be decoded .decode('utf-8')
-
-        #while True:
-        #    line = typing.cast(bytes, pipe.readline())
-        #    if not line:
-        #        break
-        #    yield line.decode("utf-8")
-
+        
         for line in iter(pipe.readline, b''):
             yield line.decode('utf-8')
 
