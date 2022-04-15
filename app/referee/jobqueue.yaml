@@ -6,7 +6,7 @@ jobqueue:
 
     # Dask worker options
     cores: 1                   # Total number of cores per job
-    memory: '2 GB'              # Total amount of memory per job
+    memory: '4 GB'              # Total amount of memory per job
     processes: 1                # Number of Python processes per job
 
     #interface: null             # Network interface to use like eth0 or ib0
@@ -18,15 +18,15 @@ jobqueue:
 
     # SLURM resource manager options
     shebang: "#!/usr/bin/env bash"
-    queue: 'standard'
+    queue: 'free'
     project: 'DMOBLEY_LAB'
-    walltime: '00:05:00'
+    walltime: '00:30:00'
     #env_extra: []
     #job-cpu: null
     #job-mem: null
     job_extra: [
-      "--error=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker/dask-worker-%j.err",
-      "--output=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker/dask-worker-%j.out",
+      #"--error=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker/dask-worker-%j.err",
+      #"--output=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker/dask-worker-%j.out",
       #"--open-mode=append",
     ]
     #log-directory: null

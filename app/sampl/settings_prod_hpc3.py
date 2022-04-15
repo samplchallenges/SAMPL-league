@@ -9,6 +9,8 @@ SAMPL_ROOT = BASE_DIR / "SAMPL-league/"
 REMOTE_SCHEDULER = False
 
 
+CONTAINER_ENGINE = "singularity"
+
 # Dask SLURMCluster Settings
 MINIMUM_WORKERS = 0
 MAXIMUM_WORKERS = 1

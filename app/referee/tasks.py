@@ -10,7 +10,7 @@ from ever_given.log_processing import CancelledException
 
 from core import models
 
-from . import scoring
+from . import scoring, utils
 
 logger = logging.getLogger(__name__)
 
@@ -157,9 +157,10 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             output_dir = None
 
             # NEW STARTS
-            # output = print_hello_world()
-            # evaluation.append(stdout=str(output))
-            # evaluation.append(stderr=str(output))
+            print("TASKS.PY SETTINGS:", settings.CONTAINER_ENGINE)
+            #output = print_hello_world()
+            #evaluation.append(stdout=str(output))
+            #evaluation.append(stderr=str(output))
             # NEW ENDS
 
             if output_file_keys:
@@ -167,13 +168,15 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                 output_dir.mkdir()
             parsed_results = ever_given.wrapper.run(
                 container.uri,
+                container_type=container.container_type,
+                engine_name=settings.CONTAINER_ENGINE,
                 kwargs=kwargs,
                 file_kwargs=file_kwargs,
                 output_dir=output_dir,
                 output_file_keys=output_file_keys,
                 log_handler=models.Evaluation.LogHandler(evaluation),
                 cancel_requested_func=submission_run.check_cancel_requested,
-                aws_login_func=settings.AWS_LOGIN_FUNCTION
+                aws_login_func=utils.get_aws_credential_function(container.uri)
                 if settings.LOGIN_TO_AWS
                 else None,
             )
