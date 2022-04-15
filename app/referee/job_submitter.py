@@ -40,11 +40,16 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     logger.debug("Checking for submissions every %d seconds over %d seconds")
     while time.time() - start_time + (1.5 * check_interval) < job_lifetime:
         logger.debug("Checking for submission runs n=%d", n)
-        for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
-            logger.debug("Added run=%d", run.id)
-            run.status = Status.PENDING
-            run.save(update_fields=["status"])
-            rt.submit_submission_run(client, run)
+        for run in SubmissionRun.objects.filter(status=Status.CANCELLED):
+            if run.id > 760:
+                logger.debug("Added run=%d", run.id)
+                run.status = Status.PENDING
+                run.save(update_fields=["status"])
+
+                for evaluation in run.evaluation_set.all():
+                    evaluation.status = Status.PENDING
+                    evaluation.save(update_fields=["status"])
+                rt.submit_submission_run(client, run)
         time.sleep(check_interval)
         n += 1
 
@@ -70,6 +75,7 @@ def reset_unfinished_to_pending_submission():
 if __name__ == "__main__":
     start_time = time.time()
     logger.info("Starting job_submitter.py at %s", time.ctime(start_time))
+    logger.info("Container engine: %s", settings.CONTAINER_ENGINE)
 
     jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
 
