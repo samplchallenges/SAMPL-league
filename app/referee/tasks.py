@@ -158,9 +158,9 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
 
             # NEW STARTS
             print("TASKS.PY SETTINGS:", settings.CONTAINER_ENGINE)
-            #output = print_hello_world()
-            #evaluation.append(stdout=str(output))
-            #evaluation.append(stderr=str(output))
+            # output = print_hello_world()
+            # evaluation.append(stdout=str(output))
+            # evaluation.append(stderr=str(output))
             # NEW ENDS
 
             if output_file_keys:
