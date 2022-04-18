@@ -349,6 +349,7 @@ def test_cancel_request(
     submission_run.refresh_from_db()
     assert submission_run.status == Status.CANCEL_PENDING
 
+
 @patch("django.conf.settings.REMOTE_SCHEDULER", True)
 @pytest.mark.django_db(transaction=True)
 def test_remote_scheduler(client):
