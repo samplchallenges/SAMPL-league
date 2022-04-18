@@ -1,14 +1,14 @@
+import time
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
 import pytest
-import time
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.db import transaction
 
 from core import models
-from referee import scoring, tasks, job_submitter
+from referee import job_submitter, scoring, tasks
 
 
 @pytest.mark.django_db(transaction=True)
