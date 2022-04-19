@@ -270,7 +270,8 @@ def test_run_submission(client, container_engine):
             future = l_future
 
         if processes:
-            cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+            preload_file = f"daskworkerinit_tst_{container_engine}.py"
+            cluster = dd.LocalCluster(n_workers=4, preload=(preload_file,))
         else:
             cluster = dd.LocalCluster(
                 n_workers=1, processes=False, threads_per_worker=1
