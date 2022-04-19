@@ -27,7 +27,7 @@ def resubmit_check_for_submission_runs_job():
 
 
 def start_cluster(config_file):
-    with open(config_file, 'r') as f:
+    with open(config_file) as f:
         config = yaml.safe_load(f)
     slurm_cluster = SLURMCluster(**config["jobqueue"]["slurm"])
     return slurm_cluster
@@ -35,7 +35,11 @@ def start_cluster(config_file):
 
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     n = 0
-    logger.debug("Checking for submissions every %d seconds over %d seconds", check_interval, job_lifetime)
+    logger.debug(
+        "Checking for submissions every %d seconds over %d seconds",
+        check_interval,
+        job_lifetime,
+    )
     while time.time() - start_time + (1.5 * check_interval) < job_lifetime:
         logger.debug("Checking for submission runs n=%d", n)
         for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
@@ -66,7 +70,6 @@ def reset_unfinished_to_pending_submission():
                     evaluation.save(update_fields=["status"])
 
 
-
 def job_submitter_main():
     start_time = time.time()
     logger.info("Starting job_submitter.py at %s", time.ctime(start_time))
@@ -94,6 +97,7 @@ def job_submitter_main():
 
     jobinfo = resubmit_check_for_submission_runs_job()
     logger.info("Resubmitting start_remote_scheduler.sh - JOB INFO: %s", jobinfo)
+
 
 if __name__ == "__main__":
     job_submitter_main()
