@@ -27,7 +27,7 @@ def resubmit_check_for_submission_runs_job():
 
 
 def start_cluster(config_file):
-    with open(config_file) as f:
+    with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
     slurm_cluster = SLURMCluster(**config["jobqueue"]["slurm"])
     return slurm_cluster
