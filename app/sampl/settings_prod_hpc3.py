@@ -1,3 +1,4 @@
+# pylint: skip-file
 from .settings_prod import *  # lgtm [py/polluting-import]
 
 BASE_DIR = Path("/data/homezvol0/osatom/")

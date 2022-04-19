@@ -1,7 +1,5 @@
 import logging
-import os
 import subprocess
-import sys
 import time
 
 import django
@@ -28,16 +26,16 @@ def resubmit_check_for_submission_runs_job():
     return str(jobid_sub_bytes)
 
 
-def start_cluster(jobqueue_config_file):
-    with open(jobqueue_config_file) as f:
+def start_cluster(config_file):
+    with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
-    cluster = SLURMCluster(**config["jobqueue"]["slurm"])
-    return cluster
+    slurm_cluster = SLURMCluster(**config["jobqueue"]["slurm"])
+    return slurm_cluster
 
 
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     n = 0
-    logger.debug("Checking for submissions every %d seconds over %d seconds")
+    logger.debug("Checking for submissions every %d seconds over %d seconds", check_interval, job_lifetime)
     while time.time() - start_time + (1.5 * check_interval) < job_lifetime:
         logger.debug("Checking for submission runs n=%d", n)
         for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
@@ -68,29 +66,24 @@ def reset_unfinished_to_pending_submission():
                     evaluation.save(update_fields=["status"])
 
 
-if __name__ == "__main__":
+
+def job_submitter_main():
     start_time = time.time()
     logger.info("Starting job_submitter.py at %s", time.ctime(start_time))
     logger.info("Container engine: %s", settings.CONTAINER_ENGINE)
-
     jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
-
     cluster = start_cluster(jobqueue_config_file)
-
     logger.debug("Min: %d; Max: %d", settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS)
     cluster.adapt(
         minimum_jobs=settings.MINIMUM_WORKERS, maximum_jobs=settings.MAXIMUM_WORKERS
     )
-
     client = Client(cluster)
-
     check_for_submission_runs(
         start_time,
         client,
         settings.CHECK_INTERVAL,
         settings.JOB_SUBMITTER_LIFETIME,
     )
-
     # shutdown scheduler and connected workers
     client.shutdown()
     logger.info("Shut down Dask scheduler and workers")
@@ -101,3 +94,6 @@ if __name__ == "__main__":
 
     jobinfo = resubmit_check_for_submission_runs_job()
     logger.info("Resubmitting start_remote_scheduler.sh - JOB INFO: %s", jobinfo)
+
+if __name__ == "__main__":
+    job_submitter_main()
