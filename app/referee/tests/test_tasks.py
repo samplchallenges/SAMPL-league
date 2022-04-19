@@ -7,7 +7,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.db import transaction
 
-
 from core import models
 from referee import job_submitter, scoring, tasks
 
@@ -22,6 +21,7 @@ def test_run_and_score_submission(container_engine):
     # See workaround in tests/test_views.py:test_run_submission
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         from django.conf import settings
+
         print("in patch: engine=", settings.CONTAINER_ENGINE)
         transaction.commit()
         call_command("migrate", "core", "zero", interactive=False)
@@ -314,6 +314,7 @@ def test_cancel_submission_before_run(
         result = delayed_conditional.compute(scheduler="synchronous")
         assert result is False
         assert submission.last_public_run().status == models.Status.CANCELLED
+
 
 @pytest.mark.parametrize(
     ["container_engine"],
