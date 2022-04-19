@@ -366,7 +366,6 @@ def test_remote_scheduler(client):
 
     submission = Submission.objects.first()
     client.force_login(submission.user)
-    container = submission.container
     response = client.post(f"/submission/{submission.pk}/submit/", {})
     assert response.url == reverse("submission-detail", kwargs={"pk": submission.pk})
     assert response.status_code == 302
