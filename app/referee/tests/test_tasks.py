@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.db import transaction
 
+
 from core import models
 from referee import job_submitter, scoring, tasks
 
@@ -20,6 +21,8 @@ def test_run_and_score_submission(container_engine):
     # This test will fail if run after another transaction=True test
     # See workaround in tests/test_views.py:test_run_submission
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        from django.conf import settings
+        print("in patch: engine=", settings.CONTAINER_ENGINE)
         transaction.commit()
         call_command("migrate", "core", "zero", interactive=False)
         call_command("migrate", "core", interactive=False)
@@ -27,7 +30,8 @@ def test_run_and_score_submission(container_engine):
         transaction.commit()
 
         submission = models.Submission.objects.first()
-        cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+        preload_file = f"daskworkerinit_tst_{container_engine}.py"
+        cluster = dd.LocalCluster(n_workers=4, preload=(preload_file))
         dask_client = dd.Client(cluster)
 
         print(submission.id, submission)
@@ -311,60 +315,36 @@ def test_cancel_submission_before_run(
         assert result is False
         assert submission.last_public_run().status == models.Status.CANCELLED
 
-
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [["docker"], ["singularity"]],
+)
 @pytest.mark.django_db(transaction=True)
-def test_submit_submission_run(client):
-    processes = True
-    if processes:
-        transaction.commit()
-        call_command("migrate", "core", "zero", interactive=False)
-        call_command("migrate", "core", interactive=False)
-        call_command("sample_data")
-        transaction.commit()
-    else:
-        call_command("sample_data")
+def test_submit_submission_run(client, container_engine):
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        processes = True
+        if processes:
+            transaction.commit()
+            call_command("migrate", "core", "zero", interactive=False)
+            call_command("migrate", "core", interactive=False)
+            call_command("sample_data")
+            transaction.commit()
+        else:
+            call_command("sample_data")
 
-    submission = models.Submission.objects.first()
-    tasks.enqueue_submission(submission)
+        submission = models.Submission.objects.first()
+        tasks.enqueue_submission(submission)
 
-    cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
-    dask_client = dd.Client(cluster)
+        preload_file = f"daskworkerinit_tst_{container_engine}.py"
+        cluster = dd.LocalCluster(n_workers=4, preload=(preload_file,))
+        dask_client = dd.Client(cluster)
 
-    for submission_run in models.SubmissionRun.objects.filter(
-        status=models.Status.PENDING_REMOTE
-    ):
-        submission_run.status = models.Status.PENDING
-        submission_run.save(update_fields=["status"])
-        future = tasks.submit_submission_run(dask_client, submission_run)
-        result = future.result()
-        print(submission_run.status)
-        assert result
-
-
-@pytest.mark.django_db(transaction=True)
-def test_check_for_submission_runs(client):
-    processes = True
-    if processes:
-        transaction.commit()
-        call_command("migrate", "core", "zero", interactive=False)
-        call_command("migrate", "core", interactive=False)
-        call_command("sample_data")
-        transaction.commit()
-    else:
-        call_command("sample_data")
-
-    submission = models.Submission.objects.first()
-    tasks.enqueue_submission(submission)
-
-    cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
-    dask_client = dd.Client(cluster)
-
-    job_submitter.check_for_submission_runs(time.time(), dask_client, 3, 15)
-
-    time.sleep(120)
-    submission_run = models.SubmissionRun.objects.get(pk=2)
-    assert submission_run.status == models.Status.SUCCESS
-    submission_run = models.SubmissionRun.objects.get(pk=3)
-    assert submission_run.status == models.Status.SUCCESS
-    # submission_run = models.SubmissionRun.objects.first()
-    # assert submission_run.status == models.Status.SUCCESS
+        for submission_run in models.SubmissionRun.objects.filter(
+            status=models.Status.PENDING_REMOTE
+        ):
+            submission_run.status = models.Status.PENDING
+            submission_run.save(update_fields=["status"])
+            future = tasks.submit_submission_run(dask_client, submission_run)
+            result = future.result()
+            print(submission_run.status)
+            assert result

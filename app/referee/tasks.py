@@ -157,7 +157,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             output_dir = None
 
             # NEW STARTS
-            print("TASKS.PY SETTINGS:", settings.CONTAINER_ENGINE)
+            #print("TASKS.PY SETTINGS:", settings.CONTAINER_ENGINE)
             # output = print_hello_world()
             # evaluation.append(stdout=str(output))
             # evaluation.append(stderr=str(output))
@@ -166,6 +166,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             if output_file_keys:
                 output_dir = dirpath / "output"
                 output_dir.mkdir()
+
             parsed_results = ever_given.wrapper.run(
                 container.uri,
                 container_type=container.container_type,
@@ -180,6 +181,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
                 if settings.LOGIN_TO_AWS
                 else None,
             )
+
 
             for key, value in parsed_results:
                 output_type = challenge.output_type(key)
