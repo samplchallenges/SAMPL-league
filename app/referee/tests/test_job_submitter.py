@@ -61,7 +61,7 @@ def test_reset_unfinished_to_pending_submission():
     assert submission_run2.status == models.Status.PENDING_REMOTE
 
 
-"""
+
 @pytest.mark.parametrize(
 
     ["container_engine"],
@@ -85,16 +85,16 @@ def test_check_for_submission_runs(client, container_engine):
         tasks.enqueue_submission(submission)
 
         preload_file = f"daskworkerinit_tst_{container_engine}.py"
-        cluster = dd.LocalCluster(n_workers=4, preload=(preload_file,))
+        cluster = dd.LocalCluster(n_workers=0, preload=(preload_file,))
         dask_client = dd.Client(cluster)
 
-        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 1)
+        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 3)
 
         #time.sleep(120)
         submission_run = models.SubmissionRun.objects.get(pk=2)
-        assert submission_run.status == models.Status.SUCCESS
+        assert submission_run.status == models.Status.PENDING
         submission_run = models.SubmissionRun.objects.get(pk=3)
-        assert submission_run.status == models.Status.SUCCESS
+        assert submission_run.status == models.Status.PENDING
         # submission_run = models.SubmissionRun.objects.first()
         # assert submission_run.status == models.Status.SUCCESS
-"""
+
