@@ -219,3 +219,4 @@ def run_redeploy_pipeline(c):
     install_venv(c)
     setup_djangoapp(c)
     restart_gunicorn(c)
+
