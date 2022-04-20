@@ -1,4 +1,5 @@
 # pylint:disable=unused-argument
+import os
 import re
 from datetime import datetime
 from unittest.mock import Mock, patch
@@ -270,7 +271,8 @@ def test_run_submission(client, container_engine):
             future = l_future
 
         if processes:
-            preload_file = f"daskworkerinit_tst_{container_engine}.py"
+            os.environ["CONTAINER_ENGINE"] = container_engine
+            preload_file = "daskworkerinit_tst.py"
             cluster = dd.LocalCluster(n_workers=4, preload=(preload_file,))
         else:
             cluster = dd.LocalCluster(
