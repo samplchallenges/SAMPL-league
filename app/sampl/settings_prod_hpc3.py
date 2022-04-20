@@ -1,7 +1,7 @@
 # pylint: skip-file
 from .settings_prod import *  # lgtm [py/polluting-import]
 
-BASE_DIR = Path("/data/homezvol0/osatom/")
+BASE_DIR = os.environ["BASE_DIR"]
 MEDIA_ROOT = BASE_DIR / "sampl-app-extras/media"
 LOGS_ROOT = BASE_DIR / "sampl-app-extras/logs"
 SAMPL_ROOT = BASE_DIR / "SAMPL-league/"
