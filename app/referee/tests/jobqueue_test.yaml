@@ -1,0 +1,23 @@
+# jobqueue.yaml file
+
+jobqueue:
+  slurm:
+    name: tstdskwrkr
+
+    # Dask worker options
+    cores: 1                   # Total number of cores per job
+    memory: '4 GB'              # Total amount of memory per job
+    processes: 1                # Number of Python processes per job
+
+    death_timeout: 60           # Number of seconds to wait if a worker can not find a scheduler
+    extra: ["--preload SAMPL-league/app/daskworkerinit.py"]
+
+    # SLURM resource manager options
+    shebang: "#!/usr/bin/env bash"
+    queue: 'free'
+    project: 'DMOBLEY_LAB'
+    walltime: '00:30:00'
+    job_extra: [
+    ]
+    scheduler_options: {}
+

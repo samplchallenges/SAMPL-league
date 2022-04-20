@@ -61,6 +61,7 @@ def reset_unfinished_to_pending_submission():
             )
             submission_run.status = Status.PENDING_REMOTE
             submission_run.save(update_fields=["status"])
+            logger.debug(   "SubmissionRun status is now: %s", submission_run.status)
             for evaluation in submission_run.evaluation_set.all():
                 if evaluation.status == Status.RUNNING:
                     logger.debug(
@@ -68,6 +69,7 @@ def reset_unfinished_to_pending_submission():
                     )
                     evaluation.status = Status.PENDING
                     evaluation.save(update_fields=["status"])
+                    logger.debug("   Evaluation status is now: %s", evaluation.status)
 
 
 def job_submitter_main():
