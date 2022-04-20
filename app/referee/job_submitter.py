@@ -25,11 +25,15 @@ def resubmit_check_for_submission_runs_job(scheduler_submission_script):
     return jobid_sub_bytes.decode("utf-8")
 
 
-def start_cluster(config_file):
+def start_cluster(config_file, min_workers, max_workers):
     with open(config_file, encoding="utf-8") as f:
         config = yaml.safe_load(f)
-    slurm_cluster = SLURMCluster(**config["jobqueue"]["slurm"])
-    return slurm_cluster
+    cluster = SLURMCluster(**config["jobqueue"]["slurm"])
+    cluster.adapt(
+        minimum_jobs=min_workers,
+        maximum_jobs=max_workers,
+    )
+    return cluster
 
 
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
@@ -78,9 +82,6 @@ def job_submitter_main():
     jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
     cluster = start_cluster(jobqueue_config_file)
     logger.debug("Min: %d; Max: %d", settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS)
-    cluster.adapt(
-        minimum_jobs=settings.MINIMUM_WORKERS, maximum_jobs=settings.MAXIMUM_WORKERS
-    )
     client = Client(cluster)
     check_for_submission_runs(
         start_time,
