@@ -15,9 +15,7 @@ from referee import job_submitter, tasks
 def test_start_cluster():
     config_file = f"{os.path.dirname(os.path.abspath(__file__))}/jobqueue_test.yaml"
     cluster = job_submitter.start_cluster(config_file, 0, 2)
-
     job_script = cluster.job_script()
-
     assert "--mem=4G" in job_script
     assert "--preload SAMPL-league/app/daskworkerinit.py" in job_script
     assert "--cpus-per-task=1" in job_script
@@ -104,7 +102,6 @@ def test_resubmit_check_for_submission_runs_job():
         job_info = job_submitter.resubmit_check_for_submission_runs_job(
             "job_submission_script.sh"
         )
-
         assert job_info == "Submitted batch job 11163505\n"
 
 
