@@ -22,7 +22,7 @@ def resubmit_check_for_submission_runs_job(scheduler_submission_script):
         f"sbatch {scheduler_submission_script}", shell=True
     )
     # jobid_sub_bytes is a bytes string that looks like b'Submitted batch job 11163505\n'
-    return jobid_sub_bytes.decode('utf-8')
+    return jobid_sub_bytes.decode("utf-8")
 
 
 def start_cluster(config_file):
