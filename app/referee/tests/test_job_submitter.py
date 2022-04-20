@@ -10,14 +10,16 @@ from django.db import transaction
 from core import models
 from referee import job_submitter, tasks
 
+
 def test_start_cluster():
-    cluster = job_submitter.start_cluster('jobqueue_test.yaml')
+    cluster = job_submitter.start_cluster("jobqueue_test.yaml")
 
     job_script = cluster.job_script()
 
     assert "--mem=4G" in job_script
     assert "--preload SAMPL-league/app/daskworkerinit.py" in job_script
     assert "--cpus-per-task=1" in job_script
+
 
 @pytest.mark.django_db(transaction=True)
 def test_reset_unfinished_to_pending_submission():
@@ -55,7 +57,8 @@ def test_reset_unfinished_to_pending_submission():
 
     assert submission_run2.status == models.Status.PENDING_REMOTE
 
-'''
+
+"""
 @pytest.mark.parametrize(
 
     ["container_engine"],
@@ -91,4 +94,4 @@ def test_check_for_submission_runs(client, container_engine):
         assert submission_run.status == models.Status.SUCCESS
         # submission_run = models.SubmissionRun.objects.first()
         # assert submission_run.status == models.Status.SUCCESS
-'''
+"""

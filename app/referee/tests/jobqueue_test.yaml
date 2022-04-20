@@ -20,4 +20,3 @@ jobqueue:
     job_extra: [
     ]
     scheduler_options: {}
-
