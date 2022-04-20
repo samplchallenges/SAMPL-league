@@ -12,7 +12,7 @@ from referee import job_submitter, tasks
 
 
 def test_start_cluster():
-    cluster = job_submitter.start_cluster("jobqueue_test.yaml")
+    cluster = job_submitter.start_cluster("referee/tests/jobqueue_test.yaml")
 
     job_script = cluster.job_script()
 
