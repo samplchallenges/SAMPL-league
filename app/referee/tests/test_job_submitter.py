@@ -1,5 +1,5 @@
-import time
 import os
+import time
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
