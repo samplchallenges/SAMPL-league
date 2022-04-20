@@ -36,6 +36,8 @@ def test_reset_unfinished_to_pending_submission():
     submission = models.Submission.objects.first()
     tasks.enqueue_submission(submission)
 
+    # set up SubmissionRun and Evaluation statuses to be modified by 
+    # job_submitter.reset_unfinished_to_pending_submission()
     submission_run1 = models.SubmissionRun.objects.get(pk=2)
     submission_run1.status = models.Status.RUNNING
     submission_run1.save(update_fields=["status"])
@@ -49,6 +51,7 @@ def test_reset_unfinished_to_pending_submission():
 
     job_submitter.reset_unfinished_to_pending_submission()
 
+    # check that SubmissionRun and Evaluation statuses were modified
     submission_run1 = models.SubmissionRun.objects.get(pk=2)
     submission_run2 = models.SubmissionRun.objects.get(pk=3)
     assert submission_run1.status == models.Status.PENDING_REMOTE
