@@ -98,3 +98,11 @@ def test_check_for_submission_runs(client, container_engine):
         # submission_run = models.SubmissionRun.objects.first()
         # assert submission_run.status == models.Status.SUCCESS
 
+def test_resubmit_check_for_submission_runs_job():
+    with patch("subprocess.check_output", mock_check_output):
+        job_info = job_submitter.resubmit_check_for_submission_runs_job("job_submission_script.sh")
+
+        assert job_info == 'Submitted batch job 11163505\n'
+
+def mock_check_output(*args, **kwargs):
+    return b'Submitted batch job 11163505\n'

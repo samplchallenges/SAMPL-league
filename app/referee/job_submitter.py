@@ -17,13 +17,12 @@ logger = logging.getLogger("job_submitter")
 logger.setLevel(logging.DEBUG)
 
 
-def resubmit_check_for_submission_runs_job():
-    scheduler_submission_script = settings.SAMPL_ROOT / "app/start_remote_scheduler.sh"
+def resubmit_check_for_submission_runs_job(scheduler_submission_script):
     jobid_sub_bytes = subprocess.check_output(
         f"sbatch {scheduler_submission_script}", shell=True
     )
     # jobid_sub_bytes is a bytes string that looks like b'Submitted batch job 11163505\n'
-    return str(jobid_sub_bytes)
+    return jobid_sub_bytes.decode('utf-8')
 
 
 def start_cluster(config_file):
@@ -97,7 +96,8 @@ def job_submitter_main():
     # pending submission to queue so next instance of scheduler will requeue them
     reset_unfinished_to_pending_submission()
 
-    jobinfo = resubmit_check_for_submission_runs_job()
+    scheduler_submission_script = settings.SAMPL_ROOT / "app/start_remote_scheduler.sh"
+    jobinfo = resubmit_check_for_submission_runs_job(scheduler_submission_script)
     logger.info("Resubmitting start_remote_scheduler.sh - JOB INFO: %s", jobinfo)
 
 
