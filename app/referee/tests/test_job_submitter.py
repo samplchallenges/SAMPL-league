@@ -79,10 +79,10 @@ def test_check_for_submission_runs(client, container_engine):
             call_command("sample_data")
 
         submission = models.Submission.objects.first()
-        print(submission)
         tasks.enqueue_submission(submission)
 
-        preload_file = f"daskworkerinit_tst_{container_engine}.py"
+        os.environ["CONTAINER_ENGINE"] = container_engine
+        preload_file = "daskworkerinit_tst.py"
         cluster = dd.LocalCluster(n_workers=0, preload=(preload_file,))
         dask_client = dd.Client(cluster)
 

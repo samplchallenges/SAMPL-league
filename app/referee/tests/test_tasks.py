@@ -1,3 +1,4 @@
+import os
 import time
 from unittest.mock import Mock, patch
 
@@ -20,9 +21,6 @@ def test_run_and_score_submission(container_engine):
     # This test will fail if run after another transaction=True test
     # See workaround in tests/test_views.py:test_run_submission
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
-        from django.conf import settings
-
-        print("in patch: engine=", settings.CONTAINER_ENGINE)
         transaction.commit()
         call_command("migrate", "core", "zero", interactive=False)
         call_command("migrate", "core", interactive=False)
@@ -30,7 +28,8 @@ def test_run_and_score_submission(container_engine):
         transaction.commit()
 
         submission = models.Submission.objects.first()
-        preload_file = f"daskworkerinit_tst_{container_engine}.py"
+        os.environ["CONTAINER_ENGINE"] = container_engine
+        preload_file = "daskworkerinit_tst.py"
         cluster = dd.LocalCluster(n_workers=4, preload=(preload_file))
         dask_client = dd.Client(cluster)
 
@@ -336,7 +335,8 @@ def test_submit_submission_run(client, container_engine):
         submission = models.Submission.objects.first()
         tasks.enqueue_submission(submission)
 
-        preload_file = f"daskworkerinit_tst_{container_engine}.py"
+        os.environ["CONTAINER_ENGINE"] = container_engine
+        preload_file = "daskworkerinit_tst.py"
         cluster = dd.LocalCluster(n_workers=4, preload=(preload_file,))
         dask_client = dd.Client(cluster)
 
