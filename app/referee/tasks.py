@@ -111,16 +111,16 @@ def _run_evaluations(submission_run, conditional):
 
 
 # NEW STARTS
-def print_hello_world():
-    logging.info("in print_hello_world")
-    import os
-    import subprocess
-
-    pyfile = "/data/homezvol0/osatom/print_hello_world.py"
-    logger.info("FILE EXISTS: %d", os.path.exists(pyfile))
-    result = subprocess.check_output(f"python {pyfile}", shell=True)
-
-    return result
+#def print_hello_world():
+#    logging.info("in print_hello_world")
+#    import os
+#    import subprocess
+#
+#    pyfile = "/data/homezvol0/osatom/print_hello_world.py"
+#    logger.info("FILE EXISTS: %d", os.path.exists(pyfile))
+#    result = subprocess.check_output(f"python {pyfile}", shell=True)
+#
+#    return result
 
 
 # NEW ENDS
