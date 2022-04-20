@@ -80,7 +80,7 @@ def job_submitter_main():
     logger.info("Starting job_submitter.py at %s", time.ctime(start_time))
     logger.info("Container engine: %s", settings.CONTAINER_ENGINE)
     jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
-    cluster = start_cluster(jobqueue_config_file)
+    cluster = start_cluster(jobqueue_config_file, settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS)
     logger.debug("Min: %d; Max: %d", settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS)
     client = Client(cluster)
     check_for_submission_runs(
