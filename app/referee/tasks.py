@@ -129,7 +129,6 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
     evaluation = submission_run.evaluation_set.get(pk=evaluation_id)
 
     if evaluation.status not in {models.Status.PENDING, models.Status.RUNNING}:
-        evaluation.append(stderr=f"Skipping evaluation run, already completed\n")
         return evaluation.status
 
     element = evaluation.input_element
