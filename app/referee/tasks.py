@@ -110,22 +110,6 @@ def _run_evaluations(submission_run, conditional):
     return statuses
 
 
-# NEW STARTS
-# def print_hello_world():
-#    logging.info("in print_hello_world")
-#    import os
-#    import subprocess
-#
-#    pyfile = "/data/homezvol0/osatom/print_hello_world.py"
-#    logger.info("FILE EXISTS: %d", os.path.exists(pyfile))
-#    result = subprocess.check_output(f"python {pyfile}", shell=True)
-#
-#    return result
-
-
-# NEW ENDS
-
-
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
     submission = models.Submission.objects.get(pk=submission_id)
@@ -143,6 +127,11 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
 
     evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
     evaluation = submission_run.evaluation_set.get(pk=evaluation_id)
+
+    if evaluation.status not in {models.Status.PENDING, models.Status.RUNNING}:
+        evaluation.append(stderr=f"Skipping evaluation run, already completed\n")
+        return evaluation.status
+
     element = evaluation.input_element
     output_file_keys = challenge.output_file_keys()
 
@@ -155,13 +144,6 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
             output_dir = None
-
-            # NEW STARTS
-            # print("TASKS.PY SETTINGS:", settings.CONTAINER_ENGINE)
-            # output = print_hello_world()
-            # evaluation.append(stdout=str(output))
-            # evaluation.append(stderr=str(output))
-            # NEW ENDS
 
             if output_file_keys:
                 output_dir = dirpath / "output"
@@ -197,7 +179,6 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             evaluation,
             evaluation_score_types,
         )
-        # """
 
         evaluation.status = models.Status.SUCCESS
     except CancelledException:

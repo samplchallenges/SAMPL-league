@@ -13,22 +13,17 @@ jobqueue:
     death_timeout: 60           # Number of seconds to wait if a worker can not find a scheduler
     #local_directory: null       # Location of fast local storage like /scratch or $TMPDIR
     #shared_temp_directory: null # Shared directory currently used to dump temporary security objects for workers
-    #python: "/data/homezvol0/osatom/SAMPL-league/app/daskworkerinit.py"
-    extra: ["--preload /data/homezvol0/osatom/SAMPL-league/app/daskworkerinit.py"]
+    #extra: ["--preload /data/homezvol0/osatom/SAMPL-league/app/daskworkerinit.py"]
 
     # SLURM resource manager options
     shebang: "#!/usr/bin/env bash"
     queue: 'free'
-    project: 'DMOBLEY_LAB'
-    walltime: '00:30:00'
+    #project: 'DMOBLEY_LAB'
+    walltime: '24:00:00'
     #env_extra: []
     #job-cpu: null
     #job-mem: null
-    job_extra: [
-      #"--error=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker/dask-worker-%j.err",
-      #"--output=/data/homezvol0/osatom/sampl-app-extras/logs/dask-worker/dask-worker-%j.out",
-      #"--open-mode=append",
-    ]
+    #job_extra: []
     #log-directory: null
 
     scheduler_options: {}
