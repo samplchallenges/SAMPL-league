@@ -34,9 +34,9 @@ def start_cluster(config_file, min_workers, max_workers):
         ],
         job_extra=[
             f"--output={settings.DASK_WORKER_LOGS_ROOT}/dask-worker-%j.out",
-            "--open-mode=append"
+            "--open-mode=append",
         ],
-        **config["jobqueue"]["slurm"]
+        **config["jobqueue"]["slurm"],
     )
     cluster.adapt(
         minimum_jobs=min_workers,
