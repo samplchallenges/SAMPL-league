@@ -19,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 
 def resubmit_check_for_submission_runs_job(scheduler_submission_script):
     jobid_sub_bytes = subprocess.check_output(
-        f"sbatch {scheduler_submission_script}", shell=True
+        ["sh", scheduler_submission_script],
     )
     # jobid_sub_bytes is a bytes string that looks like b'Submitted batch job 11163505\n'
     return jobid_sub_bytes.decode("utf-8")
@@ -28,7 +28,16 @@ def resubmit_check_for_submission_runs_job(scheduler_submission_script):
 def start_cluster(config_file, min_workers, max_workers):
     with open(config_file, encoding="utf-8") as f:
         config = yaml.safe_load(f)
-    cluster = SLURMCluster(**config["jobqueue"]["slurm"])
+    cluster = SLURMCluster(
+        extra=[
+            f"--preload {settings.SAMPL_ROOT}/app/daskworkerinit.py",
+        ],
+        job_extra=[
+            f"--output={settings.DASK_WORKER_LOGS_ROOT}/dask-worker-%j.out",
+            "--open-mode=append"
+        ],
+        **config["jobqueue"]["slurm"]
+    )
     cluster.adapt(
         minimum_jobs=min_workers,
         maximum_jobs=max_workers,

@@ -1,10 +1,13 @@
 # pylint: skip-file
+import os
 from .settings_prod import *  # lgtm [py/polluting-import]
 
-BASE_DIR = os.environ["BASE_DIR"]
-MEDIA_ROOT = BASE_DIR / "sampl-app-extras/media"
-LOGS_ROOT = BASE_DIR / "sampl-app-extras/logs"
-SAMPL_ROOT = BASE_DIR / "SAMPL-league/"
+
+BASE_DIR = Path(os.environ["BASE_DIR"])
+MEDIA_ROOT = Path(os.environ["SAMPL_MEDIA_ROOT"])
+LOGS_ROOT = Path(os.environ["SAMPL_LOGS_ROOT"])
+DASK_WORKER_LOGS_ROOT = LOGS_ROOT / "dask-worker"
+SAMPL_ROOT = Path(os.environ["SAMPL_ROOT"])   # /path/to/SAMPL-league
 
 # This settings file is on the dask workers, scheduler, and for the job that submits dask tasks
 REMOTE_SCHEDULER = False
@@ -17,8 +20,8 @@ MINIMUM_WORKERS = 0
 MAXIMUM_WORKERS = 1
 
 # HPC3 Job Submitter Settings
-JOB_SUBMITTER_LIFETIME = 60 * 60  # in seconds (1 hr)
-CHECK_INTERVAL = 60  # in seconds (5 min)
+JOB_SUBMITTER_LIFETIME = int(os.environ.get("JOB_SUBMITTER_LIFETIME", 24 * 60 * 60))  # in seconds (1 hr)
+CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 60))  # in seconds (1 min)
 
 
 LOGGING = {
