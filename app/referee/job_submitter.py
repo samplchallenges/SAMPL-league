@@ -25,15 +25,15 @@ def resubmit_check_for_submission_runs_job(scheduler_submission_script):
     return jobid_sub_bytes.decode("utf-8")
 
 
-def start_cluster(config_file, min_workers, max_workers):
+def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_workers):
     with open(config_file, encoding="utf-8") as f:
         config = yaml.safe_load(f)
     cluster = SLURMCluster(
         extra=[
-            f"--preload {settings.SAMPL_ROOT}/app/daskworkerinit.py",
+            f"--preload {preload_file}",
         ],
         job_extra=[
-            f"--output={settings.DASK_WORKER_LOGS_ROOT}/dask-worker-%j.out",
+            f"--output={worker_outfile}",
             "--open-mode=append",
         ],
         **config["jobqueue"]["slurm"],
@@ -90,7 +90,10 @@ def job_submitter_main():
     logger.info("Container engine: %s", settings.CONTAINER_ENGINE)
     jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
     cluster = start_cluster(
-        jobqueue_config_file, settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS
+        jobqueue_config_file, 
+        f"{settings.SAMPL_ROOT}/app/daskworkerinit.py",
+        f"{settings.DASK_WORKER_LOGS_ROOT}/dask-worker-%j.out",
+        settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS
     )
     logger.debug("Min: %d; Max: %d", settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS)
     client = Client(cluster)
