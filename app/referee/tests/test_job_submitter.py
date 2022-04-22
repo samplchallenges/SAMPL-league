@@ -15,10 +15,10 @@ from referee import job_submitter, tasks
 def test_start_cluster():
     config_file = f"{os.path.dirname(os.path.abspath(__file__))}/jobqueue_test.yaml"
     cluster = job_submitter.start_cluster(
-        config_file, 
+        config_file,
         "SAMPL-league/app/daskworkerinit.py",
         ""
-        0, 
+        0,
         2
     )
     job_script = cluster.job_script()
