@@ -90,10 +90,11 @@ def job_submitter_main():
     logger.info("Container engine: %s", settings.CONTAINER_ENGINE)
     jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
     cluster = start_cluster(
-        jobqueue_config_file, 
+        jobqueue_config_file,
         f"{settings.SAMPL_ROOT}/app/daskworkerinit.py",
         f"{settings.DASK_WORKER_LOGS_ROOT}/dask-worker-%j.out",
-        settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS
+        settings.MINIMUM_WORKERS,
+        settings.MAXIMUM_WORKERS,
     )
     logger.debug("Min: %d; Max: %d", settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS)
     client = Client(cluster)
