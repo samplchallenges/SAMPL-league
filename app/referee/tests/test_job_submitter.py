@@ -17,7 +17,7 @@ def test_start_cluster():
     cluster = job_submitter.start_cluster(
         config_file, 
         "SAMPL-league/app/daskworkerinit.py",
-        ""
+        "",
         0, 
         2
     )
