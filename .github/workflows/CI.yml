@@ -92,7 +92,7 @@ jobs:
           ECR_SAMPLLEAGUE_URL: "103125031445.dkr.ecr.us-east-2.amazonaws.com/sampl-league"
 
       - name: Upload test coverage
-        uses: codecov/codecov-action@v3.0.0
+        uses: codecov/codecov-action@v3.1.0
         with:
           fail_ci_if_error: true
           directory: app/
