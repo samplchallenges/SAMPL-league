@@ -1,9 +1,7 @@
 # pylint: skip-file
-import functools.partial
 import os
 from pathlib import Path
 
-from . import aws_login
 from .base_settings import *  # lgtm [py/polluting-import]
 
 BASE_DIR = Path("/opt/app/sampl")
@@ -39,13 +37,6 @@ AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID_S3"]
 AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY_S3"]
 AWS_STORAGE_BUCKET_NAME = "sampl-league-storage"
 AWS_S3_REGION_NAME = "us-east-2"
-
-ECR_BASE_URL = os.environ["ECR_BASE_URL"]
-ECR_SAMPLLEAGUE_URL = os.environ["ECR_SAMPLLEAGUE_URL"]
-
-AWS_LOGIN_FUNCTION = functools.partial(aws_login.run_aws_login, ECR_BASE_URL)
-
-AWS_LOGOUT_FUNCTION = aws_login.run_aws_logout
 
 DATABASES = {
     "default": {
