@@ -1,9 +1,6 @@
 """
 Django settings for SAMPL project.
 """
-import os
-import subprocess
-
 # Custom settings for SAMPL
 VISUALIZE_DASK_GRAPH = False
 DASK_SCHEDULER_URL = "localhost:8786"
