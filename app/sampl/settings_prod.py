@@ -3,8 +3,8 @@ import functools.partial
 import os
 from pathlib import Path
 
-from .base_settings import *  # lgtm [py/polluting-import]
 from . import aws_login
+from .base_settings import *  # lgtm [py/polluting-import]
 
 BASE_DIR = Path("/opt/app/sampl")
 MEDIA_ROOT = BASE_DIR / "media"
