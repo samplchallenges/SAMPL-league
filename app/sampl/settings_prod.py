@@ -22,9 +22,9 @@ SECRET_KEY = os.environ["SAMPL_SECRET_KEY"]
 # Rollbar API key
 POST_SERVER_ITEM_ACCESS_TOKEN = os.environ["POST_SERVER_ITEM_ACCESS_TOKEN"]
 ALLOWED_HOSTS = [
-    "app.samplchallenges.org",
-    "sampl.us-east-2.elasticbeanstalk.com",
-    "18.219.112.35",
+    os.environ.get("MAIN_WEBSITE_URL", "app.samplchallenges.org"),
+    os.environ.get("SAMPL_DNS_1", "sampl.us-east-2.elasticbeanstalk.com"),
+    os.environ.get("SAMPL_DNS_2", "18.219.112.35"),
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://app.samplchallenges.org",
