@@ -24,8 +24,7 @@ POST_SERVER_ITEM_ACCESS_TOKEN = os.environ["POST_SERVER_ITEM_ACCESS_TOKEN"]
 ALLOWED_HOSTS = [
     "app.samplchallenges.org",
     "sampl.us-east-2.elasticbeanstalk.com",
-    "3.134.45.26",
-    "18-219-112-35",
+    "18.219.112.35",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://app.samplchallenges.org",
