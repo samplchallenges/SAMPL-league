@@ -25,7 +25,7 @@ ALLOWED_HOSTS = [
     "app.samplchallenges.org",
     "sampl.us-east-2.elasticbeanstalk.com",
     "3.134.45.26",
-    "3-145-162-7",
+    "18-219-112-35",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://app.samplchallenges.org",
