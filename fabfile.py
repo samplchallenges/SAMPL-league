@@ -12,7 +12,7 @@ from patchwork.transfers import rsync
 def build(c):
     with c.cd("app"):
         c.run("PIPENV_IGNORE_VIRTUALENVS=1 pipenv run python setup.py bdist_wheel")
-        c.run("tar -cf ../current.tar Pipfile Pipfile.lock Procfile daskworkerinit.py .platform dist")
+        c.run("tar -cf ../current.tar manage.py Pipfile Pipfile.lock Procfile daskworkerinit.py .platform dist")
     with c.cd("ever_given"):
         c.run("PIPENV_IGNORE_VIRTUALENVS=1 pipenv run python setup.py bdist_wheel")
 
@@ -85,10 +85,10 @@ def _run_install_file(remote_c, sh_file, sudo=False):
     cmd = f"sudo bash {deploy_files / sh_file}" if sudo else f"bash {deploy_files / sh_file}" 
     remote_c.run(cmd)
 
-def _install_dependency(install_file):
+def _install_dependency(install_file, sudo=False):
     with sampl_staging() as remote_c:
         _upload_dependency_install_file(remote_c, install_file)
-        _run_install_file(remote_c, install_file)
+        _run_install_file(remote_c, install_file, sudo)
 
 @task
 def install_singularity(c):
@@ -121,7 +121,7 @@ def grant_executable_rights(c):
     _install_dependency(install_file)
 
 @task
-def renew_ssl_certificate_cron_job(c)
+def renew_ssl_certificate_cron_job(c):
     install_file = "renew_ssl_certificate_cron_job.sh"
     _install_dependency(install_file)
 
@@ -130,29 +130,19 @@ def setup_logging(c):
     install_file = "logging.sh"
     _install_dependency(install_file)
 
-
 @task
 def setup_media_root(c):
     install_file = "media_root.sh"
     _install_dependency(install_file)
 
-
+def install_venv(c):
+    install_file = "install_venv.sh"
+    _install_dependency(install_file)
 
 @task
 def install_dependencies(c):
     with sampl_staging() as remote_c:
-        def run_install_file(sh_file, sudo):
-            cmd = f"sudo bash {deploy_files / sh_file}" if sudo else f"bash {deploy_files / sh_file}" 
-            remote_c.run(cmd)
         _set_env_variables(c)
-        run_install_file("install_venv.sh", False)
-        #run_install_file("install_python38.sh", True)
-        #run_install_file("install_certbot.sh", True)
-        #run_install_file("open_https_port.sh", True)
-        #run_install_file("grant_executable_rights.sh", True)
-        #run_install_file("renew_ssl_certificate_cron_job.sh", True)
-        #run_install_file("install_docker.sh", True)
-        #run_install_file("logging.sh", True)
-        #run_install_file("media_root.sh", True)
-        #run_install_file("install_singularity.sh", True)
+        setup_logging(c)
+        install_venv(c)
     #_download_aws_ecr_cred(c)
