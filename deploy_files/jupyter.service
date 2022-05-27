@@ -1,0 +1,28 @@
+[Unit]
+Description=This is jupyterlab daemon
+#PartOf=app.target
+#Requires=gunicorn.target
+After=network.target
+
+
+[Service]
+User=webapp
+Type=simple
+ExecStart=/bin/sh -c "DJANGO_SETTINGS_MODULE=sampl.settings_prod /var/app/current/.venv/bin/jupyter-lab --no-browser --port 8989 --ip localhost --ServerApp.token=''"
+
+ExecStartPost=/bin/sh -c "systemctl show -p MainPID jupyterlab.service | cut -d= -f2 > /var/pids/jupyterlab.pid"
+ExecStopPost=/bin/sh -c "rm -f /var/pids/jupyterlab.pid"
+ExecStopPost=/bin/sh -c ""
+Restart=always
+
+
+EnvironmentFile=/opt/env/env 
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=jupyterlab
+WorkingDirectory=/var/app/current/ 
+
+
+[Install]
+WantedBy=multi-user.target

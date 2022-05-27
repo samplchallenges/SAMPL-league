@@ -1,0 +1,27 @@
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+#PartOf=app.target
+
+[Service]
+Type=notify
+User=webapp
+RuntimeDirectory=gunicorn
+WorkingDirectory=/var/app/current/ 
+ExecStart=/bin/sh -c "/var/app/current/.venv/bin/gunicorn --access-logfile - --workers 3 --bind unix:/run/gunicorn.sock sampl.wsgi:application"
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+#from EBS
+EnvironmentFile=/opt/env/env
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=web
+
+[Install]
+WantedBy=multi-user.target

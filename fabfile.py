@@ -12,7 +12,7 @@ from patchwork.transfers import rsync
 def build(c):
     with c.cd("app"):
         c.run("PIPENV_IGNORE_VIRTUALENVS=1 pipenv run python setup.py bdist_wheel")
-        c.run("tar -cf ../current.tar manage.py Pipfile Pipfile.lock Procfile daskworkerinit.py .platform dist")
+        c.run("tar -cf ../current.tar manage.py notebooks Pipfile Pipfile.lock Procfile daskworkerinit.py .platform dist")
     with c.cd("ever_given"):
         c.run("PIPENV_IGNORE_VIRTUALENVS=1 pipenv run python setup.py bdist_wheel")
 
@@ -49,6 +49,8 @@ def deploy(c):
             remote_c.run("sudo tar -xvf current.tar")
             remote_c.run("sudo rm current.tar")
             remote_c.run("ls -l .")
+        with remote_c.cd("/var/app/"):
+            remote_c.run("sudo chown -R webapp:webapp current")
 
 
 # def _install_venv(remote_c):
@@ -59,21 +61,6 @@ def deploy(c):
 #         remote_c.run("pipenv run pip install dist/sampl_app-0.0.1-py3-none-any.whl")
 #         remote_c.run("pipenv run pip freeze")
 
-def _download_aws_ecr_cred(c):
-    with sampl_staging() as remote_c:
-        if not exists(remote_c, "/home/webapp/.aws", sudo=True):
-            remote_c.sudo("mkdir /home/webapp/.aws")
-        remote_c.put("app/set_aws_ecr_cred.sh")
-        remote_c.run("source set_aws_ecr_cred.sh && aws s3 cp s3://aws-container-registry-config/config ~/config && aws s3 cp s3://aws-container-registry-config/credentials ~/credentials")
-        remote_c.run("rm set_aws_ecr_cred.sh")
-        remote_c.run("sudo mv ~/config ~/credentials /home/webapp/.aws")
-
-def _set_env_variables(c):
-    with sampl_staging() as remote_c:
-        remote_c.put("app/set_staging.sh")
-        remote_c.run("echo source /home/ec2-user/set_staging.sh >> ~/.bashrc")
-        remote_c.run("source ~/.bashrc")
-
 def _upload_dependency_install_file(remote_c, filename):
     if not exists(remote_c, "deploy_files"):
         remote_c.run("mkdir deploy_files")
@@ -82,13 +69,32 @@ def _upload_dependency_install_file(remote_c, filename):
 
 def _run_install_file(remote_c, sh_file, sudo=False):
     deploy_files = Path("deploy_files")
-    cmd = f"sudo bash {deploy_files / sh_file}" if sudo else f"bash {deploy_files / sh_file}" 
-    remote_c.run(cmd)
+    sh_file = f"{deploy_files / sh_file}"
+    cmd = sh_file if sudo else f"sudo {sh_file}" 
+    try: 
+        remote_run = remote_c.run(cmd)
+    except:
+        raise Exception(f"DeployError: {sh_file}")
 
 def _install_dependency(install_file, sudo=False):
     with sampl_staging() as remote_c:
         _upload_dependency_install_file(remote_c, install_file)
         _run_install_file(remote_c, install_file, sudo)
+
+@task
+def download_aws_ecr_credentials(c):
+    with sampl_staging() as remote_c:
+        if not exists(remote_c, "/home/webapp/.aws", sudo=True):
+            remote_c.sudo("mkdir /home/webapp/.aws")
+        remote_c.put("app/set_aws_ecr_cred.sh")
+    install_file = "download_aws_ecr_credentials.sh"
+    _install_dependency(install_file)
+
+@task
+def create_webapp_user(c):
+    with sampl_staging() as remote_c:
+        install_file = "create_webapp_user.sh"
+        _install_dependency(install_file)
 
 @task
 def install_singularity(c):
@@ -107,7 +113,7 @@ def install_docker(c):
 
 @task
 def install_certbot(c):
-    install_file = "logging.sh"
+    install_file = "install_certbot.sh"
     _install_dependency(install_file)
 
 @task
@@ -135,14 +141,81 @@ def setup_media_root(c):
     install_file = "media_root.sh"
     _install_dependency(install_file)
 
+@task
 def install_venv(c):
     install_file = "install_venv.sh"
     _install_dependency(install_file)
 
 @task
-def install_dependencies(c):
+def setup_djangoapp(c):
     with sampl_staging() as remote_c:
-        _set_env_variables(c)
-        setup_logging(c)
-        install_venv(c)
-    #_download_aws_ecr_cred(c)
+        _upload_dependency_install_file(remote_c, "set_staging.sh")
+    install_file = "setup_djangoapp.sh"
+    _install_dependency(install_file)
+
+@task
+def configure_nginx(c):
+    with sampl_staging() as remote_c:
+        _upload_dependency_install_file(remote_c, "nginx.conf")
+    install_file = "configure_nginx.sh"
+    _install_dependency(install_file)
+
+@task
+def configure_gunicorn(c):
+    with sampl_staging() as remote_c:
+        _upload_dependency_install_file(remote_c, "env")
+        _upload_dependency_install_file(remote_c, "gunicorn.socket")
+        _upload_dependency_install_file(remote_c, "gunicorn.service")
+        _upload_dependency_install_file(remote_c, "jupyter.service")
+        _upload_dependency_install_file(remote_c, "scheduler.service")
+        _upload_dependency_install_file(remote_c, "worker.service")
+    install_file = "configure_gunicorn.sh"
+    _install_dependency(install_file)
+
+
+@task
+def get_cert(c):
+    install_file = "get_cert.sh"
+    _install_dependency(install_file)
+
+@task
+def restart_gunicorn(c):
+    install_file = "restart_gunicorn.sh"
+    _install_dependency(install_file)
+
+@task
+def install_dependencies(c):
+    install_certbot(c)                  #00_install_certbot.config
+    open_https_port(c)                  #01_open_https_port.config
+    grant_executable_rights(c)          #02_grant_executable_rights.config
+    renew_ssl_certificate_cron_job(c)   #03_renew_ssl_certificate_cron_job.config
+    install_docker(c)                   #04_install_docker.config
+    install_singularity(c)              #05_install_singularity.config
+    setup_logging(c)                    #06_logging.config
+    setup_media_root(c)                 #07_media_root.config
+
+    download_aws_ecr_credentials(c)     
+
+    install_python38(c)
+    install_venv(c)
+    setup_djangoapp(c)
+
+    configure_nginx(c)
+    configure_gunicorn(c)
+
+@task
+def run_full_pipeline(c):
+    create_webapp_user(c)
+
+    build(c)
+    deploy(c)
+
+    install_dependencies(c)
+
+@task
+def run_redeploy_pipeline(c):
+    build(c)
+    deploy(c)
+    install_venv(c)
+    setup_djangoapp(c)
+    restart_gunicorn(c)
