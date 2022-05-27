@@ -14,3 +14,4 @@ sudo yum-config-manager --enable epel*
 # 30_install_certbot
 sudo yum install -y certbot python2-certbot-nginx
 
+
