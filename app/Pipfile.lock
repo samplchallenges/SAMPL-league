@@ -269,6 +269,14 @@
             "index": "pypi",
             "version": "==0.7.3"
         },
+        "dask-jobqueue": {
+            "hashes": [
+                "sha256:435b8a77a95f82326b3b18a3f60358754ea3f7ac4d62950ab8fed0f56f223c71",
+                "sha256:682d7cc0e6b319b6ab83a7a898680c12e9c77ddc77df380b40041290f55d4e79"
+            ],
+            "index": "pypi",
+            "version": "==0.7.3"
+        },
         "debugpy": {
             "hashes": [
                 "sha256:0d383b91efee57dbb923ba20801130cf60450a0eda60bce25bccd937de8e323a",
