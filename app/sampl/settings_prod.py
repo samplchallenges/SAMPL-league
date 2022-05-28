@@ -1,6 +1,6 @@
 # pylint: skip-file
-from functools import partial
 import os
+from functools import partial
 from pathlib import Path
 
 from . import aws_login
