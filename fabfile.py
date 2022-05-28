@@ -51,14 +51,6 @@ def deploy(c):
         with remote_c.cd("/var/app/"):
             remote_c.run("sudo chown -R webapp:webapp current")
 
-# def _install_venv(remote_c):
-#     with remote_c.cd("/var/app/current"):
-#         remote_c.run("pipenv install")
-#         remote_c.run("pipenv run pip uninstall ever-given")
-#         remote_c.run("pipenv run pip install ../ever_given-0.0.13-py3-none-any.whl")
-#         remote_c.run("pipenv run pip install dist/sampl_app-0.0.1-py3-none-any.whl")
-#         remote_c.run("pipenv run pip freeze")
-
 def _upload_dependency_install_file(remote_c, filename):
     if not exists(remote_c, "deploy_files"):
         remote_c.run("mkdir deploy_files")
