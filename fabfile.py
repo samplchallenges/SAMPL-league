@@ -23,10 +23,6 @@ STAGING_HOST = "ec2-3-134-189-93.us-east-2.compute.amazonaws.com"
 
 KEY_FILE =  "/Users/megosato/.ssh/aws-eb"
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 26ed9be3458d73b36cd0f5d1caf29272c904efcd
 def sampl_staging(user="ec2-user"):
     return Connection(
         STAGING_HOST,
@@ -55,10 +51,6 @@ def deploy(c):
         with remote_c.cd("/var/app/"):
             remote_c.run("sudo chown -R webapp:webapp current")
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 26ed9be3458d73b36cd0f5d1caf29272c904efcd
 # def _install_venv(remote_c):
 #     with remote_c.cd("/var/app/current"):
 #         remote_c.run("pipenv install")
@@ -225,8 +217,5 @@ def run_redeploy_pipeline(c):
     install_venv(c)
     setup_djangoapp(c)
     restart_gunicorn(c)
-<<<<<<< HEAD
 
 
-=======
->>>>>>> 26ed9be3458d73b36cd0f5d1caf29272c904efcd

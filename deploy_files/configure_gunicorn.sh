@@ -1,16 +1,26 @@
 #!/bin/bash -e
 
-sudo mkdir /var/pids
-sudo chmod 777 /var/pids
+DEPLOY_FILES_DIR="/home/ec2-user/deploy_files"
 
-sudo mkdir /opt/env
-sudo mv ~/deploy_files/env /opt/env/env
+if ls /var/pids; then
+   :
+else
+   sudo mkdir /var/pids
+   sudo chmod 777 /var/pids
+fi
+
+if ls /opt/env; then
+   :
+else
+   sudo mkdir /opt/env
+fi
+sudo mv $DEPLOY_FILES_DIR/env /opt/env/env
 cat /opt/env/env
-sudo mv ~/deploy_files/gunicorn.socket /etc/systemd/system
-sudo mv ~/deploy_files/gunicorn.service /etc/systemd/system
-sudo mv ~/deploy_files/jupyter.service /etc/systemd/system
-sudo mv ~/deploy_files/scheduler.service /etc/systemd/system
-sudo mv ~/deploy_files/worker.service /etc/systemd/system
+sudo mv $DEPLOY_FILES_DIR/gunicorn.socket /etc/systemd/system
+sudo mv $DEPLOY_FILES_DIR/gunicorn.service /etc/systemd/system
+sudo mv $DEPLOY_FILES_DIR/jupyter.service /etc/systemd/system
+sudo mv $DEPLOY_FILES_DIR/scheduler.service /etc/systemd/system
+sudo mv $DEPLOY_FILES_DIR/worker.service /etc/systemd/system
 
 sudo systemctl daemon-reload
 
