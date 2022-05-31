@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models, transaction
 from django.db.models.functions import Concat
+from django.db.models.signals import pre_save
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -102,6 +103,9 @@ class Challenge(Timestamped):
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
     repo_url = models.URLField()
+    max_batch_size = models.PositiveIntegerField(
+        help_text="0 to disable batching", default=0
+    )
 
     __output_types_dict = None
 
@@ -391,14 +395,33 @@ class SubmissionRun(Logged):
 
 class InputElement(Timestamped):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text="Inherit common values from parent element, eg. protein PDB file",
+    )
+    is_parent = models.BooleanField(
+        default=False,
+        help_text="Parent elements won't be evaluated. They are used to"
+        " group common values",
+    )
     name = models.CharField(max_length=255)
     is_public = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ["challenge", "name"]
 
+    def clean(self):
+        if self.is_parent and self.parent is not None:
+            raise ValidationError(
+                "If the input element is a parent, it cannot also have a parent."
+                " Only one level of parent-child relationship is supported"
+            )
+
     @classmethod
-    def all_element_values(cls, input_values):
+    def element_values(cls, input_values):
         file_values = {}
         values = {}
 
@@ -412,7 +435,7 @@ class InputElement(Timestamped):
                 values[key] = input_value.value
         return values, file_values
 
-    def all_values(self):
+    def _values(self):
         """
         Returns a pair of key: value dicts, where the first dict is regular values
         and the second is file values
@@ -420,7 +443,21 @@ class InputElement(Timestamped):
         input_values = self.inputvalue_set.select_related(
             "value_type", "value_type__content_type"
         ).all()
-        return self.all_element_values(input_values)
+        return self.element_values(input_values)
+
+    def all_values(self):
+        """
+        Includes parent values
+        """
+        values, file_values = self._values()
+        if self.parent:
+            (
+                parent_values,
+                parent_file_values,
+            ) = self.parent._values()  # pylint: disable=protected-access
+            values.update(parent_values)
+            file_values.update(parent_file_values)
+        return values, file_values
 
     def __str__(self):
         return f"{self.name}, is public? {self.is_public}"
@@ -429,7 +466,20 @@ class InputElement(Timestamped):
 class ValueType(Timestamped):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
     is_input_flag = models.BooleanField(choices=((True, "Input"), (False, "Output")))
+    on_parent_flag = models.BooleanField(
+        choices=((True, "On parent"), (False, "On child")),
+        default=False,
+        help_text="For input elements, should this value be set on the parent or on"
+        " the child? e.g. protein PDB structure should only be set on the parent;"
+        " ligand SMILES should only be set on the child",
+    )
     key = models.CharField(max_length=255)
+    batch_method = models.CharField(
+        max_length=10,
+        blank=True,
+        default="",
+        choices=(("", "None"), ("csv", "CSV"), ("mol", "MOL or SDF")),
+    )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     description = models.TextField()
 
@@ -490,6 +540,16 @@ class InputValue(ValueParentMixin):
         if self.input_element.challenge.id != self.value_type.challenge.id:
             raise ValidationError(
                 {"input_element": "Challenge must match value_type's"}
+            )
+
+        if self.input_element.is_parent and not self.value_type.on_parent_flag:
+            raise ValidationError(
+                "Cannot set a non-parent value type on a parent input element"
+            )
+
+        if not self.input_element.is_parent and self.value_type.on_parent_flag:
+            raise ValidationError(
+                "Cannot set a parent value type on non-parent input element"
             )
 
 
@@ -739,3 +799,48 @@ class FileValue(GenericValue):
             instance.value.save(filename, File(fp))
         filecache.preserve_local_copy(instance.value, filepath)
         return instance
+
+
+class InputBatchGroup(Timestamped):
+    """
+    When batch sizes are changed, we want to keep history associated with old batches
+    """
+
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+
+
+class InputBatch(Timestamped):
+    batch_group = models.ForeignKey(InputBatchGroup, on_delete=models.CASCADE)
+    is_public = models.BooleanField(default=False)
+
+    def add_element(self, input_element):
+        InputBatchMembership.objects.create(
+            batch=self, batch_group=self.batch_group, input_element=input_element
+        )
+
+
+class InputBatchMembership(Timestamped):
+    batch_group = models.ForeignKey(InputBatchGroup, on_delete=models.CASCADE)
+    batch = models.ForeignKey(InputBatch, on_delete=models.CASCADE)
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ["batch_group", "input_element"]
+
+
+def _validate_batch_membership(sender, **kwargs):  # pylint: disable=unused-argument
+    ibm = kwargs["instance"]
+
+    if ibm.batch.batch_group != ibm.batch_group:
+        raise ValidationError(
+            "batch group on InputBatchMembership object doesn't match the"
+            "batch group of its batch"
+        )
+    if ibm.batch.is_public != ibm.input_element.is_public:
+        raise ValidationError(
+            f"Input element is_public ({ibm.input_element.is_public}) doesn't"
+            f" match batch is_public ({ibm.batch.is_public})"
+        )
+
+
+pre_save.connect(_validate_batch_membership, sender=InputBatchMembership)

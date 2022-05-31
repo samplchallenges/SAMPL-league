@@ -9,6 +9,7 @@ import pytest
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.db import models as django_models
 
 from core import models
@@ -72,6 +73,15 @@ def test_input_element(input_elements, benzene_from_mol):
     relative_path = dirpath.relative_to(settings.MEDIA_ROOT)
     expected_path = f"file_uploads/challenges/{benzene_from_mol.challenge_id}"
     assert relative_path == Path(expected_path)
+
+
+def test_parent_element(smiles_docking_config_and_func):
+    smiles_docking_config, add_element_func = smiles_docking_config_and_func
+    benz = add_element_func("benzene", "c1ccccc1")
+    methane = add_element_func("methane", "C")
+
+    values, file_values = benz.all_values()
+    assert "protein_pdb" in file_values
 
 
 @pytest.mark.parametrize(
@@ -140,3 +150,35 @@ def test_cancel_requested(draft_submission, submission_run_factory):
     submission_run.save()
 
     assert submission_run.check_cancel_requested()
+
+
+def test_batch_build_works(smiles_molw_config, input_elements):
+    group1 = models.InputBatchGroup.objects.create(
+        challenge=smiles_molw_config.challenge
+    )
+    batch1_priv = models.InputBatch.objects.create(batch_group=group1, is_public=False)
+    batch1_pub = models.InputBatch.objects.create(batch_group=group1, is_public=True)
+
+    for element in input_elements:
+        if element.is_public:
+            batch1_pub.add_element(element)
+        else:
+            batch1_priv.add_element(element)
+
+
+def test_batch_checks(smiles_molw_config, input_elements):
+    element = input_elements[1]
+    assert element.is_public
+    group = models.InputBatchGroup.objects.create(
+        challenge=smiles_molw_config.challenge
+    )
+    batch_priv = models.InputBatch.objects.create(batch_group=group)
+    batch1_pub = models.InputBatch.objects.create(batch_group=group, is_public=True)
+    batch2_pub = models.InputBatch.objects.create(batch_group=group, is_public=True)
+    with pytest.raises(ValidationError):
+        batch_priv.add_element(element)
+
+    batch1_pub.add_element(element)
+
+    with pytest.raises(IntegrityError):
+        batch2_pub.add_element(element)

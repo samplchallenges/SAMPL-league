@@ -3,6 +3,7 @@ DJANGO_SETTINGS_MODULE = "sampl.settings_dev"
 addopts = "-vv"
 
 [tool.pylint.format]
+# Note: .pylintrc file overrides pylint settings in this file
 max-line-length = "88"
 
 [tool.pylint.messages_control]

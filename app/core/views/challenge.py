@@ -33,7 +33,7 @@ def _input_elements(challenge):
 
     for element_dict in elements.values():
         element_values = [v for k, v in element_dict.items() if k != "name"]
-        kwargs, file_kwargs = InputElement.all_element_values(element_values)
+        kwargs, file_kwargs = InputElement.element_values(element_values)
         args_dict = kwargs
         for k, v in file_kwargs.items():
             args_dict[k] = os.path.basename(v)
