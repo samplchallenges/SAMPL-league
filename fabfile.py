@@ -192,6 +192,7 @@ def install_dependencies(c):
 
     configure_nginx(c)
     configure_gunicorn(c)
+    get_cert(c)
 
 @task
 def run_full_pipeline(c):
