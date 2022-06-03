@@ -23,15 +23,18 @@ DEBUG = False
 SECRET_KEY = os.environ["SAMPL_SECRET_KEY"]
 # Rollbar API key
 POST_SERVER_ITEM_ACCESS_TOKEN = os.environ["POST_SERVER_ITEM_ACCESS_TOKEN"]
+
+MAIN_WEBSITE_URL = os.environ.get("MAIN_WEBSITE_URL", "app.samplchallenges.org")
+
 ALLOWED_HOSTS = [
     "127.0.0.1",
-    os.environ.get("MAIN_WEBSITE_URL", "app.samplchallenges.org"),
+    MAIN_WEBSITE_URL,
     os.environ.get("EC2_PRIVATE_IP", "172.31.43.228"),
     os.environ.get("SAMPL_DNS_1", ""),
     os.environ.get("SAMPL_DNS_2", ""),
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "https://app.samplchallenges.org",
+    f"https://{MAIN_WEBSITE_URL}",
 ]
 
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"

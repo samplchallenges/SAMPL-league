@@ -170,6 +170,8 @@ def get_cert(c):
 
 @task
 def restart_gunicorn(c):
+    with sampl_staging() as remote_c:
+        _upload_dependency_install_file(remote_c, "env")
     install_file = "restart_gunicorn.sh"
     _install_dependency(install_file)
 
