@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import time
+import os
 
 import django
 import yaml
@@ -28,6 +29,19 @@ def resubmit_check_for_submission_runs_job(scheduler_submission_script):
 def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_workers):
     with open(config_file, encoding="utf-8") as f:
         config = yaml.safe_load(f)
+
+    job_extra = [
+        f"--output={worker_outfile}",
+        "--open-mode=append",
+    ]
+    if os.environ['WORKER_QUEUE_PARTITION'] == 'free':
+        job_extra.append("--partition=free")
+    elif os.environ['WORKER_QUEUE_PARTITION'] == 'standard':
+        job_extra.append("--partition=standard")
+        job_extra.append("--account=DMOBLE_LAB")
+    else:
+        raise Exception(f"Unsupported WORKER_QUEUE_PARTITION {os.environ['WORKER_QUEUE_PARTITION']}")
+   
     cluster = SLURMCluster(
         extra=[
             f"--preload {preload_file}",
