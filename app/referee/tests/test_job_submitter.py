@@ -13,14 +13,16 @@ from referee import job_submitter, tasks
 
 
 def test_start_cluster():
-    config_file = f"{os.path.dirname(os.path.abspath(__file__))}/jobqueue_test.yaml"
-    cluster = job_submitter.start_cluster(
-        config_file, "SAMPL-league/app/daskworkerinit.py", "", 0, 2
-    )
-    job_script = cluster.job_script()
-    assert "--mem=4G" in job_script
-    assert "--preload SAMPL-league/app/daskworkerinit.py" in job_script
-    assert "--cpus-per-task=1" in job_script
+    with patch("django.conf.settings.WORKER_QUEUE_PARTITION", "free"):
+        config_file = f"{os.path.dirname(os.path.abspath(__file__))}/jobqueue_test.yaml"
+        cluster = job_submitter.start_cluster(
+            config_file, "SAMPL-league/app/daskworkerinit.py", "", 0, 2
+        )
+        job_script = cluster.job_script()
+        assert "--partition=free" in job_script
+        assert "--mem=4G" in job_script
+        assert "--preload SAMPL-league/app/daskworkerinit.py" in job_script
+        assert "--cpus-per-task=1" in job_script
 
 
 @pytest.mark.django_db(transaction=True)
