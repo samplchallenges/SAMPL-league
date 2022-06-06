@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pytz import timezone
 
-sender = "from@fromdomain.com"
+sender = "hpc3cron@app.samplchallenges.org"
 receivers = ["sampl-devops-aaaaexi2kkbdjwkxsqltscjpuy@mobleylab.slack.com"]
 
 date_format = "%Y-%m-%d %H:%M:%S %Z%z"
@@ -12,8 +12,8 @@ current_time = datetime.now(timezone("America/Los_Angeles"))
 current_tstr = current_time.strftime(date_format)
 
 
-message = f"""From: HPC3 Cron Job <hpc3cron@app.samplchallenges.org>
-To: sampl-devops Slack Channel <sampl-devops-aaaaexi2kkbdjwkxsqltscjpuy@mobleylab.slack.com>
+message = f"""From: HPC3 Cron Job <{sender}>
+To: sampl-devops Slack Channel <{receivers[0]}>
 Subject: HPC3 ERROR: Scheduler is DOWN
 
 The SLURMQueue Scheduler is DOWN
@@ -36,7 +36,6 @@ def check_submitter_is_running():
     for line in squeue_output.split("\n"):
         if len(line) != 0:
             if line.split()[2] == "submtr":
-                print("Job submitter is running or queued")
                 return 0
 
     send_scheduler_down_email()
