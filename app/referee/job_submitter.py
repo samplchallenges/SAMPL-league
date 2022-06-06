@@ -1,7 +1,7 @@
 import logging
+import os
 import subprocess
 import time
-import os
 
 import django
 import yaml
@@ -34,14 +34,16 @@ def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_wo
         f"--output={worker_outfile}",
         "--open-mode=append",
     ]
-    if os.environ['WORKER_QUEUE_PARTITION'] == 'free':
+    if os.environ["WORKER_QUEUE_PARTITION"] == "free":
         job_extra.append("--partition=free")
-    elif os.environ['WORKER_QUEUE_PARTITION'] == 'standard':
+    elif os.environ["WORKER_QUEUE_PARTITION"] == "standard":
         job_extra.append("--partition=standard")
         job_extra.append("--account=DMOBLE_LAB")
     else:
-        raise Exception(f"Unsupported WORKER_QUEUE_PARTITION {os.environ['WORKER_QUEUE_PARTITION']}")
-   
+        raise Exception(
+            f"Unsupported WORKER_QUEUE_PARTITION {os.environ['WORKER_QUEUE_PARTITION']}"
+        )
+
     cluster = SLURMCluster(
         extra=[
             f"--preload {preload_file}",

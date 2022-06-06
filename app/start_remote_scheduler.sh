@@ -27,4 +27,3 @@ else
     echo "Unknown SUBMITTER_QUEUE_PARTITION: ${SUBMITTER_QUEUE_PARTITION}" 1>&2
     exit 2
 fi
-
