@@ -20,6 +20,7 @@ MINIMUM_WORKERS = 0
 MAXIMUM_WORKERS = 1
 
 # HPC3 Job Submitter Settings
+WORKER_QUEUE_PARTITION =  os.environ.get("WORKER_QUEUE_PARTITION", "free")
 JOB_SUBMITTER_LIFETIME = int(
     os.environ.get("JOB_SUBMITTER_LIFETIME", 24 * 60 * 60)
 )  # in seconds (1 hr)
