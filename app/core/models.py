@@ -315,8 +315,14 @@ class Submission(Timestamped):
             is_public=is_public
         ).values_list("id", flat=True):
             submission_run.evaluation_set.create(input_element_id=element_id)
-
         return submission_run
+
+    def create_run_pair(self, *, public_run, private_run):
+        submission_run_pair = self.submissionrunpair_set.create(
+            public_run=public_run,
+            private_run=private_run,
+        )
+        return submission_run_pair
 
 
 def _container_file_location(instance, filename):
@@ -387,6 +393,18 @@ class SubmissionRun(Logged):
         ).count()
         completed_frac = completed / num_element_ids if num_element_ids else 0
         return Completion(completed, num_element_ids, completed_frac)
+
+
+class SubmissionRunPair(Timestamped):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
+    public_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE, related_name='%(class)s_public_run')
+    private_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE, related_name='%(class)s_private_run')
+
+    class Meta:
+        unique_together = ['public_run', 'private_run']
+
+    def __str__(self):
+        return f"{self.submission}: public {self.public_run}, private {self.private_run}"
 
 
 class InputElement(Timestamped):

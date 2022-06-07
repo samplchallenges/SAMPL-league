@@ -21,9 +21,9 @@ def enqueue_submission(submission):
     Records in the database that we want the job submitter to call
     submit_submission_run
     """
-    for is_public in (True, False):
-        submission.create_run(is_public=is_public, remote=True)
-
+    public = submission.create_run(is_public=True, remote=True)
+    private = submission.create_run(is_public=False, remote=True)
+    submission.create_run_pair(public_run=public, private_run=private)
 
 def run_and_score_submission(client, submission):
     """
