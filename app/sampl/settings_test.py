@@ -23,3 +23,5 @@ DATABASES = {
         "PORT": os.environ["RDS_PORT"],
     }
 }
+
+WORKER_QUEUE_PARTITION = "free"

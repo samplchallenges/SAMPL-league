@@ -47,10 +47,7 @@ def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_wo
         extra=[
             f"--preload {preload_file}",
         ],
-        job_extra=[
-            f"--output={worker_outfile}",
-            "--open-mode=append",
-        ],
+        job_extra=job_extra,
         **config["jobqueue"]["slurm"],
     )
     cluster.adapt(
