@@ -93,10 +93,12 @@ def test_check_for_submission_runs(client, container_engine):
         job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 3)
 
         # time.sleep(120)
+        # public run
         submission_run = models.SubmissionRun.objects.get(pk=2)
-        assert submission_run.status == models.Status.PENDING
+        assert submission_run.status == models.Status.PENDING 
+        # private run
         submission_run = models.SubmissionRun.objects.get(pk=3)
-        assert submission_run.status == models.Status.PENDING
+        assert submission_run.status == models.Status.PENDING_REMOTE
         # submission_run = models.SubmissionRun.objects.first()
         # assert submission_run.status == models.Status.SUCCESS
 

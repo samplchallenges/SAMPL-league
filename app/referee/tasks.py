@@ -61,6 +61,7 @@ def submit_submission_run(client, submission_run):
 
 def _run(submission_run, delayed_conditional):
     evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
+    print(evaluation_statuses)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
 

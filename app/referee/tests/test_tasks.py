@@ -35,7 +35,18 @@ def test_run_and_score_submission(container_engine):
 
         print(submission.id, submission)
         future = tasks.run_and_score_submission(dask_client, submission)
+
         result = future.result()
+        
+        for submission_run in models.SubmissionRun.objects.filter(submission=submission):
+            print(f"RUN: {submission_run}")
+            
+            for evaluation in submission_run.evaluation_set.all():
+                print(f"  EVAL: {evaluation}")
+                if evaluation.status == models.Status.FAILURE:
+                    print(f"    ERR: {evaluation.log_stderr}")
+                    print(f"    OUT: {evaluation.log_stdout}")
+
         assert result
 
 
@@ -306,7 +317,7 @@ def test_cancel_submission_before_run(
 ):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         submission = molfile_molw_config.submission_run.submission
-        submission_run = molfile_molw_config.submission_run
+        submission_run = submission.create_run(is_public=True, remote=False)
         delayed_conditional = tasks._run(submission_run, True)
         submission.last_public_run().mark_for_cancel()
         result = delayed_conditional.compute(scheduler="synchronous")

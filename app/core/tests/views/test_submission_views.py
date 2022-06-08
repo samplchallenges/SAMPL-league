@@ -299,6 +299,7 @@ def test_run_submission(client, container_engine):
             result = future.result()
             response = client.get(detail_url)
             public_run = response.context["public_run"]
+            print(public_run)
             assert public_run.status == "SUCCESS"
             assert result
 

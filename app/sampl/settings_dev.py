@@ -1,7 +1,9 @@
 # pylint: skip-file
 import os
 from pathlib import Path
+from functools import partial
 
+from . import aws_login
 from .base_settings import *  # lgtm [py/polluting-import]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -43,5 +45,11 @@ else:
         }
     }
 
+ECR_BASE_URL = os.environ["ECR_BASE_URL"]
+ECR_SAMPLLEAGUE_URL = os.environ["ECR_SAMPLLEAGUE_URL"]
+
+AWS_LOGIN_FUNCTION = partial(aws_login.run_aws_login, ECR_BASE_URL)
+
+AWS_LOGOUT_FUNCTION = aws_login.run_aws_logout
 LOGIN_TO_AWS = True
 CONTAINER_ENGINE = "docker"
