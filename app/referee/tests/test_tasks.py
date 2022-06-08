@@ -37,10 +37,12 @@ def test_run_and_score_submission(container_engine):
         future = tasks.run_and_score_submission(dask_client, submission)
 
         result = future.result()
-        
-        for submission_run in models.SubmissionRun.objects.filter(submission=submission):
+
+        for submission_run in models.SubmissionRun.objects.filter(
+            submission=submission
+        ):
             print(f"RUN: {submission_run}")
-            
+
             for evaluation in submission_run.evaluation_set.all():
                 print(f"  EVAL: {evaluation}")
                 if evaluation.status == models.Status.FAILURE:
