@@ -17,7 +17,6 @@ jobqueue:
 
     # SLURM resource manager options
     shebang: "#!/usr/bin/env bash"
-    walltime: '00:03:30'
     #env_extra: []
     #job-cpu: null
     #job-mem: null

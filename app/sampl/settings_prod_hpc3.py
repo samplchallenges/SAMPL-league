@@ -13,19 +13,19 @@ SAMPL_ROOT = Path(os.environ["SAMPL_ROOT"])  # /path/to/SAMPL-league
 REMOTE_SCHEDULER = False
 
 
-CONTAINER_ENGINE = "singularity"
+CONTAINER_ENGINE = "singularity"  # The container engine must be singularity on hpc3
 
 # Dask SLURMCluster Settings
-MINIMUM_WORKERS = 0
-MAXIMUM_WORKERS = 1
+MINIMUM_WORKERS = int(os.environ.get("MINIMUM_WORKERS", 0))
+MAXIMUM_WORKERS = int(os.environ.get("MAXIMUM_WORKERS", 1))
 
 # HPC3 Job Submitter Settings
+WORKER_WALLTIME = os.environ.get("WORKER_WALLTIME", "12:00:00")
 WORKER_QUEUE_PARTITION = os.environ.get("WORKER_QUEUE_PARTITION", "free")
 JOB_SUBMITTER_LIFETIME = int(
     os.environ.get("JOB_SUBMITTER_LIFETIME", 24 * 60 * 60)
 )  # in seconds (1 hr)
 CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 60))  # in seconds (1 min)
-
 
 LOGGING = {
     "version": 1,

@@ -306,9 +306,8 @@ def test_cancel_submission_before_run(
 ):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         submission = molfile_molw_config.submission_run.submission
-        delayed_conditional = tasks._trigger_submission_run(
-            submission, True, is_public=True
-        )
+        submission_run = molfile_molw_config.submission_run
+        delayed_conditional = tasks._run(submission_run, True)
         submission.last_public_run().mark_for_cancel()
         result = delayed_conditional.compute(scheduler="synchronous")
         assert result is False

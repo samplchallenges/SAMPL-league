@@ -11,7 +11,7 @@ django.setup()
 from django.conf import settings
 
 import referee.tasks as rt
-from core.models import Status, SubmissionRun
+from core.models import Status, SubmissionRun, SubmissionRunPair
 
 logger = logging.getLogger("job_submitter")
 logger.setLevel(logging.DEBUG)
@@ -48,6 +48,7 @@ def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_wo
             f"--preload {preload_file}",
         ],
         job_extra=job_extra,
+        walltime=settings.WORKER_WALLTIME,
         **config["jobqueue"]["slurm"],
     )
     cluster.adapt(
@@ -55,6 +56,11 @@ def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_wo
         maximum_jobs=max_workers,
     )
     return cluster
+
+
+def set_submission_run_status(submission_run, status):
+    submission_run.status = status
+    submission_run.save(update_fields=["status"])
 
 
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
@@ -67,10 +73,24 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     while time.time() - start_time + (1.5 * check_interval) < job_lifetime:
         logger.debug("Checking for submission runs n=%d", n)
         for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
-            logger.debug("Added run=%d", run.id)
-            run.status = Status.PENDING
-            run.save(update_fields=["status"])
-            rt.submit_submission_run(client, run)
+            if run.is_public:
+                logger.debug("Added run=%d", run.id)
+                set_submission_run_status(run, Status.PENDING)
+                rt.submit_submission_run(client, run)
+
+            else:  # run is private
+                for pair in SubmissionRunPair.objects.filter(private_run=run):
+                    if pair.public_run.status == Status.SUCCESS:
+                        set_submission_run_status(run, Status.PENDING)
+                        rt.submit_submission_run(client, run)
+                    elif pair.public_run.status in [
+                        Status.CANCELLED,
+                        Status.CANCEL_PENDING,
+                        Status.FAILURE,
+                    ]:
+                        set_submission_run_status(run, Status.CANCELLED)
+                    else:  # Status.PENDING_REMOTE or Status.RUNNING
+                        pass
 
         time.sleep(check_interval)
         n += 1
@@ -83,8 +103,7 @@ def reset_unfinished_to_pending_submission():
                 "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
                 submission_run.id,
             )
-            submission_run.status = Status.PENDING_REMOTE
-            submission_run.save(update_fields=["status"])
+            set_submission_run_status(submission_run, Status.PENDING_REMOTE)
             logger.debug("SubmissionRun status is now: %s", submission_run.status)
             for evaluation in submission_run.evaluation_set.all():
                 if evaluation.status == Status.RUNNING:

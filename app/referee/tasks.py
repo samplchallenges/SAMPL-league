@@ -21,8 +21,9 @@ def enqueue_submission(submission):
     Records in the database that we want the job submitter to call
     submit_submission_run
     """
-    for is_public in (True, False):
-        submission.create_run(is_public=is_public, remote=True)
+    public_run = submission.create_run(is_public=True, remote=True)
+    private_run = submission.create_run(is_public=False, remote=True)
+    submission.create_run_pair(public_run=public_run, private_run=private_run)
 
 
 def run_and_score_submission(client, submission):
@@ -30,10 +31,13 @@ def run_and_score_submission(client, submission):
     Runs public and private, plus scoring
     """
     delayed_conditional = dask.delayed(True)
-    for is_public in (True, False):
-        delayed_conditional = _trigger_submission_run(
-            submission, delayed_conditional, is_public=is_public
-        )
+
+    public_run = submission.create_run(is_public=True, remote=False)
+    private_run = submission.create_run(is_public=False, remote=False)
+    submission.create_run_pair(public_run=public_run, private_run=private_run)
+
+    for submission_run in (public_run, private_run):
+        delayed_conditional = _run(submission_run, delayed_conditional)
 
     if settings.VISUALIZE_DASK_GRAPH:
         delayed_conditional.visualize(filename="task_graph.svg")
@@ -53,11 +57,6 @@ def submit_submission_run(client, submission_run):
 
     dd.fire_and_forget(future)
     return future
-
-
-def _trigger_submission_run(submission, delayed_conditional, *, is_public):
-    submission_run = submission.create_run(is_public=is_public, remote=False)
-    return _run(submission_run, delayed_conditional)
 
 
 def _run(submission_run, delayed_conditional):
