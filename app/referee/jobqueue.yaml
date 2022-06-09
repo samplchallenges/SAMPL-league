@@ -8,6 +8,7 @@ jobqueue:
     cores: 1                   # Total number of cores per job
     memory: '4 GB'              # Total amount of memory per job
     processes: 1                # Number of Python processes per job
+    walltime: '12:00:00'
 
     #interface: null             # Network interface to use like eth0 or ib0
     death_timeout: 60           # Number of seconds to wait if a worker can not find a scheduler

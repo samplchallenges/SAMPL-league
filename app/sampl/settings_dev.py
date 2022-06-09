@@ -53,3 +53,9 @@ AWS_LOGIN_FUNCTION = partial(aws_login.run_aws_login, ECR_BASE_URL)
 AWS_LOGOUT_FUNCTION = aws_login.run_aws_logout
 LOGIN_TO_AWS = True
 CONTAINER_ENGINE = "docker"
+
+WORKER_CORES = int(os.environ.get("WORKER_CORES", 1))
+WORKER_MEMORY = os.environ.get("WORKER_MEMORY", "4 GB")
+WORKER_PROCESSES = int(os.environ.get("WORKER_PROCESSES", 1))
+WORKER_QUEUE_PARTITION = os.environ.get("WORKER_QUEUE_PARTITION", "free")
+WORKER_WALLTIME = os.environ.get("WORKER_WALLTIME", "12:00:00")

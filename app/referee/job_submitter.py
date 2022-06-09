@@ -28,16 +28,19 @@ def resubmit_check_for_submission_runs_job(scheduler_submission_script):
 def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_workers):
     with open(config_file, encoding="utf-8") as f:
         config = yaml.safe_load(f)
+        print(config)
+        print(config_file)
 
     job_extra = [
         f"--output={worker_outfile}",
         "--open-mode=append",
     ]
+
     if settings.WORKER_QUEUE_PARTITION == "free":
         job_extra.append("--partition=free")
     elif settings.WORKER_QUEUE_PARTITION == "standard":
         job_extra.append("--partition=standard")
-        job_extra.append("--account=DMOBLE_LAB")
+        job_extra.append("--account=DMOBLEY_LAB")
     else:
         raise Exception(
             f"Unsupported WORKER_QUEUE_PARTITION {settings.WORKER_QUEUE_PARTITION}"
@@ -47,9 +50,11 @@ def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_wo
         extra=[
             f"--preload {preload_file}",
         ],
-        job_extra=job_extra,
+        cores=settings.WORKER_CORES,
+        memory=settings.WORKER_MEMORY,
+        processes=settings.WORKER_PROCESSES,
         walltime=settings.WORKER_WALLTIME,
-        **config["jobqueue"]["slurm"],
+        job_extra=job_extra,
     )
     cluster.adapt(
         minimum_jobs=min_workers,
