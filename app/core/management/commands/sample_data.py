@@ -22,6 +22,7 @@ def _create_challenge_inputs(challenge, file_based):
             content_type=ContentType.objects.get_for_model(models.FileValue),
             key="molfile",
             description="MOL File",
+            batch_method="mol",
         )
 
         output_type = models.ValueType.objects.create(
@@ -38,6 +39,7 @@ def _create_challenge_inputs(challenge, file_based):
             content_type=ContentType.objects.get_for_model(models.TextValue),
             key="smiles",
             description="SMILES",
+            batch_method="csv",
         )
 
         output_type = models.ValueType.objects.create(

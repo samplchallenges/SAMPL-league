@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models, transaction
 from django.db.models.functions import Concat
-from django.db.models.signals import pre_save
+
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -136,6 +136,10 @@ class Challenge(Timestamped):
         if self.__output_types_dict is None:
             self.__load_output_types()
         return self.__output_types_dict.get(key)
+
+    def current_batch_group(self):
+        return self.inputbatchgroup_set.order_by("-created_at").first()
+
 
     @cached_property
     def score_types(self):
@@ -807,6 +811,9 @@ class InputBatchGroup(Timestamped):
     """
 
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    max_batch_size = models.PositiveIntegerField(
+        help_text="Value of setting when batch group was created"
+    )
 
 
 class InputBatch(Timestamped):
@@ -828,19 +835,24 @@ class InputBatchMembership(Timestamped):
         unique_together = ["batch_group", "input_element"]
 
 
-def _validate_batch_membership(sender, **kwargs):  # pylint: disable=unused-argument
-    ibm = kwargs["instance"]
-
-    if ibm.batch.batch_group != ibm.batch_group:
-        raise ValidationError(
-            "batch group on InputBatchMembership object doesn't match the"
-            "batch group of its batch"
-        )
-    if ibm.batch.is_public != ibm.input_element.is_public:
-        raise ValidationError(
-            f"Input element is_public ({ibm.input_element.is_public}) doesn't"
-            f" match batch is_public ({ibm.batch.is_public})"
-        )
+def _batch_upload_location(instance, filename):
+    batch_group = instance.batch.batch_group
+    challenge = batch_group.challenge
+    group_path = os.path.join("batch_group", f"{batch_group.id}")
+    return os.path.join("batches", f"{challenge.id}", group_path, instance.value_type.key, filename)
 
 
-pre_save.connect(_validate_batch_membership, sender=InputBatchMembership)
+class BatchFile(Timestamped):
+    batch = models.ForeignKey(InputBatch, on_delete=models.CASCADE)
+    value_type = models.ForeignKey(ValueType, on_delete=models.CASCADE)
+    data = models.FileField(upload_to=_batch_upload_location)
+
+    @classmethod
+    def from_local(cls, filepath, *, challenge, evaluation=None):
+        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
+        filename = os.path.basename(filepath)
+        instance = cls(value=filename, **cls_kwargs)
+        with open(filepath, "rb") as fp:
+            instance.value.save(filename, File(fp))
+        filecache.preserve_local_copy(instance.value, filepath)
+        return instance
