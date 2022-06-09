@@ -1,7 +1,7 @@
 # pylint: skip-file
 import os
-from pathlib import Path
 from functools import partial
+from pathlib import Path
 
 from . import aws_login
 from .base_settings import *  # lgtm [py/polluting-import]
