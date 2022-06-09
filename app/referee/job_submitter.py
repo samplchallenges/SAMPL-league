@@ -36,25 +36,12 @@ def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_wo
         "--open-mode=append",
     ]
 
-    if settings.WORKER_QUEUE_PARTITION == "free":
-        job_extra.append("--partition=free")
-    elif settings.WORKER_QUEUE_PARTITION == "standard":
-        job_extra.append("--partition=standard")
-        job_extra.append("--account=DMOBLEY_LAB")
-    else:
-        raise Exception(
-            f"Unsupported WORKER_QUEUE_PARTITION {settings.WORKER_QUEUE_PARTITION}"
-        )
-
     cluster = SLURMCluster(
         extra=[
             f"--preload {preload_file}",
         ],
-        cores=settings.WORKER_CORES,
-        memory=settings.WORKER_MEMORY,
-        processes=settings.WORKER_PROCESSES,
-        walltime=settings.WORKER_WALLTIME,
         job_extra=job_extra,
+        **config['jobqueue']['slurm'],
     )
     cluster.adapt(
         minimum_jobs=min_workers,
@@ -124,7 +111,7 @@ def job_submitter_main():
     start_time = time.time()
     logger.info("Starting job_submitter.py at %s", time.ctime(start_time))
     logger.info("Container engine: %s", settings.CONTAINER_ENGINE)
-    jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
+    jobqueue_config_file = settings.JOBQUEUE_CONFIG_FILE
     cluster = start_cluster(
         jobqueue_config_file,
         f"{settings.SAMPL_ROOT}/app/daskworkerinit.py",

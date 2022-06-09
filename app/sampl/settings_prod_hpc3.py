@@ -12,16 +12,15 @@ SAMPL_ROOT = Path(os.environ["SAMPL_ROOT"])  # /path/to/SAMPL-league
 # This settings file is on the dask workers, scheduler, and for the job that submits dask tasks
 REMOTE_SCHEDULER = False
 
-
-CONTAINER_ENGINE = "singularity"  # The container engine must be singularity on hpc3
+# The container engine must be singularity on hpc3
+CONTAINER_ENGINE = "singularity"  
 
 # Dask SLURMCluster Settings
 MINIMUM_WORKERS = int(os.environ.get("MINIMUM_WORKERS", 0))
 MAXIMUM_WORKERS = int(os.environ.get("MAXIMUM_WORKERS", 1))
 
 # HPC3 Job Submitter Settings
-WORKER_WALLTIME = os.environ.get("WORKER_WALLTIME", "12:00:00")
-WORKER_QUEUE_PARTITION = os.environ.get("WORKER_QUEUE_PARTITION", "free")
+JOBQUEUE_CONFIG_FILE = SAMPL_ROOT / "app/referee/jobqueue.yaml"
 JOB_SUBMITTER_LIFETIME = int(
     os.environ.get("JOB_SUBMITTER_LIFETIME", 24 * 60 * 60)
 )  # in seconds (1 hr)
