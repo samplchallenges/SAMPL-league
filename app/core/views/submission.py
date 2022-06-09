@@ -92,7 +92,6 @@ def submit_submission_view(request, pk):
         dask_client = referee.get_client()
         future = referee.tasks.run_and_score_submission(dask_client, submission)
         ignore_future(future)
-        print(future)
     return redirect("submission-detail", pk=submission.pk)
 
 

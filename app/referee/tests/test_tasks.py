@@ -38,17 +38,6 @@ def test_run_and_score_submission(container_engine):
 
         result = future.result()
 
-        for submission_run in models.SubmissionRun.objects.filter(
-            submission=submission
-        ):
-            print(f"RUN: {submission_run}")
-
-            for evaluation in submission_run.evaluation_set.all():
-                print(f"  EVAL: {evaluation}")
-                if evaluation.status == models.Status.FAILURE:
-                    print(f"    ERR: {evaluation.log_stderr}")
-                    print(f"    OUT: {evaluation.log_stdout}")
-
         assert result
 
 
