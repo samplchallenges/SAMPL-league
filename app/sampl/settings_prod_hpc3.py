@@ -13,7 +13,7 @@ SAMPL_ROOT = Path(os.environ["SAMPL_ROOT"])  # /path/to/SAMPL-league
 REMOTE_SCHEDULER = False
 
 # The container engine must be singularity on hpc3
-CONTAINER_ENGINE = "singularity"  
+CONTAINER_ENGINE = "singularity"
 
 # Dask SLURMCluster Settings
 MINIMUM_WORKERS = int(os.environ.get("MINIMUM_WORKERS", 0))
