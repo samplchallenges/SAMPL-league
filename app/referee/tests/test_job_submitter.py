@@ -18,7 +18,7 @@ def test_start_cluster():
         config_file, "SAMPL-league/app/daskworkerinit.py", "", 0, 2
     )
     job_script = cluster.job_script()
-    assert "--partition=free" in job_script
+    assert "--partition=free" in job_script or "-p free" in job_script
     assert "--mem=4G" in job_script
     assert "--preload SAMPL-league/app/daskworkerinit.py" in job_script
     assert "--cpus-per-task=1" in job_script
