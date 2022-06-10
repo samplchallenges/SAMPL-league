@@ -63,6 +63,7 @@ def _run(submission_run, delayed_conditional):
     evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
+
 def get_submission_run_status(evaluation_statuses, submission_run):
     uniq_statuses = set(evaluation_statuses)
     if {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:

@@ -54,6 +54,7 @@ def set_submission_run_status(submission_run, status):
     submission_run.status = status
     submission_run.save(update_fields=["status"])
 
+
 def check_for_cancel_pending():
     for submission_run in SubmissionRun.objects.filter(status=Status.CANCEL_PENDING):
         evaluation_statuses = []
@@ -61,7 +62,6 @@ def check_for_cancel_pending():
             evaluation_statuses.append(evaluation.status)
         status = rt.get_submission_run_status(evaluation_statuses, submission_run)
         set_submission_run_status(submission_run, status)
-
 
 
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
