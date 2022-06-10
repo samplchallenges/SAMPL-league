@@ -197,7 +197,7 @@ def install_dependencies(c):
     get_cert(c)
 
 @task
-def run_full_pipeline(c):
+def deploy_full_pipeline(c):
     create_webapp_user(c)
 
     build(c)
@@ -206,11 +206,16 @@ def run_full_pipeline(c):
     install_dependencies(c)
 
 @task
-def run_redeploy_pipeline(c):
+def redeploy_pipeline(c):
     build(c)
     deploy(c)
     install_venv(c)
     setup_djangoapp(c)
+    restart_gunicorn(c)
+
+
+@task
+def deploy_env_var(c):
     restart_gunicorn(c)
 
 

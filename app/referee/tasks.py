@@ -63,14 +63,9 @@ def _run(submission_run, delayed_conditional):
     evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
-
-@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses):
-    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
+def get_submission_run_status(evaluation_statuses, submission_run):
     uniq_statuses = set(evaluation_statuses)
-    if not delayed_conditional:
-        status = models.Status.CANCELLED
-    elif {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
+    if {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
         submission_run.append(
             stderr=f"Evaluations should have all completed, but have statuses {evaluation_statuses}!"
         )
@@ -81,6 +76,16 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
         status = models.Status.FAILURE
     else:
         status = models.Status.SUCCESS
+    return status
+
+
+@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
+def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses):
+    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
+    if not delayed_conditional:
+        status = models.Status.CANCELLED
+    else:
+        status = get_submission_run_status(evaluation_statuses, submission_run)
 
     submission_run.status = status
     if status != models.Status.SUCCESS:

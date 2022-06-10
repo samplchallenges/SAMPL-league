@@ -54,6 +54,15 @@ def set_submission_run_status(submission_run, status):
     submission_run.status = status
     submission_run.save(update_fields=["status"])
 
+def check_for_cancel_pending():
+    for submission_run in SubmissionRun.objects.filter(status=Status.CANCEL_PENDING):
+        evaluation_statuses = []
+        for evaluation in submission_run.evaluation_set.all():
+            evaluation_statuses.append(evaluation.status)
+        status = rt.get_submission_run_status(evaluation_statuses, submission_run)
+        set_submission_run_status(submission_run, status)
+
+
 
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     n = 0
@@ -64,6 +73,7 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     )
     while time.time() - start_time + (1.5 * check_interval) < job_lifetime:
         logger.debug("Checking for submission runs n=%d", n)
+        check_for_cancel_pending()
         for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
             if run.is_public:
                 logger.debug("Added run=%d", run.id)
