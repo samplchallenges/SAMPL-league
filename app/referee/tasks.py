@@ -65,7 +65,7 @@ def _run(submission_run, delayed_conditional):
 
 
 def get_submission_run_status(evaluation_statuses, submission_run_id):
-    submission_run = SubmissionRun.objects.get(pk=submission_run_id)
+    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     uniq_statuses = set(evaluation_statuses)
     if {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
         submission_run.append(
