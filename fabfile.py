@@ -136,6 +136,10 @@ def install_venv(c):
     install_file = "install_venv.sh"
     _install_dependency(install_file)
 
+def reinstall_samplapp(c):
+    install_file = "reinstall_samplapp.sh"
+    _install_dependency(install_file)
+
 @task
 def setup_djangoapp(c):
     with sampl_staging() as remote_c:
@@ -196,23 +200,30 @@ def install_dependencies(c):
     configure_gunicorn(c)
     get_cert(c)
 
+
+
 @task
 def deploy_full_pipeline(c):
     create_webapp_user(c)
-
     build(c)
     deploy(c)
-
     install_dependencies(c)
 
 @task
-def redeploy_pipeline(c):
+def redeploy_pipeline_venv(c):
     build(c)
     deploy(c)
     install_venv(c)
     setup_djangoapp(c)
     restart_gunicorn(c)
 
+@task
+def redeploy_samplapp(c):
+    build(c)
+    deploy(c)
+    reinstall_samplapp(c)
+    setup_djangoapp(c)
+    restart_gunicorn(c)
 
 @task
 def deploy_env_var(c):

@@ -74,7 +74,7 @@ def cancel_submissionrun_view(request, pk):
         SubmissionRun, pk=pk, submission__user=request.user
     )
     if not submission_run.is_finished():
-        submission_run.mark_for_cancel()
+        submission_run.mark_for_cancel(settings.REMOTE_SCHEDULER)
 
     return redirect("submission-detail", pk=submission_run.submission.pk)
 

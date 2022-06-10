@@ -63,19 +63,31 @@ def _run(submission_run, delayed_conditional):
     evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
-def get_submission_run_status(evaluation_statuses, submission_run):
+
+def get_submission_run_status(evaluation_statuses, submission_run_id):
+    submission_run = SubmissionRun.objects.get(pk=submission_run_id)
     uniq_statuses = set(evaluation_statuses)
     if {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
         submission_run.append(
             stderr=f"Evaluations should have all completed, but have statuses {evaluation_statuses}!"
         )
         status = models.Status.FAILURE
-    elif {models.Status.CANCELLED} == uniq_statuses:
+    elif {models.Status.CANCELLED} == uniq_statuses or {
+        models.Status.CANCELLED,
+        models.Status.SUCCESS,
+    } == uniq_statuses:
         status = models.Status.CANCELLED
     elif {models.Status.FAILURE, models.Status.CANCELLED} & uniq_statuses:
         status = models.Status.FAILURE
     else:
         status = models.Status.SUCCESS
+
+    if (
+        submission_run.status == models.Status.CANCEL_PENDING
+        and status == models.Status.SUCCESS
+    ):
+        status = models.Status.CANCELLED
+
     return status
 
 
@@ -85,7 +97,7 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
     if not delayed_conditional:
         status = models.Status.CANCELLED
     else:
-        status = get_submission_run_status(evaluation_statuses, submission_run)
+        status = get_submission_run_status(evaluation_statuses, submission_run_id)
 
     submission_run.status = status
     if status != models.Status.SUCCESS:

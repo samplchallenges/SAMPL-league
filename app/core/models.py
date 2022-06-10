@@ -373,17 +373,27 @@ class SubmissionRun(Logged):
         status = SubmissionRun.objects.values_list("status", flat=True).get(pk=self.id)
         return status == Status.CANCEL_PENDING
 
-    def mark_for_cancel(self):
+    def mark_for_cancel(self, remote=False):
         with transaction.atomic():
-            SubmissionRun.objects.filter(pk=self.id).update(
-                status=Status.CANCEL_PENDING
+            submission_run = SubmissionRun.objects.select_for_update().filter(
+                pk=self.id
             )
-            Evaluation.objects.filter(
-                submission_run_id=self.id, status=Status.PENDING
-            ).update(status=Status.CANCELLED)
-            Evaluation.objects.filter(
-                submission_run_id=self.id, status=Status.RUNNING
-            ).update(status=Status.CANCEL_PENDING)
+            Evaluation.objects.select_for_update().filter(submission_run_id=self.id)
+            if remote and submission_run.status == Status.PENDING_REMOTE:
+                SubmissionRun.objects.filter(pk=self.id).update(status=Status.CANCELLED)
+                Evaluation.objects.filter(submission_run_id=self.id).update(
+                    status=Status.CANCELLED
+                )
+            else:
+                SubmissionRun.objects.filter(pk=self.id).update(
+                    status=Status.CANCEL_PENDING
+                )
+                Evaluation.objects.filter(
+                    submission_run_id=self.id, status=Status.PENDING
+                ).update(status=Status.CANCELLED)
+                Evaluation.objects.filter(
+                    submission_run_id=self.id, status=Status.RUNNING
+                ).update(status=Status.CANCEL_PENDING)
 
     def completion(self):
         completed = self.evaluation_set.filter(
