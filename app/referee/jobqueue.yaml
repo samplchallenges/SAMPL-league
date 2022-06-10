@@ -1,0 +1,29 @@
+# jobqueue.yaml file
+
+jobqueue:
+  slurm:
+    name: dskworker
+
+    # Dask worker options
+    cores: 1                   # Total number of cores per job
+    memory: '4 GB'              # Total amount of memory per job
+    processes: 1                # Number of Python processes per job
+
+    #interface: null             # Network interface to use like eth0 or ib0
+    death_timeout: 60           # Number of seconds to wait if a worker can not find a scheduler
+    #local_directory: null       # Location of fast local storage like /scratch or $TMPDIR
+    #shared_temp_directory: null # Shared directory currently used to dump temporary security objects for workers
+    #extra: ["--preload /data/homezvol0/osatom/SAMPL-league/app/daskworkerinit.py"]
+
+    # SLURM resource manager options
+    shebang: "#!/usr/bin/env bash"
+    queue: 'free'
+    #project: 'DMOBLEY_LAB'
+    walltime: '24:00:00'
+    #env_extra: []
+    #job-cpu: null
+    #job-mem: null
+    #job_extra: []
+    #log-directory: null
+
+    scheduler_options: {}

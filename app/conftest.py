@@ -209,10 +209,23 @@ def testing_data_path():
 
 @pytest.fixture
 def elem_factory(testing_data_path, db):
-    def elem_maker(challenge, file_type, name, file_name):
+    def elem_maker(
+        challenge,
+        file_type,
+        name,
+        file_name,
+        parent=None,
+        is_parent=False,
+        is_public=True,
+    ):
         elem = models.InputElement.objects.create(
-            name=name, challenge=challenge, is_public=True
+            name=name,
+            challenge=challenge,
+            is_public=is_public,
+            is_parent=is_parent,
+            parent=parent,
         )
+        elem.full_clean()
         file_path = os.path.join(testing_data_path, file_name)
         file_value = models.FileValue.from_string(file_path, challenge=challenge)
         file_value.save()
@@ -309,6 +322,55 @@ def smiles_molw_config(config_factory):
         "molWeight",
         models.FloatValue,
     )
+
+
+@pytest.fixture
+def smiles_docking_config_and_func(config_factory, elem_factory):
+    config = config_factory(
+        "smiles_docking",
+        "megosato/calc-molwt",
+        "megosato/score-coords",
+        "smiles",
+        models.TextValue,
+        "molWeight",
+        models.FloatValue,
+    )
+
+    protein_type = models.ValueType.objects.create(
+        challenge=config.challenge,
+        is_input_flag=True,
+        on_parent_flag=True,
+        content_type=ContentType.objects.get_for_model(models.FileValue),
+        key="protein_pdb",
+        description="Protein structure (shared among input elements)",
+    )
+    parent = elem_factory(
+        config.challenge,
+        protein_type,
+        "5QCR",
+        "5qcr.pdb",
+        is_parent=True,
+        is_public=True,
+    )
+
+    def add_element(name, smiles):
+        element = models.InputElement.objects.create(
+            challenge=config.challenge,
+            parent=parent,
+            is_parent=False,
+            name=name,
+            is_public=True,
+        )
+        smiles_value = models.TextValue.from_string(smiles, challenge=config.challenge)
+        smiles_value.save()
+        models.InputValue.objects.create(
+            input_element=element,
+            value_type=config.input_type,
+            value_object=smiles_value,
+        )
+        return element
+
+    return config, add_element
 
 
 @pytest.fixture
