@@ -357,3 +357,25 @@ class FloatValueAdmin(GenericValueAdmin):
 @register(models.FileValue)
 class FileValueAdmin(GenericValueAdmin):
     pass
+
+
+@register(models.InputBatchGroup)
+class InputBatchGroupAdmin(TimestampedAdmin):
+    list_filter = ("challenge",)
+    list_display = ("id", "challenge", "created_at")
+
+
+@register(models.InputBatch)
+class InputBatchAdmin(TimestampedAdmin):
+    list_display = ("id", "batch_group", "is_public")
+
+
+@register(models.InputBatchMembership)
+class InputBatchMembershipAdmin(TimestampedAdmin):
+    list_display = ("id", "batch_group", "batch", "input_element")
+
+
+@register(models.BatchFile)
+class BatchFileAdmin(TimestampedAdmin):
+    list_display = ("id", "batch", "value_type")
+    readonly_fields = ("batch", "value_type", *TimestampedAdmin.readonly_fields)

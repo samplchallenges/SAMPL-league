@@ -76,6 +76,7 @@ def config_factory(challenge_factory, container_factory, db):
         score_label,
         input_key,
         input_model,
+        batch_method,
         output_key,
         output_model,
     ):
@@ -96,6 +97,7 @@ def config_factory(challenge_factory, container_factory, db):
             content_type=ContentType.objects.get_for_model(input_model),
             key=input_key,
             description="N/A",
+            batch_method=batch_method,
         )
         output_type = models.ValueType.objects.create(
             challenge=challenge,
@@ -306,6 +308,7 @@ def molfile_molw_config(config_factory):
         "megosato/score-coords",
         "molfile",
         models.FileValue,
+        "mol",
         "molWeight",
         models.FloatValue,
     )
@@ -319,6 +322,7 @@ def smiles_molw_config(config_factory):
         "megosato/score-coords",
         "smiles",
         models.TextValue,
+        "csv",
         "molWeight",
         models.FloatValue,
     )
@@ -332,6 +336,7 @@ def smiles_docking_config_and_func(config_factory, elem_factory):
         "megosato/score-coords",
         "smiles",
         models.TextValue,
+        "csv",
         "molWeight",
         models.FloatValue,
     )

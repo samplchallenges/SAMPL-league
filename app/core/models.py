@@ -813,6 +813,9 @@ class InputBatchGroup(Timestamped):
         help_text="Value of setting when batch group was created"
     )
 
+    def __str__(self):
+        return f'Challenge "{self.challenge.name}" batch size {self.max_batch_size}'
+
 
 class InputBatch(Timestamped):
     batch_group = models.ForeignKey(InputBatchGroup, on_delete=models.CASCADE)
@@ -823,6 +826,9 @@ class InputBatch(Timestamped):
             batch=self, batch_group=self.batch_group, input_element=input_element
         )
 
+    def __str__(self):
+        return f"Public? {self.is_public}"
+
 
 class InputBatchMembership(Timestamped):
     batch_group = models.ForeignKey(InputBatchGroup, on_delete=models.CASCADE)
@@ -831,6 +837,9 @@ class InputBatchMembership(Timestamped):
 
     class Meta:
         unique_together = ["batch_group", "input_element"]
+
+    def __str__(self):
+        return str(self.input_element)
 
 
 def _batch_upload_location(instance, filename):
@@ -847,12 +856,14 @@ class BatchFile(Timestamped):
     value_type = models.ForeignKey(ValueType, on_delete=models.CASCADE)
     data = models.FileField(upload_to=_batch_upload_location)
 
+    def __str__(self):
+        return f"{self.batch} {self.value_type} {self.data}"
+
     @classmethod
-    def from_local(cls, filepath, *, challenge, evaluation=None):
-        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
+    def from_local(cls, filepath, *, batch, value_type):
         filename = os.path.basename(filepath)
-        instance = cls(value=filename, **cls_kwargs)
+        instance = cls(data=filename, batch=batch, value_type=value_type)
         with open(filepath, "rb") as fp:
-            instance.value.save(filename, File(fp))
-        filecache.preserve_local_copy(instance.value, filepath)
+            instance.data.save(filename, File(fp))
+        filecache.preserve_local_copy(instance.data, filepath)
         return instance

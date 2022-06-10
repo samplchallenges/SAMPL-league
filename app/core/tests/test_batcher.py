@@ -4,7 +4,7 @@ import tempfile
 
 from rdkit import Chem
 
-from .. import batcher
+from .. import batcher, models
 
 
 def test_batch_csv(smiles_molw_config, input_elements):
@@ -42,3 +42,24 @@ def test_batch_mol(
         assert idx == 0
         assert mol.GetProp("SAMPL_ID") == str(benzene_from_mol.id)
         assert mol.GetProp("SAMPL_NAME") == benzene_from_mol.name
+
+
+def test_batch_hooks(
+    molfile_molw_config, benzene_from_mol
+):  # pylint: disable=unused-argument
+    challenge = molfile_molw_config.challenge
+    assert challenge.current_batch_group() is None
+
+    challenge.max_batch_size = 10
+
+    challenge.save()
+
+    batch_group: models.InputBatchGroup = challenge.current_batch_group()
+
+    assert batch_group is not None
+
+    assert batch_group.inputbatch_set.count() == 1
+
+    batch = batch_group.inputbatch_set.first()
+
+    assert batch.batchfile_set.count() == 1

@@ -8,6 +8,8 @@ from abc import ABC, abstractmethod
 
 from rdkit import Chem
 
+from . import models
+
 BATCHERS = {}
 
 
@@ -93,5 +95,9 @@ def batchup(batch, batch_elements):
                 )
             output_path = os.path.join(temp_dir, f"{value_type.key}.{batcher.suffix}")
             batcher.call(batch_elements, value_type.key, output_path)
+            batch_file = models.BatchFile.from_local(
+                output_path, batch=batch, value_type=value_type
+            )
+            batch_file.save()
     for batch_element in batch_elements:
         batch.add_element(batch_element)
