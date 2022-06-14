@@ -94,21 +94,28 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
 
 def reset_unfinished_to_pending_submission():
     for status in [Status.PENDING, Status.RUNNING]:
-        for submission_run in SubmissionRun.objects.filter(status=status):
-            logger.debug(
-                "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
-                submission_run.id,
-            )
-            set_submission_run_status(submission_run, Status.PENDING_REMOTE)
-            logger.debug("SubmissionRun status is now: %s", submission_run.status)
-            for evaluation in submission_run.evaluation_set.all():
-                if evaluation.status == Status.RUNNING:
-                    logger.debug(
-                        "   Resetting RUNNING back to PENDING: %d", evaluation.id
-                    )
-                    evaluation.status = Status.PENDING
-                    evaluation.save(update_fields=["status"])
-                    logger.debug("   Evaluation status is now: %s", evaluation.status)
+        with transaction.atomic():
+            for submission_run in SubmissionRun.objects.select_for_update().filter(
+                status=status
+            ):
+                logger.debug(
+                    "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
+                    submission_run.id,
+                )
+                set_submission_run_status(submission_run, Status.PENDING_REMOTE)
+                logger.debug("SubmissionRun status is now: %s", submission_run.status)
+                for (
+                    evaluation
+                ) in submission_run.evaluation_set.select_for_update().all():
+                    if evaluation.status == Status.RUNNING:
+                        logger.debug(
+                            "   Resetting RUNNING back to PENDING: %d", evaluation.id
+                        )
+                        evaluation.status = Status.PENDING
+                        evaluation.save(update_fields=["status"])
+                        logger.debug(
+                            "   Evaluation status is now: %s", evaluation.status
+                        )
 
 
 def job_submitter_main():
