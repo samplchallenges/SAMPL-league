@@ -69,6 +69,76 @@ def test_reset_unfinished_to_pending_submission():
     [["docker"], ["singularity"]],
 )
 @pytest.mark.django_db(transaction=True)
+def test_submission_run_public_private_dependency_failure(client, container_engine):
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        processes = True
+        if processes:
+            transaction.commit()
+            call_command("migrate", "core", "zero", interactive=False)
+            call_command("migrate", "core", interactive=False)
+            call_command("sample_data")
+            transaction.commit()
+        else:
+            call_command("sample_data")
+
+        submission = models.Submission.objects.first()
+        tasks.enqueue_submission(submission)
+
+        os.environ["CONTAINER_ENGINE"] = container_engine
+        preload_file = "daskworkerinit_tst.py"
+        cluster = dd.LocalCluster(n_workers=0, preload=(preload_file,))
+        dask_client = dd.Client(cluster)
+
+        submission_run = models.SubmissionRun.objects.get(pk=2)
+        submission_run.status = models.Status.FAILURE
+        submission_run.save(update_fields=["status"])
+
+        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 3)
+
+        submission_run = models.SubmissionRun.objects.get(pk=3)
+        assert submission_run.status == models.Status.CANCELLED
+
+
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [["docker"], ["singularity"]],
+)
+@pytest.mark.django_db(transaction=True)
+def test_submission_run_public_private_dependency_success(client, container_engine):
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        processes = True
+        if processes:
+            transaction.commit()
+            call_command("migrate", "core", "zero", interactive=False)
+            call_command("migrate", "core", interactive=False)
+            call_command("sample_data")
+            transaction.commit()
+        else:
+            call_command("sample_data")
+
+        submission = models.Submission.objects.first()
+        tasks.enqueue_submission(submission)
+
+        os.environ["CONTAINER_ENGINE"] = container_engine
+        preload_file = "daskworkerinit_tst.py"
+        cluster = dd.LocalCluster(n_workers=0, preload=(preload_file,))
+        dask_client = dd.Client(cluster)
+
+        submission_run = models.SubmissionRun.objects.get(pk=2)
+        submission_run.status = models.Status.SUCCESS
+        submission_run.save(update_fields=["status"])
+
+        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 3)
+
+        submission_run = models.SubmissionRun.objects.get(pk=3)
+        assert submission_run.status == models.Status.PENDING
+
+
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [["docker"], ["singularity"]],
+)
+@pytest.mark.django_db(transaction=True)
 def test_check_for_submission_runs(client, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         processes = True
