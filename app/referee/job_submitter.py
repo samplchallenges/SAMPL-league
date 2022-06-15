@@ -58,6 +58,8 @@ def set_submission_run_status(submission_run, status):
     submission_run.save(update_fields=["status"])
 
 
+
+
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     n = 0
     logger.debug(
@@ -118,7 +120,6 @@ def reset_unfinished_to_pending_submission():
                         logger.debug(
                             "   Evaluation status is now: %s", evaluation.status
                         )
-
 
 def job_submitter_main():
     start_time = time.time()
