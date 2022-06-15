@@ -95,7 +95,7 @@ def test_submission_run_public_private_dependency_failure(client, container_engi
         submission_run.status = models.Status.FAILURE
         submission_run.save(update_fields=["status"])
 
-        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 3)
+        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 4)
 
         submission_run = models.SubmissionRun.objects.get(pk=3)
         assert submission_run.status == models.Status.CANCELLED
@@ -130,7 +130,7 @@ def test_submission_run_public_private_dependency_success(client, container_engi
         submission_run.status = models.Status.SUCCESS
         submission_run.save(update_fields=["status"])
 
-        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 3)
+        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 4)
 
         submission_run = models.SubmissionRun.objects.get(pk=3)
         assert submission_run.status == models.Status.PENDING
@@ -161,7 +161,7 @@ def test_check_for_submission_runs(client, container_engine):
         cluster = dd.LocalCluster(n_workers=0, preload=(preload_file,))
         dask_client = dd.Client(cluster)
 
-        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 3)
+        job_submitter.check_for_submission_runs(time.time(), dask_client, 1, 4)
 
         # time.sleep(120)
         # public run
