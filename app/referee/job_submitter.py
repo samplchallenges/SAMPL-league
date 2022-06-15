@@ -26,7 +26,7 @@ def resubmit_check_for_submission_runs_job(scheduler_submission_script):
     return jobid_sub_bytes.decode("utf-8")
 
 
-def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_workers):
+def start_cluster(config_file, preload_file, worker_outfile):
     with open(config_file, encoding="utf-8") as f:
         config = yaml.safe_load(f)
         print(config)
@@ -44,11 +44,12 @@ def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_wo
         job_extra=job_extra,
         **config["jobqueue"]["slurm"]["cluster_settings"],
     )
-    cluster.adapt(
-        minimum_jobs=min_workers,
-        maximum_jobs=max_workers,
-        **config["jobqueue"]["slurm"]["adapt_settings"]
+    logger.debug(
+        "Min: %d; Max: %d",
+        config["jobqueue"]["slurm"]["adapt_settings"]["minimum_jobs"],
+        config["jobqueue"]["slurm"]["adapt_settings"]["maximum_jobs"],
     )
+    cluster.adapt(**config["jobqueue"]["slurm"]["adapt_settings"])
     return cluster
 
 
@@ -64,7 +65,7 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
         check_interval,
         job_lifetime,
     )
-    while time.time() - start_time + (1.5 * check_interval) < job_lifetime:
+    while time.time() - start_time + (3 * check_interval) < job_lifetime:
         logger.debug("Checking for submission runs n=%d", n)
         with transaction.atomic():
             for run in SubmissionRun.objects.select_for_update().filter(
@@ -122,16 +123,14 @@ def reset_unfinished_to_pending_submission():
 def job_submitter_main():
     start_time = time.time()
     logger.info("Starting job_submitter.py at %s", time.ctime(start_time))
+    logger.info("Job Lifetime: %s", settings.JOB_SUBMITTER_LIFETIME)
     logger.info("Container engine: %s", settings.CONTAINER_ENGINE)
     jobqueue_config_file = settings.JOBQUEUE_CONFIG_FILE
     cluster = start_cluster(
         jobqueue_config_file,
         f"{settings.SAMPL_ROOT}/app/daskworkerinit.py",
         f"{settings.DASK_WORKER_LOGS_ROOT}/dask-worker-%j.out",
-        settings.MINIMUM_WORKERS,
-        settings.MAXIMUM_WORKERS,
     )
-    logger.debug("Min: %d; Max: %d", settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS)
     client = Client(cluster)
     check_for_submission_runs(
         start_time,

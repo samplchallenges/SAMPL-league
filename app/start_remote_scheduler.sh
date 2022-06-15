@@ -9,21 +9,21 @@ else
     exit 1
 fi
 
+LOG_FILE="${SAMPL_LOGS_ROOT}/${ENV_TYPE}-remote_scheduler.out"
+
 if [[ ${SUBMITTER_QUEUE_PARTITION} == 'free' ]]; then
-    sbatch \
-        --job-name=$JOB_NAME \
-        --partition=free \
-        --output="${SAMPL_LOGS_ROOT}/staging-remote_scheduler.out" \
-        --open-mode=append \
-        "${SAMPL_ROOT}/app/remote_scheduler.slurm"
+    PARTITION="--partition=free"
 elif [[ ${SUBMITTER_QUEUE_PARTITION} == 'standard' ]]; then
-    sbatch \
-        --job-name=$JOB_NAME \
-        --partition=standard \
-        --account=DMOBLEY_LAB \
-        --output="${SAMPL_LOGS_ROOT}/staging-remote_scheduler.out" \
-        "${SAMPL_ROOT}/app/remote_scheduler.slurm"
+    PARTITION="--partition=standard --account=DMOBLEY_LAB"
 else
     echo "Unknown SUBMITTER_QUEUE_PARTITION: ${SUBMITTER_QUEUE_PARTITION}" 1>&2
     exit 2
 fi
+
+
+sbatch \
+    --job-name=$JOB_NAME \
+    --time=$JOB_SUBMITTER_WALLTIME \
+    $PARTITION \
+    --output=$LOG_FILE \
+    "${SAMPL_ROOT}/app/remote_scheduler.slurm"

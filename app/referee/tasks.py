@@ -182,6 +182,16 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             for key, value in parsed_results:
                 output_type = challenge.output_type(key)
                 if output_type:
+                    if models.Prediction.objects.filter(
+                        evaluation_id=evaluation.id, value_type=output_type
+                    ).exists():
+                        evaluation.append(
+                            stderr="Duplicate prediction entry, overwriting old entry"
+                        )
+                        prediction = models.Prediction.objects.get(
+                            evaluation_id=evaluation.id, value_type=output_type
+                        )
+                        prediction.delete()
                     prediction = models.Prediction.load_output(
                         challenge, evaluation, output_type, value
                     )

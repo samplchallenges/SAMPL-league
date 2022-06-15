@@ -19,7 +19,7 @@ jobqueue:
       shebang: "#!/usr/bin/env bash"
       queue: 'free'                # Queue to use: 'free' or 'standard' if standard is used project must be DMOBLEY_LAB
       #project: 'DMOBLEY_LAB'
-      walltime: '12:00:00'
+      walltime: '02:00:00'
       #env-extra: []
       #job-cpu: null
       #job-mem: null
@@ -27,7 +27,9 @@ jobqueue:
 
       # Scheduler Options
       scheduler_options: {}
-  
+
     adapt_settings:
+      minimum_jobs: 0
+      maximum_jobs: 1
       wait_count: 3
-      interval: '30000 ms' 
+      interval: '30000 ms'

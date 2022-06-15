@@ -15,15 +15,13 @@ REMOTE_SCHEDULER = False
 # The container engine must be singularity on hpc3
 CONTAINER_ENGINE = "singularity"
 
-# Dask SLURMCluster Settings
-MINIMUM_WORKERS = int(os.environ.get("MINIMUM_WORKERS", 0))
-MAXIMUM_WORKERS = int(os.environ.get("MAXIMUM_WORKERS", 1))
-
 # HPC3 Job Submitter Settings
 JOBQUEUE_CONFIG_FILE = SAMPL_ROOT / "app/referee/jobqueue.yaml"
-JOB_SUBMITTER_LIFETIME = int(
-    os.environ.get("JOB_SUBMITTER_LIFETIME", 24 * 60 * 60)
-)  # in seconds (1 hr)
+JOB_SUBMITTER_WALLTIME = os.environ.get("JOB_SUBMITTER_WALLTIME", "24:00:00")
+WALLTIME_HRS, WALLTIME_MIN, WALLTIME_SEC = tuple(JOB_SUBMITTER_WALLTIME.split(":"))
+JOB_SUBMITTER_LIFETIME = (
+    int(WALLTIME_HRS) * 60 * 60 + int(WALLTIME_MIN) * 60 + int(WALLTIME_SEC)
+)
 CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 60))  # in seconds (1 min)
 
 LOGGING = {
