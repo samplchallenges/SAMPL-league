@@ -124,6 +124,7 @@ def reset_unfinished_to_pending_submission():
                             "   Evaluation status is now: %s", evaluation.status
                         )
 
+
 def job_submitter_main():
     start_time = time.time()
     logger.info("Starting job_submitter.py at %s", time.ctime(start_time))
