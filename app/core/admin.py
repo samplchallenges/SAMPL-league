@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join, mark_safe
 
-from . import batcher, models
+from . import batching, models
 
 HREF_TEMPLATE = '<a href="{}">{}</a> {}'
 
@@ -54,7 +54,7 @@ def generate_batches_action(
     modeladmin, request, queryset
 ):  # pylint: disable=unused-argument
     for challenge in queryset.all():
-        batcher.generate_batches(challenge)
+        batching.generate_batches(challenge)
 
 
 @register(models.Challenge)

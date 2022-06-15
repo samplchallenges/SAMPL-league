@@ -48,6 +48,7 @@ def _create_challenge_inputs(challenge, file_based):
             content_type=ContentType.objects.get_for_model(models.FloatValue),
             key="molWeight",
             description="Molecular Weight",
+            batch_method="csv",
         )
 
     for idx, name in enumerate(

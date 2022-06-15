@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-from . import batcher, models
+from . import models
 
 
 @receiver(post_save, sender=models.Challenge)
@@ -17,8 +17,12 @@ def manage_batch_group(
             return
     if instance.max_batch_size == 0:
         return
-    # Also verify that max_batch_size is changed
-    batcher.generate_batches(instance)
+    group = instance.current_batch_group()
+    if group is None or group.max_batch_size != instance.max_batch_size:
+        group = instance.inputbatchgroup_set.create(
+            max_batch_size=instance.max_batch_size
+        )
+        group.generate_batches()
 
 
 @receiver(pre_save, sender=models.InputBatchMembership)
