@@ -9,9 +9,10 @@ from dask_jobqueue import SLURMCluster
 
 django.setup()
 from django.conf import settings
+from django.db import transaction
 
 import referee.tasks as rt
-from core.models import Status, SubmissionRun
+from core.models import Status, SubmissionRun, SubmissionRunPair
 
 logger = logging.getLogger("job_submitter")
 logger.setLevel(logging.DEBUG)
@@ -25,36 +26,40 @@ def resubmit_check_for_submission_runs_job(scheduler_submission_script):
     return jobid_sub_bytes.decode("utf-8")
 
 
-def start_cluster(config_file, preload_file, worker_outfile, min_workers, max_workers):
+def start_cluster(config_file, preload_file, worker_outfile):
     with open(config_file, encoding="utf-8") as f:
         config = yaml.safe_load(f)
+        print(config)
+        print(config_file)
 
     job_extra = [
         f"--output={worker_outfile}",
         "--open-mode=append",
     ]
-    if settings.WORKER_QUEUE_PARTITION == "free":
-        job_extra.append("--partition=free")
-    elif settings.WORKER_QUEUE_PARTITION == "standard":
-        job_extra.append("--partition=standard")
-        job_extra.append("--account=DMOBLE_LAB")
-    else:
-        raise Exception(
-            f"Unsupported WORKER_QUEUE_PARTITION {settings.WORKER_QUEUE_PARTITION}"
-        )
 
     cluster = SLURMCluster(
         extra=[
             f"--preload {preload_file}",
         ],
         job_extra=job_extra,
-        **config["jobqueue"]["slurm"],
+        **config["jobqueue"]["slurm"]["cluster_settings"],
     )
-    cluster.adapt(
-        minimum_jobs=min_workers,
-        maximum_jobs=max_workers,
+    logger.debug(
+        "Min: %d; Max: %d",
+        config["jobqueue"]["slurm"]["adapt_settings"]["minimum_jobs"],
+        config["jobqueue"]["slurm"]["adapt_settings"]["maximum_jobs"],
     )
+    cluster.adapt(**config["jobqueue"]["slurm"]["adapt_settings"])
     return cluster
+
+
+def set_submission_run_status(submission_run, status):
+    submission_run.status = status
+    submission_run.save(update_fields=["status"])
+
+
+def job_submitter_alive(start_time, check_interval, job_lifetime):
+    return time.time() - start_time + (3 * check_interval) < job_lifetime
 
 
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
@@ -64,51 +69,73 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
         check_interval,
         job_lifetime,
     )
-    while time.time() - start_time + (1.5 * check_interval) < job_lifetime:
-        logger.debug("Checking for submission runs n=%d", n)
-        for run in SubmissionRun.objects.filter(status=Status.PENDING_REMOTE):
-            logger.debug("Added run=%d", run.id)
-            run.status = Status.PENDING
-            run.save(update_fields=["status"])
-            rt.submit_submission_run(client, run)
 
-        time.sleep(check_interval)
+    while job_submitter_alive(start_time, check_interval, job_lifetime):
+        logger.debug("Checking for submission runs n=%d", n)
+        with transaction.atomic():
+            for run in SubmissionRun.objects.select_for_update().filter(
+                status=Status.PENDING_REMOTE
+            ):
+                if run.is_public:
+                    logger.debug("Added run=%d", run.id)
+                    set_submission_run_status(run, Status.PENDING)
+                    rt.submit_submission_run(client, run)
+
+                else:  # run is private
+                    for pair in SubmissionRunPair.objects.filter(private_run=run):
+                        if pair.public_run.status == Status.SUCCESS:
+                            set_submission_run_status(run, Status.PENDING)
+                            rt.submit_submission_run(client, run)
+                        elif pair.public_run.status in [
+                            Status.CANCELLED,
+                            Status.CANCEL_PENDING,
+                            Status.FAILURE,
+                        ]:
+                            set_submission_run_status(run, Status.CANCELLED)
+                        else:  # Status.PENDING_REMOTE or Status.RUNNING
+                            pass
+        if job_submitter_alive(start_time, check_interval, job_lifetime):
+            time.sleep(check_interval)
         n += 1
 
 
 def reset_unfinished_to_pending_submission():
     for status in [Status.PENDING, Status.RUNNING]:
-        for submission_run in SubmissionRun.objects.filter(status=status):
-            logger.debug(
-                "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
-                submission_run.id,
-            )
-            submission_run.status = Status.PENDING_REMOTE
-            submission_run.save(update_fields=["status"])
-            logger.debug("SubmissionRun status is now: %s", submission_run.status)
-            for evaluation in submission_run.evaluation_set.all():
-                if evaluation.status == Status.RUNNING:
-                    logger.debug(
-                        "   Resetting RUNNING back to PENDING: %d", evaluation.id
-                    )
-                    evaluation.status = Status.PENDING
-                    evaluation.save(update_fields=["status"])
-                    logger.debug("   Evaluation status is now: %s", evaluation.status)
+        with transaction.atomic():
+            for submission_run in SubmissionRun.objects.select_for_update().filter(
+                status=status
+            ):
+                logger.debug(
+                    "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
+                    submission_run.id,
+                )
+                set_submission_run_status(submission_run, Status.PENDING_REMOTE)
+                logger.debug("SubmissionRun status is now: %s", submission_run.status)
+                for (
+                    evaluation
+                ) in submission_run.evaluation_set.select_for_update().all():
+                    if evaluation.status == Status.RUNNING:
+                        logger.debug(
+                            "   Resetting RUNNING back to PENDING: %d", evaluation.id
+                        )
+                        evaluation.status = Status.PENDING
+                        evaluation.save(update_fields=["status"])
+                        logger.debug(
+                            "   Evaluation status is now: %s", evaluation.status
+                        )
 
 
 def job_submitter_main():
     start_time = time.time()
     logger.info("Starting job_submitter.py at %s", time.ctime(start_time))
+    logger.info("Job Lifetime: %s", settings.JOB_SUBMITTER_LIFETIME)
     logger.info("Container engine: %s", settings.CONTAINER_ENGINE)
-    jobqueue_config_file = settings.SAMPL_ROOT / "app/referee/jobqueue.yaml"
+    jobqueue_config_file = settings.JOBQUEUE_CONFIG_FILE
     cluster = start_cluster(
         jobqueue_config_file,
         f"{settings.SAMPL_ROOT}/app/daskworkerinit.py",
         f"{settings.DASK_WORKER_LOGS_ROOT}/dask-worker-%j.out",
-        settings.MINIMUM_WORKERS,
-        settings.MAXIMUM_WORKERS,
     )
-    logger.debug("Min: %d; Max: %d", settings.MINIMUM_WORKERS, settings.MAXIMUM_WORKERS)
     client = Client(cluster)
     check_for_submission_runs(
         start_time,

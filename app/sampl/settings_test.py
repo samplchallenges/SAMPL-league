@@ -12,7 +12,6 @@ SECRET_KEY = "7&gz49!+qmxwltqo*!_g$n+i)%qcn9c^%2kbwzlnwiuofj29!%"
 
 CRISPY_FAIL_SILENTLY = False
 
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
@@ -24,4 +23,5 @@ DATABASES = {
     }
 }
 
-WORKER_QUEUE_PARTITION = "free"
+ECR_BASE_URL = os.environ["ECR_BASE_URL"]
+ECR_SAMPLLEAGUE_URL = os.environ["ECR_SAMPLLEAGUE_URL"]

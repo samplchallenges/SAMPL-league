@@ -12,6 +12,22 @@ from core import models
 from referee import job_submitter, scoring, tasks
 
 
+def test_get_submission_run_status_cancel_pending(molfile_molw_config):
+    evaluation_statuses = [
+        models.Status.SUCCESS,
+        models.Status.SUCCESS,
+        models.Status.SUCCESS,
+    ]
+    submission_run = molfile_molw_config.submission_run
+
+    submission_run.status = models.Status.CANCEL_PENDING
+    submission_run.save(update_fields=["status"])
+
+    status = tasks.get_submission_run_status(evaluation_statuses, submission_run.id)
+
+    assert status == models.Status.CANCELLED
+
+
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize(
     ["container_engine"],
@@ -35,7 +51,9 @@ def test_run_and_score_submission(container_engine):
 
         print(submission.id, submission)
         future = tasks.run_and_score_submission(dask_client, submission)
+
         result = future.result()
+
         assert result
 
 
@@ -306,12 +324,25 @@ def test_cancel_submission_before_run(
 ):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         submission = molfile_molw_config.submission_run.submission
-        delayed_conditional = tasks._trigger_submission_run(
-            submission, True, is_public=True
-        )
+        submission_run = submission.create_run(is_public=True, remote=False)
+        delayed_conditional = tasks._run(submission_run, True)
         submission.last_public_run().mark_for_cancel()
         result = delayed_conditional.compute(scheduler="synchronous")
         assert result is False
+        assert submission.last_public_run().status == models.Status.CANCELLED
+
+
+@pytest.mark.parametrize(
+    ["container_engine"],
+    [["docker"], ["singularity"]],
+)
+def test_cancel_submission_before_run_remote(
+    molfile_molw_config, benzene_from_mol, container_engine
+):
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        submission = molfile_molw_config.submission_run.submission
+        tasks.enqueue_submission(submission)
+        submission.last_public_run().mark_for_cancel(remote=True)
         assert submission.last_public_run().status == models.Status.CANCELLED
 
 

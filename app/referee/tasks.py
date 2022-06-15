@@ -21,8 +21,9 @@ def enqueue_submission(submission):
     Records in the database that we want the job submitter to call
     submit_submission_run
     """
-    for is_public in (True, False):
-        submission.create_run(is_public=is_public, remote=True)
+    public_run = submission.create_run(is_public=True, remote=True)
+    private_run = submission.create_run(is_public=False, remote=True)
+    submission.create_run_pair(public_run=public_run, private_run=private_run)
 
 
 def run_and_score_submission(client, submission):
@@ -30,10 +31,13 @@ def run_and_score_submission(client, submission):
     Runs public and private, plus scoring
     """
     delayed_conditional = dask.delayed(True)
-    for is_public in (True, False):
-        delayed_conditional = _trigger_submission_run(
-            submission, delayed_conditional, is_public=is_public
-        )
+
+    public_run = submission.create_run(is_public=True, remote=False)
+    private_run = submission.create_run(is_public=False, remote=False)
+    submission.create_run_pair(public_run=public_run, private_run=private_run)
+
+    for submission_run in (public_run, private_run):
+        delayed_conditional = _run(submission_run, delayed_conditional)
 
     if settings.VISUALIZE_DASK_GRAPH:
         delayed_conditional.visualize(filename="task_graph.svg")
@@ -55,33 +59,45 @@ def submit_submission_run(client, submission_run):
     return future
 
 
-def _trigger_submission_run(submission, delayed_conditional, *, is_public):
-    submission_run = submission.create_run(is_public=is_public, remote=False)
-    return _run(submission_run, delayed_conditional)
-
-
 def _run(submission_run, delayed_conditional):
     evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
     return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
 
 
-@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses):
+def get_submission_run_status(evaluation_statuses, submission_run_id):
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
     uniq_statuses = set(evaluation_statuses)
-    if not delayed_conditional:
-        status = models.Status.CANCELLED
-    elif {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
+    if {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
         submission_run.append(
             stderr=f"Evaluations should have all completed, but have statuses {evaluation_statuses}!"
         )
         status = models.Status.FAILURE
-    elif {models.Status.CANCELLED} == uniq_statuses:
+    elif {models.Status.CANCELLED} == uniq_statuses or {
+        models.Status.CANCELLED,
+        models.Status.SUCCESS,
+    } == uniq_statuses:
         status = models.Status.CANCELLED
     elif {models.Status.FAILURE, models.Status.CANCELLED} & uniq_statuses:
         status = models.Status.FAILURE
     else:
         status = models.Status.SUCCESS
+
+    if (
+        submission_run.status == models.Status.CANCEL_PENDING
+        and status == models.Status.SUCCESS
+    ):
+        status = models.Status.CANCELLED
+
+    return status
+
+
+@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
+def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses):
+    submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
+    if not delayed_conditional:
+        status = models.Status.CANCELLED
+    else:
+        status = get_submission_run_status(evaluation_statuses, submission_run_id)
 
     submission_run.status = status
     if status != models.Status.SUCCESS:
@@ -166,6 +182,16 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
             for key, value in parsed_results:
                 output_type = challenge.output_type(key)
                 if output_type:
+                    if models.Prediction.objects.filter(
+                        evaluation_id=evaluation.id, value_type=output_type
+                    ).exists():
+                        evaluation.append(
+                            stderr="Duplicate prediction entry, overwriting old entry"
+                        )
+                        prediction = models.Prediction.objects.get(
+                            evaluation_id=evaluation.id, value_type=output_type
+                        )
+                        prediction.delete()
                     prediction = models.Prediction.load_output(
                         challenge, evaluation, output_type, value
                     )

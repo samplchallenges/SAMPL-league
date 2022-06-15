@@ -318,6 +318,13 @@ class Submission(Timestamped):
 
         return submission_run
 
+    def create_run_pair(self, *, public_run, private_run):
+        submission_run_pair = self.submissionrunpair_set.create(
+            public_run=public_run,
+            private_run=private_run,
+        )
+        return submission_run_pair
+
 
 def _container_file_location(instance, filename):
     return os.path.join(
@@ -366,17 +373,26 @@ class SubmissionRun(Logged):
         status = SubmissionRun.objects.values_list("status", flat=True).get(pk=self.id)
         return status == Status.CANCEL_PENDING
 
-    def mark_for_cancel(self):
+    def mark_for_cancel(self, remote=False):
         with transaction.atomic():
-            SubmissionRun.objects.filter(pk=self.id).update(
-                status=Status.CANCEL_PENDING
-            )
-            Evaluation.objects.filter(
-                submission_run_id=self.id, status=Status.PENDING
-            ).update(status=Status.CANCELLED)
-            Evaluation.objects.filter(
-                submission_run_id=self.id, status=Status.RUNNING
-            ).update(status=Status.CANCEL_PENDING)
+            SubmissionRun.objects.select_for_update().filter(pk=self.id)
+            submission_run = SubmissionRun.objects.get(pk=self.id)
+            Evaluation.objects.select_for_update().filter(submission_run_id=self.id)
+            if remote and submission_run.status == Status.PENDING_REMOTE:
+                SubmissionRun.objects.filter(pk=self.id).update(status=Status.CANCELLED)
+                Evaluation.objects.filter(submission_run_id=self.id).update(
+                    status=Status.CANCELLED
+                )
+            else:
+                SubmissionRun.objects.filter(pk=self.id).update(
+                    status=Status.CANCEL_PENDING
+                )
+                Evaluation.objects.filter(
+                    submission_run_id=self.id, status=Status.PENDING
+                ).update(status=Status.CANCELLED)
+                Evaluation.objects.filter(
+                    submission_run_id=self.id, status=Status.RUNNING
+                ).update(status=Status.CANCEL_PENDING)
 
     def completion(self):
         completed = self.evaluation_set.filter(
@@ -387,6 +403,24 @@ class SubmissionRun(Logged):
         ).count()
         completed_frac = completed / num_element_ids if num_element_ids else 0
         return Completion(completed, num_element_ids, completed_frac)
+
+
+class SubmissionRunPair(Timestamped):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
+    public_run = models.ForeignKey(
+        SubmissionRun, on_delete=models.CASCADE, related_name="%(class)s_public_run"
+    )
+    private_run = models.ForeignKey(
+        SubmissionRun, on_delete=models.CASCADE, related_name="%(class)s_private_run"
+    )
+
+    class Meta:
+        unique_together = ["public_run", "private_run"]
+
+    def __str__(self):
+        return (
+            f"{self.submission}: public {self.public_run}, private {self.private_run}"
+        )
 
 
 class InputElement(Timestamped):
