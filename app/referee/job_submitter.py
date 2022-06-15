@@ -58,6 +58,8 @@ def set_submission_run_status(submission_run, status):
     submission_run.save(update_fields=["status"])
 
 
+def job_submitter_alive(start_time, check_interval, job_lifetime):
+    return time.time() - start_time + (3 * check_interval) < job_lifetime
 
 
 def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
@@ -67,7 +69,8 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
         check_interval,
         job_lifetime,
     )
-    while time.time() - start_time + (3 * check_interval) < job_lifetime:
+
+    while job_submitter_alive(start_time, check_interval, job_lifetime):
         logger.debug("Checking for submission runs n=%d", n)
         with transaction.atomic():
             for run in SubmissionRun.objects.select_for_update().filter(
@@ -91,8 +94,8 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
                             set_submission_run_status(run, Status.CANCELLED)
                         else:  # Status.PENDING_REMOTE or Status.RUNNING
                             pass
-
-        time.sleep(check_interval)
+        if job_submitter_alive(start_time, check_interval, job_lifetime):
+            time.sleep(check_interval)
         n += 1
 
 
