@@ -85,7 +85,7 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
                 else:  # run is private
                     for pair in SubmissionRunPair.objects.filter(private_run=run):
                         if pair.public_run.status == Status.SUCCESS:
-                            run.update_status(run, Status.PENDING)
+                            run.update_status(Status.PENDING)
                             rt.submit_submission_run(client, run)
                         elif pair.public_run.status in [
                             Status.CANCELLED,
