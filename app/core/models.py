@@ -38,6 +38,10 @@ class StatusMixin:
     def is_finished(self):
         return self.status in (Status.SUCCESS, Status.FAILURE, Status.CANCELLED)
 
+    def update_status(self, status):
+        self.status = status
+        self.save(update_fields=["status"])
+
 
 class Timestamped(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
@@ -375,24 +379,18 @@ class SubmissionRun(Logged):
 
     def mark_for_cancel(self, remote=False):
         with transaction.atomic():
-            SubmissionRun.objects.select_for_update().filter(pk=self.id)
-            submission_run = SubmissionRun.objects.get(pk=self.id)
-            Evaluation.objects.select_for_update().filter(submission_run_id=self.id)
+            Evaluation.objects.select_for_update().select_related(
+                "submission_run"
+            ).filter(submission_run_id=self.id).all()
+            submission_run = SubmissionRun.objects.select_for_update().get(pk=self.id)
+
             if remote and submission_run.status == Status.PENDING_REMOTE:
-                SubmissionRun.objects.filter(pk=self.id).update(status=Status.CANCELLED)
-                Evaluation.objects.filter(submission_run_id=self.id).update(
-                    status=Status.CANCELLED
-                )
+                self.update_status(status=Status.CANCELLED)
+                self.evaluation_set.update(status=Status.CANCELLED)
             else:
-                SubmissionRun.objects.filter(pk=self.id).update(
-                    status=Status.CANCEL_PENDING
-                )
-                Evaluation.objects.filter(
-                    submission_run_id=self.id, status=Status.PENDING
-                ).update(status=Status.CANCELLED)
-                Evaluation.objects.filter(
-                    submission_run_id=self.id, status=Status.RUNNING
-                ).update(status=Status.CANCEL_PENDING)
+                self.update_status(status=Status.CANCEL_PENDING)
+                self.evaluation_set.update(status=Status.CANCELLED)
+                self.evaluation_set.update(status=Status.CANCEL_PENDING)
 
     def completion(self):
         completed = self.evaluation_set.filter(

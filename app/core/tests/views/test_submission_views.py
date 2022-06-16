@@ -299,7 +299,6 @@ def test_run_submission(client, container_engine):
             result = future.result()
             response = client.get(detail_url)
             public_run = response.context["public_run"]
-            print(public_run)
             assert public_run.status == "SUCCESS"
             assert result
 
@@ -361,7 +360,6 @@ def test_cancel_request_remote(client, user, draft_submission, submission_run_fa
         submission_run.status = Status.PENDING_REMOTE
         submission_run.save(update_fields=["status"])
         submission_run.refresh_from_db()
-        assert submission_run.status == Status.PENDING_REMOTE
         client.force_login(user)
         response = client.post(f"/submissionrun/{submission_run.pk}/cancel/")
         assert response.status_code == 302

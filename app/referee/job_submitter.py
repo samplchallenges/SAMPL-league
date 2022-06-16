@@ -29,8 +29,6 @@ def resubmit_check_for_submission_runs_job(scheduler_submission_script):
 def start_cluster(config_file, preload_file, worker_outfile):
     with open(config_file, encoding="utf-8") as f:
         config = yaml.safe_load(f)
-        print(config)
-        print(config_file)
 
     job_extra = [
         f"--output={worker_outfile}",
@@ -73,25 +71,28 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     while job_submitter_alive(start_time, check_interval, job_lifetime):
         logger.debug("Checking for submission runs n=%d", n)
         with transaction.atomic():
-            for run in SubmissionRun.objects.select_for_update().filter(
-                status=Status.PENDING_REMOTE
-            ):
+            submission_run_query = (
+                SubmissionRun.objects.select_for_update()
+                .filter(status=Status.PENDING_REMOTE)
+                .all()
+            )
+            for run in submission_run_query:
                 if run.is_public:
                     logger.debug("Added run=%d", run.id)
-                    set_submission_run_status(run, Status.PENDING)
+                    run.update_status(Status.PENDING)
                     rt.submit_submission_run(client, run)
 
                 else:  # run is private
                     for pair in SubmissionRunPair.objects.filter(private_run=run):
                         if pair.public_run.status == Status.SUCCESS:
-                            set_submission_run_status(run, Status.PENDING)
+                            run.update_status(run, Status.PENDING)
                             rt.submit_submission_run(client, run)
                         elif pair.public_run.status in [
                             Status.CANCELLED,
                             Status.CANCEL_PENDING,
                             Status.FAILURE,
                         ]:
-                            set_submission_run_status(run, Status.CANCELLED)
+                            run.update_status(Status.CANCELLED)
                         else:  # Status.PENDING_REMOTE or Status.RUNNING
                             pass
         if job_submitter_alive(start_time, check_interval, job_lifetime):
@@ -102,24 +103,26 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
 def reset_unfinished_to_pending_submission():
     for status in [Status.PENDING, Status.RUNNING]:
         with transaction.atomic():
-            for submission_run in SubmissionRun.objects.select_for_update().filter(
-                status=status
-            ):
+            submission_run_query = (
+                SubmissionRun.objects.select_for_update().filter(status=status).all()
+            )
+            for submission_run in submission_run_query:
                 logger.debug(
                     "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
                     submission_run.id,
                 )
-                set_submission_run_status(submission_run, Status.PENDING_REMOTE)
+                submission_run.update_status(Status.PENDING_REMOTE)
                 logger.debug("SubmissionRun status is now: %s", submission_run.status)
-                for (
-                    evaluation
-                ) in submission_run.evaluation_set.select_for_update().all():
+
+                evaluation_query = (
+                    submission_run.evaluation_set.select_for_update().all()
+                )
+                for evaluation in evaluation_query:
                     if evaluation.status == Status.RUNNING:
                         logger.debug(
                             "   Resetting RUNNING back to PENDING: %d", evaluation.id
                         )
-                        evaluation.status = Status.PENDING
-                        evaluation.save(update_fields=["status"])
+                        evaluation.update_status(Status.PENDING)
                         logger.debug(
                             "   Evaluation status is now: %s", evaluation.status
                         )
