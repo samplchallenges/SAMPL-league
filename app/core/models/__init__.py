@@ -1,6 +1,7 @@
 from .admin_managed import (
     Challenge,
     Container,
+    ContainerType,
     InputElement,
     ScoreMaker,
     ScoreType,
@@ -15,9 +16,9 @@ from .batch_related import (
 )
 from .run_related import (
     BatchEvaluation,
-    BatchPrediction,
     Evaluation,
     EvaluationScore,
+    Logged,
     Prediction,
     Status,
     SubmissionRun,
@@ -29,6 +30,7 @@ from .values import (
     FileValue,
     FloatValue,
     InputValue,
+    Solution,
     TextValue,
     _upload_location,
 )

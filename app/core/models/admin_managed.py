@@ -32,7 +32,7 @@ class Challenge(Timestamped):
         self.__output_types_dict = {
             output_type.key: output_type for output_type in output_types.all()
         }
-        file_content_type = ContentType.objects.get_by_natural_key("core", "FileValue")
+        file_content_type = ContentType.objects.get_by_natural_key("core", "filevalue")
         self.__output_file_keys = {  # pylint:disable=attribute-defined-outside-init
             key
             for key, output_type in self.__output_types_dict.items()

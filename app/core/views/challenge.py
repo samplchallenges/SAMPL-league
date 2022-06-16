@@ -5,7 +5,8 @@ import ever_given.wrapper
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
-from ..models import Challenge, InputElement, InputValue
+from .. import values_helper
+from ..models import Challenge, InputValue
 
 
 def _input_elements(challenge):
@@ -33,7 +34,12 @@ def _input_elements(challenge):
 
     for element_dict in elements.values():
         element_values = [v for k, v in element_dict.items() if k != "name"]
-        kwargs, file_kwargs = InputElement.element_values(element_values)
+        (
+            kwargs,
+            file_kwargs,
+        ) = values_helper._element_values(  # pylint: disable=protected-access
+            element_values
+        )
         args_dict = kwargs
         for k, v in file_kwargs.items():
             args_dict[k] = os.path.basename(v)

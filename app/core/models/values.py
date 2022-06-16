@@ -111,14 +111,14 @@ class AnswerKey(Solution):
 
 class GenericValue(models.Model):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
     evaluation = models.ForeignKey(
-        "Evaluation", on_delete=models.CASCADE, null=True, blank=True
+        "core.Evaluation", on_delete=models.CASCADE, null=True, blank=True
     )
     batch_evaluation = models.ForeignKey(
-        "BatchEvaluation", on_delete=models.CASCADE, null=True, blank=True
+        "core.BatchEvaluation", on_delete=models.CASCADE, null=True, blank=True
     )
-    prediction = GenericRelation("Prediction")
-    batch_prediction = GenericRelation("BatchPrediction")
+    prediction = GenericRelation("core.Prediction")
 
     answer_key = GenericRelation(AnswerKey)
     input_value = GenericRelation(InputValue)
@@ -127,11 +127,24 @@ class GenericValue(models.Model):
         abstract = True
 
     @classmethod
-    def from_string(cls, raw_value, *, challenge, evaluation=None, **_kwargs):
-        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
+    def from_string(
+        cls,
+        raw_value,
+        *,
+        challenge,
+        input_element,
+        evaluation=None,
+        batch_evaluation=None,
+    ):
         value_field = cls._meta.get_field("value")
         value = value_field.to_python(raw_value)
-        return cls(value=value, **cls_kwargs)
+        return cls(
+            value=value,
+            challenge=challenge,
+            input_element=input_element,
+            evaluation=evaluation,
+            batch_evaluation=batch_evaluation,
+        )
 
     def __str__(self):
         # pylint: disable=no-member
@@ -188,11 +201,23 @@ class FileValue(GenericValue):
 
     @classmethod
     def from_string(
-        cls, filepath, *, challenge, evaluation=None
-    ):  # pylint:disable=arguments-renamed,arguments-differ
-        cls_kwargs = {"challenge": challenge, "evaluation": evaluation}
+        cls,
+        raw_value,
+        *,
+        challenge,
+        input_element,
+        evaluation=None,
+        batch_evaluation=None,
+    ):
+        filepath = raw_value
         filename = os.path.basename(filepath)
-        instance = cls(value=filename, **cls_kwargs)
+        instance = cls(
+            value=filename,
+            challenge=challenge,
+            input_element=input_element,
+            evaluation=evaluation,
+            batch_evaluation=batch_evaluation,
+        )
         with open(filepath, "rb") as fp:
             instance.value.save(filename, File(fp))
         filecache.preserve_local_copy(instance.value, filepath)

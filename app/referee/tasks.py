@@ -8,7 +8,7 @@ import ever_given.wrapper
 from django.conf import settings
 from ever_given.log_processing import CancelledException
 
-from core import models
+from core import models, values_helper
 
 from . import scoring, utils
 
@@ -130,9 +130,7 @@ def _run_evaluations(submission_run, conditional):
     )
 
 
-def run_eval_or_batch(
-    submission_id, cls, prediction_class, object_id, submission_run_id, conditional
-):
+def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, conditional):
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     challenge = submission.challenge
@@ -145,21 +143,30 @@ def run_eval_or_batch(
         submission_run.save(update_fields=["status"])
 
     evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
-    obj = cls.filter(submission_run_id=submission_run_id).get(pk=object_id)
+    obj = cls.objects.filter(submission_run_id=submission_run_id).get(pk=object_id)
 
     if obj.status not in {models.Status.PENDING, models.Status.RUNNING}:
         return obj.status
 
-    raise Exception("WIP")
-    # pylint: disable=unreachable
-    element = evaluation.input_element
     output_file_keys = challenge.output_file_keys()
 
-    kwargs, file_kwargs = element.all_values()
+    if isinstance(
+        obj, models.Evaluation
+    ):  # or duck typing hasattr(obj, "input_element")
+        kwargs, file_kwargs = values_helper.all_values(obj.input_element)
+        is_batch = False
+    else:
+        kwargs, file_kwargs = values_helper.batch_values(obj)
+        is_batch = True
 
     obj.mark_started(kwargs, file_kwargs)
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
+    aws_login_func = (
+        utils.get_aws_credential_function(container.uri)
+        if settings.LOGIN_TO_AWS
+        else None
+    )
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
@@ -171,6 +178,7 @@ def run_eval_or_batch(
 
             parsed_results = ever_given.wrapper.run(
                 container.uri,
+                "--batch" if is_batch else "",
                 container_type=container.container_type,
                 engine_name=settings.CONTAINER_ENGINE,
                 kwargs=kwargs,
@@ -179,23 +187,37 @@ def run_eval_or_batch(
                 output_file_keys=output_file_keys,
                 log_handler=cls.LogHandler(obj),
                 cancel_requested_func=submission_run.check_cancel_requested,
-                aws_login_func=utils.get_aws_credential_function(container.uri)
-                if settings.LOGIN_TO_AWS
-                else None,
+                aws_login_func=aws_login_func,
             )
 
             for key, value in parsed_results:
                 output_type = challenge.output_type(key)
                 if output_type:
-                    prediction_class.load_output(challenge, obj, output_type, value)
+                    if is_batch:
+                        models.Prediction.load_batch_output(
+                            challenge, obj, output_type, value
+                        )
+                    else:
+                        models.Prediction.load_evaluation_output(
+                            challenge, obj, output_type, value
+                        )
                 else:
                     obj.append(stderr=f"Ignoring key {key} with value {value}\n")
 
-        scoring.score_evaluation(
-            challenge.scoremaker.container,
-            evaluation,
-            evaluation_score_types,
-        )
+        if is_batch:
+            input_elements = []
+        else:
+            input_elements = [obj.input_element]
+        for input_element in input_elements:
+            # TODO: batch up scoring?
+            for log_message in scoring.score_element(
+                challenge.scoremaker.container,
+                obj,
+                submission_run,
+                input_element,
+                evaluation_score_types,
+            ):
+                obj.append(log_message)
 
         obj.status = models.Status.SUCCESS
     except CancelledException:
@@ -219,94 +241,10 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
     run_eval_or_batch(
         submission_id,
         models.Evaluation,
-        models.Prediction,
         evaluation_id,
         submission_run_id,
         conditional,
     )
-
-    submission = models.Submission.objects.get(pk=submission_id)
-    container = submission.container
-    challenge = submission.challenge
-    submission_run = submission.submissionrun_set.get(pk=submission_run_id)
-    if not conditional or submission_run.check_cancel_requested():
-        models.Evaluation.objects.filter(pk=evaluation_id).update(
-            status=models.Status.CANCELLED
-        )
-        return models.Status.CANCELLED
-    if submission_run.status == models.Status.PENDING:
-        submission_run.status = models.Status.RUNNING
-        submission_run.save(update_fields=["status"])
-
-    evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
-    evaluation = submission_run.evaluation_set.get(pk=evaluation_id)
-
-    if evaluation.status not in {models.Status.PENDING, models.Status.RUNNING}:
-        return evaluation.status
-
-    element = evaluation.input_element
-    output_file_keys = challenge.output_file_keys()
-
-    kwargs, file_kwargs = element.all_values()
-
-    evaluation.mark_started(kwargs, file_kwargs)
-    kwargs.update(container.custom_args())
-    file_kwargs.update(container.custom_file_args())
-    try:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            dirpath = Path(str(tmpdir))
-            output_dir = None
-
-            if output_file_keys:
-                output_dir = dirpath / "output"
-                output_dir.mkdir()
-
-            parsed_results = ever_given.wrapper.run(
-                container.uri,
-                container_type=container.container_type,
-                engine_name=settings.CONTAINER_ENGINE,
-                kwargs=kwargs,
-                file_kwargs=file_kwargs,
-                output_dir=output_dir,
-                output_file_keys=output_file_keys,
-                log_handler=models.Evaluation.LogHandler(evaluation),
-                cancel_requested_func=submission_run.check_cancel_requested,
-                aws_login_func=utils.get_aws_credential_function(container.uri)
-                if settings.LOGIN_TO_AWS
-                else None,
-            )
-
-            for key, value in parsed_results:
-                output_type = challenge.output_type(key)
-                if output_type:
-                    prediction = models.Prediction.load_output(
-                        challenge, evaluation, output_type, value
-                    )
-                    prediction.save()
-                else:
-                    evaluation.append(stderr=f"Ignoring key {key} with value {value}\n")
-
-        scoring.score_evaluation(
-            challenge.scoremaker.container,
-            evaluation,
-            evaluation_score_types,
-        )
-
-        evaluation.status = models.Status.SUCCESS
-    except CancelledException:
-        evaluation.status = models.Status.CANCELLED
-        evaluation.append(stderr="Cancelled")
-    except scoring.ScoringFailureException as exc:
-        evaluation.status = models.Status.FAILURE
-        evaluation.append(stderr=f"Error scoring: {exc}")
-    except Exception as exc:  # pylint: disable=broad-except
-        evaluation.status = models.Status.FAILURE
-        evaluation.append(stderr=f"Execution failure: {exc}\n")
-    finally:
-        evaluation.save(update_fields=["status"])
-        evaluation.cleanup_local_outputs(output_file_keys)
-
-    return evaluation.status
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
@@ -316,7 +254,6 @@ def run_batch_evaluation(
     run_eval_or_batch(
         submission_id,
         models.BatchEvaluation,
-        models.BatchPrediction,
         batch_evaluation_id,
         submission_run_id,
         conditional,

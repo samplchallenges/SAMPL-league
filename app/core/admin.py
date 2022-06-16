@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join, mark_safe
 
-from . import batching, models
+from . import models
 
 HREF_TEMPLATE = '<a href="{}">{}</a> {}'
 
@@ -49,20 +49,11 @@ class TimestampedAdmin(admin.ModelAdmin):
 # Sometimes we add methods to ModelAdmin that don't need to use self
 
 
-@admin.action(description="Generate batches")
-def generate_batches_action(
-    modeladmin, request, queryset
-):  # pylint: disable=unused-argument
-    for challenge in queryset.all():
-        batching.generate_batches(challenge)
-
-
 @register(models.Challenge)
 class ChallengeAdmin(TimestampedAdmin):
     list_display = ("name", "start_at", "end_at")
     date_hierarchy = "start_at"
     readonly_fields = ["batch_status", "created_at", "updated_at"]
-    actions = [generate_batches_action]
 
     def batch_status(self, instance):
         batch_group = instance.current_batch_group()
@@ -105,7 +96,7 @@ class ScoreTypeAdmin(TimestampedAdmin):
 
 @register(models.EvaluationScore)
 class EvaluationScoreAdmin(TimestampedAdmin):
-    list_display = ("evaluation", "score_type", "value")
+    list_display = ("submission_run", "input_element", "score_type", "value")
     list_filter = ("score_type__challenge",)
 
 
@@ -259,7 +250,8 @@ class PredictionAdmin(TimestampedAdmin):
     list_display = (
         "pk",
         "challenge",
-        "evaluation",
+        "submission_run",
+        "input_element",
         "value_type",
         "content_type",
     )

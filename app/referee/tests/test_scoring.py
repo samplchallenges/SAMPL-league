@@ -95,7 +95,7 @@ def test_score_evaluation_args(
 
     with patch("referee.scoring.ever_given.wrapper") as mock_wrapper:
         mock_wrapper.run = fake_run
-        scoring.score_evaluation(scoring_container, evaluation, evaluation_score_types)
+        scoring.score_element(scoring_container, evaluation, evaluation_score_types)
 
         expected_args = ("ghcr.io/megosato/score-coords:latest", "score-evaluation")
         expected_kwargs = {"molWeight_answerkey": 72.0, "molWeight_prediction": 97.08}
@@ -151,4 +151,4 @@ def _evaluation_failure(smiles_molw_config, evaluations, mock_wrapper):
     evaluation = evaluations[0]
 
     with pytest.raises(scoring.ScoringFailureException):
-        scoring.score_evaluation(scoring_container, evaluation, evaluation_score_types)
+        scoring.score_element(scoring_container, evaluation, evaluation_score_types)

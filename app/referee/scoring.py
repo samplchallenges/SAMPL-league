@@ -37,11 +37,12 @@ class AnswerPredictionPair:
         return args_dict
 
 
-def _build_kwargs(evaluation):
+def _build_kwargs(submission_run, input_element):
     predictions_by_key, file_predictions_by_key = models.Prediction.dicts_by_key(
-        evaluation.prediction_set.all()
+        models.Prediction.objects.filter(
+            submission_run=submission_run, input_element=input_element
+        )
     )
-    input_element = evaluation.input_element
 
     answer_keys, file_answer_keys = models.AnswerKey.dicts_by_key(
         input_element.answerkey_set.all()
@@ -71,10 +72,12 @@ def _build_kwargs(evaluation):
     return kwargs, file_kwargs
 
 
-def score_evaluation(container, evaluation, evaluation_score_types):
-    kwargs, file_kwargs = _build_kwargs(evaluation)
+def score_element(
+    container, log_owner, submission_run, input_element, evaluation_score_types
+):
+    kwargs, file_kwargs = _build_kwargs(submission_run, input_element)
     command = "score-evaluation"
-    evaluation.append(stdout=f"Scoring with {container.uri} {command}\n")
+    yield f"Scoring with {container.uri} {command}\n"
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
 
@@ -84,7 +87,7 @@ def score_evaluation(container, evaluation, evaluation_score_types):
             command,
             file_kwargs=file_kwargs,
             kwargs=kwargs,
-            log_handler=models.Evaluation.LogHandler(evaluation),
+            log_handler=models.Logged.LogHandler(log_owner),
             container_type=container.container_type,
             engine_name=settings.CONTAINER_ENGINE,
             aws_login_func=utils.get_aws_credential_function(container.uri)
@@ -93,12 +96,14 @@ def score_evaluation(container, evaluation, evaluation_score_types):
         ):
             if key in evaluation_score_types:
                 models.EvaluationScore.objects.create(
-                    evaluation=evaluation,
+                    submission_run=submission_run,
+                    input_element=input_element,
                     score_type=evaluation_score_types[key],
                     value=float(score_value),
                 )
     except Exception as exc:  # pylint: disable=broad-except
         raise ScoringFailureException from exc
+    yield f"Scoring completed for {input_element.name}"
 
 
 def _score_submission_run(container, submission_run, score_types):

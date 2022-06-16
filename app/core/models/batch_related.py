@@ -1,5 +1,6 @@
 import os.path
 import tempfile
+from collections import defaultdict
 
 from django.core.files import File
 from django.db import models, transaction
@@ -22,18 +23,24 @@ class InputBatchGroup(Timestamped):
 
     def generate_batches(self):
         for is_public in (True, False):
-            # TODO: each batch must share a parent as well
-            elements = (
-                self.challenge.inputelement_set.filter(
-                    is_public=is_public, is_parent=False
-                )
-                .order_by("name")
-                .all()
-            )
-            for idx in range(0, len(elements), self.max_batch_size):
-                batch_elements = elements[idx : idx + self.max_batch_size]
-                batch = self.inputbatch_set.create(is_public=is_public)
-                batch.batchup(batch_elements)
+            elements = self.challenge.inputelement_set.filter(
+                is_public=is_public, is_parent=False
+            ).order_by("parent_id", "name")
+            unparented = []
+            by_parent = defaultdict(list)
+            for element in elements:
+                if element.parent_id is None:
+                    unparented.append(element)
+                else:
+                    by_parent[element.parent_id].append(element)
+            for parent_id, elements in ((None, unparented), *by_parent.items()):
+                if elements:
+                    for idx in range(0, len(elements), self.max_batch_size):
+                        batch_elements = elements[idx : idx + self.max_batch_size]
+                        batch = self.inputbatch_set.create(
+                            is_public=is_public, parent_input_element_id=parent_id
+                        )
+                        batch.batchup(batch_elements)
 
     def __str__(self):
         return f'Challenge "{self.challenge.name}" batch size {self.max_batch_size}'
@@ -41,17 +48,30 @@ class InputBatchGroup(Timestamped):
 
 class InputBatch(Timestamped):
     batch_group = models.ForeignKey(InputBatchGroup, on_delete=models.CASCADE)
+    parent_input_element = models.ForeignKey(
+        InputElement, on_delete=models.CASCADE, null=True, blank=True
+    )
     is_public = models.BooleanField(default=False)
 
-    def _add_elements(self, input_elements):
+    def _set_elements(self, input_elements):
+        self.inputbatchmembership_set.all().delete()
         for input_element in input_elements:
+            if self.parent_input_element_id != input_element.parent_id:
+                raise ValueError(
+                    "All input elements to a batch must share a "
+                    "parent id (or all have no parent elements)"
+                )
             InputBatchMembership.objects.create(
                 batch=self, batch_group=self.batch_group, input_element=input_element
             )
 
+    def elements(self):
+        for ibm in self.inputbatchmembership_set.select_related("input_element"):
+            yield ibm.input_element
+
     def batchup(self, input_elements):
         with transaction.atomic():
-            self._add_elements(input_elements)
+            self._set_elements(input_elements)
             with tempfile.TemporaryDirectory() as temp_dir:
                 for value_type in self.batch_group.challenge.valuetype_set.filter(
                     is_input_flag=True, on_parent_flag=False
@@ -65,7 +85,7 @@ class InputBatch(Timestamped):
                         temp_dir, f"{value_type.key}.{batcher.suffix}"
                     )
                     batcher.call(input_elements, value_type.key, output_path)
-                    batch_file = models.BatchFile.from_local(
+                    batch_file = BatchFile.from_local(
                         output_path, batch=self, value_type=value_type
                     )
                     batch_file.save()

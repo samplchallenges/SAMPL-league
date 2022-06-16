@@ -67,7 +67,7 @@ class MolBatcher(BatcherBase):
     def call(elements, key, output_path):
         with Chem.SDWriter(output_path) as molwriter:
             for element in elements:
-                _, file_values = element.all_values()
+                _, file_values = values_helper.all_values(element)
                 mol_file = file_values[key]
                 mol = Chem.MolFromMolFile(mol_file)
                 if mol is None:

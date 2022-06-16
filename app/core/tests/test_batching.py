@@ -4,13 +4,13 @@ import tempfile
 
 from rdkit import Chem
 
-from .. import batcher, models
+from .. import batching, models
 
 
 def test_batch_csv(smiles_molw_config, input_elements):
     with tempfile.TemporaryDirectory() as dirname:
         output_path = os.path.join(dirname, "smiles_list.csv")
-        batcher.BATCHERS["csv"].call(input_elements, "smiles", output_path)
+        batching.BATCHERS["csv"].call(input_elements, "smiles", output_path)
         with open(output_path, encoding="utf8") as fp:
             reader = csv.DictReader(fp)
             by_name = {}
@@ -32,7 +32,7 @@ def test_batch_mol(
 ):  # pylint: disable=unused-argument
     with tempfile.TemporaryDirectory() as dirname:
         output_path = os.path.join(dirname, "mols.sdf")
-        batcher.BATCHERS["mol"].call([benzene_from_mol], "molfile", output_path)
+        batching.BATCHERS["mol"].call([benzene_from_mol], "molfile", output_path)
 
         suppl = Chem.SDMolSupplier(output_path)
 

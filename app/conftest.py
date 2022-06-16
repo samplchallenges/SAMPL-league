@@ -229,7 +229,9 @@ def elem_factory(testing_data_path, db):
         )
         elem.full_clean()
         file_path = os.path.join(testing_data_path, file_name)
-        file_value = models.FileValue.from_string(file_path, challenge=challenge)
+        file_value = models.FileValue.from_string(
+            file_path, challenge=challenge, input_element=elem
+        )
         file_value.save()
         models.InputValue.objects.create(
             input_element=elem, value_type=file_type, value_object=file_value
@@ -271,7 +273,9 @@ def submission_run_factory(db):
 @pytest.fixture
 def float_answer_key_factory(db):
     def fak_maker(challenge, elem, value_type, value):
-        float_value = models.FloatValue.from_string("72.0", challenge=challenge)
+        float_value = models.FloatValue.from_string(
+            "72.0", challenge=challenge, input_element=elem
+        )
         float_value.save()
         answer_key = models.AnswerKey.objects.create(
             challenge=challenge,
@@ -288,7 +292,9 @@ def float_answer_key_factory(db):
 def file_answer_key_factory(testing_data_path, db):
     def fak_maker(challenge, elem, value_type, file_name):
         file_path = os.path.join(testing_data_path, file_name)
-        file_value = models.FileValue.from_string(file_path, challenge=challenge)
+        file_value = models.FileValue.from_string(
+            file_path, challenge=challenge, input_element=elem
+        )
         answer_key = models.AnswerKey.objects.create(
             challenge=challenge,
             input_element=elem,
@@ -366,7 +372,9 @@ def smiles_docking_config_and_func(config_factory, elem_factory):
             name=name,
             is_public=True,
         )
-        smiles_value = models.TextValue.from_string(smiles, challenge=config.challenge)
+        smiles_value = models.TextValue.from_string(
+            smiles, challenge=config.challenge, input_element=element
+        )
         smiles_value.save()
         models.InputValue.objects.create(
             input_element=element,
@@ -431,12 +439,16 @@ def input_elements(smiles_molw_config, db):
         elem = models.InputElement.objects.create(
             name=name, challenge=challenge, is_public=idx % 2
         )
-        smiles_value = models.TextValue.from_string(smiles, challenge=challenge)
+        smiles_value = models.TextValue.from_string(
+            smiles, challenge=challenge, input_element=elem
+        )
         smiles_value.save()
         models.InputValue.objects.create(
             input_element=elem, value_type=smiles_type, value_object=smiles_value
         )
-        float_value = models.FloatValue.from_string("72.0", challenge=challenge)
+        float_value = models.FloatValue.from_string(
+            "72.0", challenge=challenge, input_element=elem
+        )
         float_value.save()
         models.AnswerKey.objects.create(
             challenge=challenge,

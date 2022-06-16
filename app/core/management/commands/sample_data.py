@@ -59,18 +59,18 @@ def _create_challenge_inputs(challenge, file_based):
         )
         if file_based:
             value_object = models.FileValue.from_string(
-                SAMPLE_INPUT_FILE, challenge=challenge
+                SAMPLE_INPUT_FILE, challenge=challenge, input_element=elem
             )
             expected_value = models.FileValue.from_string(
-                SAMPLE_OUTPUT_FILE, challenge=challenge
+                SAMPLE_OUTPUT_FILE, challenge=challenge, input_element=elem
             )
         else:
             smiles = "c1ccccc1"
             value_object = models.TextValue.objects.create(
-                challenge=challenge, value=smiles
+                challenge=challenge, value=smiles, input_element=elem
             )
             expected_value = models.FloatValue.objects.create(
-                challenge=challenge, value=72.0
+                challenge=challenge, value=72.0, input_element=elem
             )
 
         models.InputValue.objects.create(

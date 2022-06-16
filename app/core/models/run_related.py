@@ -138,12 +138,6 @@ class BaseEvaluation(Logged):
     def __str__(self):
         return f"{self.submission_run}:, status {self.status}"
 
-    def cleanup_local_outputs(self, output_file_keys):
-        for prediction in self.prediction_set.filter(
-            value_type__key__in=output_file_keys
-        ):
-            filecache.delete_local_cache(prediction.value)
-
 
 class Evaluation(BaseEvaluation):
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
@@ -152,11 +146,28 @@ class Evaluation(BaseEvaluation):
         unique_together = ["submission_run", "input_element"]
 
     @property
+    def scores(self):
+        return EvaluationScore.objects.filter(
+            submission_run_id=self.submission_run_id,
+            input_element_id=self.input_element_id,
+        )
+
+    @property
     def input_object(self):
         return self.input_element
 
+    def cleanup_local_outputs(self, output_file_keys):
+        # TODO: copied between this and BatchEvaluation with minor changes
+        for prediction in Prediction.objects.filter(
+            submission_run=self.submission_run,
+            input_element=self.input_element,
+            value_type__key__in=output_file_keys,
+        ):
+            filecache.delete_local_cache(prediction.value)
+
 
 class ScoreBase(Timestamped):
+    submission_run = models.ForeignKey(SubmissionRun, on_delete=models.CASCADE)
     score_type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
     value = models.FloatField()
 
@@ -172,25 +183,7 @@ class ScoreBase(Timestamped):
             )
 
 
-class EvaluationScore(ScoreBase):
-    evaluation = models.ForeignKey(
-        Evaluation, on_delete=models.CASCADE, related_name="scores"
-    )
-
-    REQUIRED_LEVEL = ScoreType.Level.EVALUATION
-
-    class Meta:
-        unique_together = ["evaluation", "score_type"]
-
-    def __str__(self):
-        return f"{self.evaluation}:, {self.score_type}:{self.value}"
-
-
 class SubmissionRunScore(ScoreBase):
-    submission_run = models.ForeignKey(
-        SubmissionRun, on_delete=models.CASCADE, related_name="scores"
-    )
-
     REQUIRED_LEVEL = ScoreType.Level.SUBMISSION_RUN
 
     class Meta:
@@ -200,25 +193,33 @@ class SubmissionRunScore(ScoreBase):
         return f"{self.submission_run}:, {self.score_type}:{self.value}"
 
 
+class EvaluationScore(ScoreBase):
+    input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
+
+    REQUIRED_LEVEL = ScoreType.Level.EVALUATION
+
+    class Meta:
+        unique_together = ["submission_run", "input_element", "score_type"]
+
+    def __str__(self):
+        return f"{self.submission_run}::{self.input_element}:, {self.score_type}:{self.value}"
+
+
 def _timestamped_log(log):
     return " ".join([time.strftime("[%c %Z]", time.gmtime()), log])
 
 
-class BasePrediction(Solution):
+class Prediction(Solution):
+    submission_run = models.ForeignKey(
+        SubmissionRun, on_delete=models.CASCADE, related_name="predictions"
+    )
     input_element = models.ForeignKey(InputElement, on_delete=models.CASCADE)
 
     class Meta:
-        abstract = True
-
-
-class Prediction(BasePrediction):
-    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ["evaluation", "value_type"]
+        unique_together = ["submission_run", "input_element", "value_type"]
 
     @classmethod
-    def load_output(cls, challenge, evaluation, output_type, value):
+    def load_evaluation_output(cls, challenge, evaluation, output_type, value):
         if challenge is None:
             raise ValueError("Challenge is not set")
         if evaluation is None:
@@ -228,9 +229,9 @@ class Prediction(BasePrediction):
 
         prediction = cls(
             challenge=challenge,
-            value_type=output_type,
+            submission_run=evaluation.submission_run,
             input_element=evaluation.input_element,
-            evaluation=evaluation,
+            value_type=output_type,
         )
         output_type_model = output_type.content_type.model_class()
         value_object = output_type_model.from_string(
@@ -244,33 +245,8 @@ class Prediction(BasePrediction):
 
         prediction.save()
 
-    def __str__(self):
-        return f"{self.evaluation}::{self.value_type.key}::{self.content_type}"
-
-    def clean(self):
-        super().clean()
-        self.challenge = self.evaluation.submission_run.submission.challenge
-
-
-class BatchEvaluation(BaseEvaluation):
-    input_batch = models.ForeignKey(InputBatch, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ["submission_run", "input_batch"]
-
-    @property
-    def input_object(self):
-        return self.input_batch
-
-
-class BatchPrediction(BasePrediction):
-    batch_evaluation = models.ForeignKey(BatchEvaluation, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ["batch_evaluation", "input_element", "value_type"]
-
     @classmethod
-    def load_output(cls, challenge, batch_evaluation, output_type, value):
+    def load_batch_output(cls, challenge, batch_evaluation, output_type, value):
         if challenge is None:
             raise ValueError("Challenge is not set")
         if batch_evaluation is None:
@@ -297,3 +273,36 @@ class BatchPrediction(BasePrediction):
                 raise ValueError("after save, value_object must not be none")
 
             prediction.save()
+
+    def __str__(self):
+        return f"{self.input_element}::{self.value_type.key}::{self.content_type}"
+
+    def clean(self):
+        super().clean()
+        self.challenge = self.submission_run.submission.challenge
+
+
+class BatchEvaluation(BaseEvaluation):
+    input_batch = models.ForeignKey(InputBatch, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ["submission_run", "input_batch"]
+
+    @property
+    def scores(self):
+        return EvaluationScore.objects.filter(
+            submission_run_id=self.submission_run_id,
+            input_element__in=self.input_batch.elements(),
+        )
+
+    @property
+    def input_object(self):
+        return self.input_batch
+
+    def cleanup_local_outputs(self, output_file_keys):
+        for prediction in Prediction.objects.filter(
+            submission_run=self.submission_run,
+            input_element__in=self.input_batch.elements(),
+            value_type__key__in=output_file_keys,
+        ):
+            filecache.delete_local_cache(prediction.value)
