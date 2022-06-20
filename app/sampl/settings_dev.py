@@ -43,5 +43,5 @@ else:
         }
     }
 
-LOGIN_TO_AWS = True
+LOGIN_TO_AWS = False
 CONTAINER_ENGINE = "docker"

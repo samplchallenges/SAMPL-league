@@ -75,12 +75,17 @@ def _build_kwargs(submission_run, input_element):
 def score_element(
     container, log_owner, submission_run, input_element, evaluation_score_types
 ):
+    log_messages = []
     kwargs, file_kwargs = _build_kwargs(submission_run, input_element)
     command = "score-evaluation"
-    yield f"Scoring with {container.uri} {command}\n"
+    log_messages.append(f"Scoring with {container.uri} {command}\n")
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
-
+    aws_login_func = (
+        utils.get_aws_credential_function(container.uri)
+        if settings.LOGIN_TO_AWS
+        else None
+    )
     try:
         for key, score_value in ever_given.wrapper.run(
             container.uri,
@@ -90,9 +95,7 @@ def score_element(
             log_handler=models.Logged.LogHandler(log_owner),
             container_type=container.container_type,
             engine_name=settings.CONTAINER_ENGINE,
-            aws_login_func=utils.get_aws_credential_function(container.uri)
-            if settings.LOGIN_TO_AWS
-            else None,
+            aws_login_func=aws_login_func,
         ):
             if key in evaluation_score_types:
                 models.EvaluationScore.objects.create(
@@ -103,7 +106,8 @@ def score_element(
                 )
     except Exception as exc:  # pylint: disable=broad-except
         raise ScoringFailureException from exc
-    yield f"Scoring completed for {input_element.name}"
+    log_messages.append(f"Scoring completed for {input_element.name}")
+    return log_messages
 
 
 def _score_submission_run(container, submission_run, score_types):
@@ -115,7 +119,11 @@ def _score_submission_run(container, submission_run, score_types):
         {score.score_type.key: score.value for score in evaluation.scores.all()}
         for evaluation in evaluations
     ]
-
+    aws_login_func = (
+        utils.get_aws_credential_function(container.uri)
+        if settings.LOGIN_TO_AWS
+        else None
+    )
     with tempfile.NamedTemporaryFile(suffix=".json", mode="w") as fp:
         json.dump(run_scores_dicts, fp)
         fp.flush()
@@ -132,9 +140,7 @@ def _score_submission_run(container, submission_run, score_types):
             kwargs=kwargs,
             container_type=container.container_type,
             engine_name=settings.CONTAINER_ENGINE,
-            aws_login_func=utils.get_aws_credential_function(container.uri)
-            if settings.LOGIN_TO_AWS
-            else None,
+            aws_login_func=aws_login_func,
         ):
             if key in submission_run_score_types:
                 models.SubmissionRunScore.objects.create(

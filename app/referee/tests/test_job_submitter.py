@@ -63,10 +63,6 @@ def test_reset_unfinished_to_pending_submission():
     assert submission_run2.status == models.Status.PENDING_REMOTE
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 @pytest.mark.django_db(transaction=True)
 def test_check_for_submission_runs(client, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):

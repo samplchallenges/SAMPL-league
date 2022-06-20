@@ -239,10 +239,6 @@ def test_update_expired_submission(client, user, draft_submission):
         assert getattr(submission, key) == getattr(submission_old, key)
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 @pytest.mark.django_db(transaction=True)
 def test_run_submission(client, container_engine):
 

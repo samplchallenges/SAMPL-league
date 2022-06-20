@@ -17,10 +17,9 @@ def evaluations(smiles_molw_config, input_elements):
                 input_element=input_element, submission_run=submission_run
             )
             evaluations_list.append(evaluation)
-            prediction = models.Prediction.load_evaluation_output(
+            models.Prediction.load_evaluation_output(
                 challenge, evaluation, molw_type, value
             )
-            prediction.save()
 
     return evaluations_list
 
@@ -35,7 +34,10 @@ def evaluation_scores(smiles_molw_config, evaluations):
 
     return [
         models.EvaluationScore.objects.create(
-            evaluation=evaluation, score_type=evaluation_score_type, value=score_value
+            submission_run=evaluation.submission_run,
+            input_element=evaluation.input_element,
+            score_type=evaluation_score_type,
+            value=score_value,
         )
         for evaluation in evaluations
     ]
