@@ -20,6 +20,10 @@ class ScoringFailureException(Exception):
     pass
 
 
+class IncompleteRunException(Exception):
+    pass
+
+
 class AnswerPredictionPair:
     def __init__(self, answer, prediction):
         self.answer = answer
@@ -119,6 +123,8 @@ def _score_submission_run(container, submission_run, score_types):
         {score.score_type.key: score.value for score in evaluation.scores.all()}
         for evaluation in evaluations
     ]
+    if any(len(score_dict) == 0 for score_dict in run_scores_dicts):
+        raise IncompleteRunException("Scores are not present for all evaluations")
     aws_login_func = (
         utils.get_aws_credential_function(container.uri)
         if settings.LOGIN_TO_AWS
@@ -165,6 +171,8 @@ def score_submission_run(submission_run):
 
     try:
         _score_submission_run(container, submission_run, challenge.score_types)
+    except IncompleteRunException as ire:
+        submission_run.append(stderr=str(ire))
     except Exception as exc:
         submission_run.append(stderr=str(exc))
         submission_run.status = models.Status.FAILURE

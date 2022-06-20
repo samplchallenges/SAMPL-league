@@ -18,8 +18,8 @@ def test_run_and_score_submission(container_engine):
     # See workaround in tests/test_views.py:test_run_submission
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         transaction.commit()
-        call_command("migrate", "core", "zero", interactive=False)
-        call_command("migrate", "core", interactive=False)
+        call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+        call_command("migrate", "core", verbosity=0, interactive=False)
         call_command("sample_data")
         transaction.commit()
 
@@ -49,7 +49,9 @@ def _run_and_check_evaluation(submission_run, evaluation):
     assert (
         evaluation.status == models.Status.SUCCESS
     ), f"Evaluation failed: {evaluation.log_stdout};; {evaluation.log_stderr}"
-    prediction = evaluation.prediction_set.get()
+    prediction = models.Prediction.objects.get(
+        submission_run=submission_run, input_element=evaluation.input_element
+    )
     return prediction
 
 
@@ -95,7 +97,7 @@ def test_evaluation_scoring_failure(
             input_element=benzene_from_mol, submission_run=submission_run
         )
 
-        with patch("referee.scoring.score_evaluation") as mock_score:
+        with patch("referee.scoring.score_element") as mock_score:
             mock_score.side_effect = scoring.ScoringFailureException("Mock failure")
             delayed = tasks.run_evaluation(
                 submission_run.submission.id,
@@ -242,8 +244,10 @@ def test_run_files(
         assert submission_run.evaluation_set.count() == 1
         evaluation = submission_run.evaluation_set.get()
         assert evaluation.status == models.Status.SUCCESS
-        prediction = prediction = evaluation.prediction_set.get(
-            value_type__key="molWeight"
+        prediction = models.Prediction.objects.get(
+            submission_run=submission_run,
+            input_element=evaluation.input_element,
+            value_type__key="molWeight",
         )
         assert prediction.value == pytest.approx(78.046950192)
 
@@ -289,8 +293,8 @@ def test_submit_submission_run(client, container_engine):
         processes = True
         if processes:
             transaction.commit()
-            call_command("migrate", "core", "zero", interactive=False)
-            call_command("migrate", "core", interactive=False)
+            call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+            call_command("migrate", "core", verbosity=0, interactive=False)
             call_command("sample_data")
             transaction.commit()
         else:

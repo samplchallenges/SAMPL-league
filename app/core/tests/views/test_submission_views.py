@@ -251,8 +251,8 @@ def test_run_submission(client, container_engine):
         processes = True
         if processes:
             transaction.commit()
-            call_command("migrate", "core", "zero", interactive=False)
-            call_command("migrate", "core", interactive=False)
+            call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+            call_command("migrate", "core", verbosity=0, interactive=False)
             call_command("sample_data")
             transaction.commit()
         else:
@@ -355,8 +355,8 @@ def test_remote_scheduler(client):
     processes = True
     if processes:
         transaction.commit()
-        call_command("migrate", "core", "zero", interactive=False)
-        call_command("migrate", "core", interactive=False)
+        call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+        call_command("migrate", "core", verbosity=0, interactive=False)
         call_command("sample_data")
         transaction.commit()
     else:

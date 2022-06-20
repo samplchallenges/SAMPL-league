@@ -28,8 +28,8 @@ def test_reset_unfinished_to_pending_submission():
     processes = True
     if processes:
         transaction.commit()
-        call_command("migrate", "core", "zero", interactive=False)
-        call_command("migrate", "core", interactive=False)
+        call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+        call_command("migrate", "core", verbosity=0, interactive=False)
         call_command("sample_data")
         transaction.commit()
     else:
@@ -69,8 +69,8 @@ def test_check_for_submission_runs(client, container_engine):
         processes = True
         if processes:
             transaction.commit()
-            call_command("migrate", "core", "zero", interactive=False)
-            call_command("migrate", "core", interactive=False)
+            call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+            call_command("migrate", "core", verbosity=0, interactive=False)
             call_command("sample_data")
             transaction.commit()
         else:

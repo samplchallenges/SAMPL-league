@@ -85,9 +85,11 @@ def check_and_score(submission_run_id, delayed_conditional, statuses):
         status = models.Status.CANCELLED
     elif {models.Status.FAILURE, models.Status.CANCELLED} & uniq_statuses:
         status = models.Status.FAILURE
-    else:
+    elif {models.Status.SUCCESS} == uniq_statuses:
         status = models.Status.SUCCESS
-
+    else:
+        submission_run.append(f"Unrecognized statuses: {statuses}")
+        status = models.Status.FAILURE
     submission_run.status = status
     if status != models.Status.SUCCESS:
         submission_run.append(stderr=f"Submission run failed {status}")
@@ -238,7 +240,7 @@ def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, conditio
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
-    run_eval_or_batch(
+    return run_eval_or_batch(
         submission_id,
         models.Evaluation,
         evaluation_id,
@@ -251,7 +253,7 @@ def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional)
 def run_batch_evaluation(
     submission_id, batch_evaluation_id, submission_run_id, conditional
 ):
-    run_eval_or_batch(
+    return run_eval_or_batch(
         submission_id,
         models.BatchEvaluation,
         batch_evaluation_id,

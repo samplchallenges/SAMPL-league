@@ -136,7 +136,7 @@ class BaseEvaluation(Logged):
         self.save()
 
     def __str__(self):
-        return f"{self.submission_run}:, status {self.status}"
+        return f"run: {self.submission_run}, local status {self.status}"
 
 
 class Evaluation(BaseEvaluation):
