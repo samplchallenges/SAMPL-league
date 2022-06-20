@@ -40,7 +40,7 @@ def test_cancellation(container_engine):
     end_at = time.time()
     # Should cancel in not much more time than QUEUE_WAIT_SECONDS * 2
     # in log_processing
-    assert end_at - start_at < QUEUE_WAIT_SECONDS * 2 + 2
+    assert end_at - start_at < QUEUE_WAIT_SECONDS * 2 + 7
 
 
 
