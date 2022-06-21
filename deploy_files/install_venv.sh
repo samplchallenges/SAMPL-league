@@ -12,6 +12,5 @@ pip install  /var/app/current/dist/sampl_app-0.0.1-py3-none-any.whl
 pip install gunicorn
 pip install django-debug-toolbar
 EOF
-
 source /var/app/current/.venv/bin/activate
 pip freeze
