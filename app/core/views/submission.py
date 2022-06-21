@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseBadRequest
@@ -73,7 +74,7 @@ def cancel_submissionrun_view(request, pk):
         SubmissionRun, pk=pk, submission__user=request.user
     )
     if not submission_run.is_finished():
-        submission_run.mark_for_cancel()
+        submission_run.mark_for_cancel(settings.REMOTE_SCHEDULER)
 
     return redirect("submission-detail", pk=submission_run.submission.pk)
 
@@ -82,11 +83,15 @@ def cancel_submissionrun_view(request, pk):
 def submit_submission_view(request, pk):
     if request.method != "POST":
         return HttpResponseBadRequest()
-    submission = Submission.objects.get(pk=pk, user=request.user)
-    # verifies that user matches
-    dask_client = referee.get_client()
-    future = referee.tasks.run_and_score_submission(dask_client, submission)
-    ignore_future(future)
+    submission = get_object_or_404(Submission, pk=pk, user=request.user)
+
+    if settings.REMOTE_SCHEDULER:
+        referee.tasks.enqueue_submission(submission)
+    else:
+        # verifies that user matches
+        dask_client = referee.get_client()
+        future = referee.tasks.run_and_score_submission(dask_client, submission)
+        ignore_future(future)
     return redirect("submission-detail", pk=submission.pk)
 
 

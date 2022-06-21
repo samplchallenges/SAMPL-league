@@ -1,4 +1,5 @@
 # pylint:disable=unused-argument
+import os
 import re
 from datetime import datetime
 from unittest.mock import Mock, patch
@@ -270,7 +271,9 @@ def test_run_submission(client, container_engine):
             future = l_future
 
         if processes:
-            cluster = dd.LocalCluster(n_workers=4, preload=("daskworkerinit_tst.py",))
+            os.environ["CONTAINER_ENGINE"] = container_engine
+            preload_file = "daskworkerinit_tst.py"
+            cluster = dd.LocalCluster(n_workers=4, preload=(preload_file,))
         else:
             cluster = dd.LocalCluster(
                 n_workers=1, processes=False, threads_per_worker=1
@@ -348,3 +351,40 @@ def test_cancel_request(
     assert response.status_code == 302
     submission_run.refresh_from_db()
     assert submission_run.status == Status.CANCEL_PENDING
+
+
+@pytest.mark.django_db
+def test_cancel_request_remote(client, user, draft_submission, submission_run_factory):
+    with patch("django.conf.settings.REMOTE_SCHEDULER", True):
+        submission_run = submission_run_factory(draft_submission)
+        submission_run.status = Status.PENDING_REMOTE
+        submission_run.save(update_fields=["status"])
+        client.force_login(user)
+        response = client.post(f"/submissionrun/{submission_run.pk}/cancel/")
+        assert response.status_code == 302
+        submission_run.refresh_from_db()
+        assert submission_run.status == Status.CANCELLED
+
+
+@patch("django.conf.settings.REMOTE_SCHEDULER", True)
+@pytest.mark.django_db(transaction=True)
+def test_remote_scheduler(client):
+    processes = True
+    if processes:
+        transaction.commit()
+        call_command("migrate", "core", "zero", interactive=False)
+        call_command("migrate", "core", interactive=False)
+        call_command("sample_data")
+        transaction.commit()
+    else:
+        call_command("sample_data")
+
+    submission = Submission.objects.first()
+    client.force_login(submission.user)
+    response = client.post(f"/submission/{submission.pk}/submit/", {})
+    assert response.url == reverse("submission-detail", kwargs={"pk": submission.pk})
+    assert response.status_code == 302
+    detail_url = response.url
+    response = client.get(detail_url)
+    public_run = response.context["public_run"]
+    assert public_run.status == Status.PENDING_REMOTE

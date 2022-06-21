@@ -1,0 +1,27 @@
+[Unit]
+Description=This is worker daemon
+Requires=gunicorn.socket
+#After=network.target
+
+[Service]
+User=webapp
+Type=simple
+Restart=always
+ExecStart=/bin/sh -c "DJANGO_SETTINGS_MODULE=sampl.settings_prod /var/app/current/.venv/bin/dask-worker --nthreads 1 --nprocs 1 --preload daskworkerinit.py 127.0.0.1:8786"
+
+ExecStartPost=/bin/sh -c "systemctl show -p MainPID worker.service | cut -d= -f2 > /var/pids/worker.pid"
+ExecStopPost=/bin/sh -c "rm -f /var/pids/worker.pid"
+ExecStopPost=/bin/sh -c ""
+ExecReload=/bin/kill -s HUP $MAINPID
+
+
+EnvironmentFile=/opt/env/env 
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=worker
+WorkingDirectory=/var/app/current/ 
+
+
+[Install]
+WantedBy=multi-user.target

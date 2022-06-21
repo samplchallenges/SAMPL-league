@@ -28,6 +28,7 @@ class Status(models.TextChoices):
     FAILURE = "FAILURE"
     SUCCESS = "SUCCESS"
     PENDING = "PENDING"
+    PENDING_REMOTE = "PENDING_REMOTE"
     RUNNING = "RUNNING"
     CANCELLED = "CANCELLED"
     CANCEL_PENDING = "CANCEL_PENDING"
@@ -36,6 +37,10 @@ class Status(models.TextChoices):
 class StatusMixin:
     def is_finished(self):
         return self.status in (Status.SUCCESS, Status.FAILURE, Status.CANCELLED)
+
+    def update_status(self, status):
+        self.status = status
+        self.save(update_fields=["status"])
 
 
 class Timestamped(models.Model):
@@ -300,14 +305,15 @@ class Submission(Timestamped):
     def last_private_run(self):
         return self.last_run(is_public=False)
 
-    def create_run(self, *, is_public):
+    def create_run(self, *, is_public, remote=False):
+        status = Status.PENDING_REMOTE if remote else Status.PENDING
         digest = self.container.digest
         if digest is None:
             digest = "nodigest"
         submission_run = self.submissionrun_set.create(
             digest=digest,
             is_public=is_public,
-            status=Status.PENDING,
+            status=status,
         )
         for element_id in self.challenge.inputelement_set.filter(
             is_public=is_public
@@ -315,6 +321,13 @@ class Submission(Timestamped):
             submission_run.evaluation_set.create(input_element_id=element_id)
 
         return submission_run
+
+    def create_run_pair(self, *, public_run, private_run):
+        submission_run_pair = self.submissionrunpair_set.create(
+            public_run=public_run,
+            private_run=private_run,
+        )
+        return submission_run_pair
 
 
 def _container_file_location(instance, filename):
@@ -364,17 +377,24 @@ class SubmissionRun(Logged):
         status = SubmissionRun.objects.values_list("status", flat=True).get(pk=self.id)
         return status == Status.CANCEL_PENDING
 
-    def mark_for_cancel(self):
+    def mark_for_cancel(self, remote=False):
         with transaction.atomic():
-            SubmissionRun.objects.filter(pk=self.id).update(
-                status=Status.CANCEL_PENDING
-            )
-            Evaluation.objects.filter(
-                submission_run_id=self.id, status=Status.PENDING
-            ).update(status=Status.CANCELLED)
-            Evaluation.objects.filter(
-                submission_run_id=self.id, status=Status.RUNNING
-            ).update(status=Status.CANCEL_PENDING)
+            Evaluation.objects.select_for_update().select_related(
+                "submission_run"
+            ).filter(submission_run_id=self.id).all()
+            submission_run = SubmissionRun.objects.select_for_update().get(pk=self.id)
+
+            if remote and submission_run.status == Status.PENDING_REMOTE:
+                self.update_status(status=Status.CANCELLED)
+                self.evaluation_set.update(status=Status.CANCELLED)
+            else:
+                self.update_status(status=Status.CANCEL_PENDING)
+                self.evaluation_set.filter(status=Status.PENDING).update(
+                    status=Status.CANCELLED
+                )
+                self.evaluation_set.filter(status=Status.RUNNING).update(
+                    status=Status.CANCEL_PENDING
+                )
 
     def completion(self):
         completed = self.evaluation_set.filter(
@@ -385,6 +405,24 @@ class SubmissionRun(Logged):
         ).count()
         completed_frac = completed / num_element_ids if num_element_ids else 0
         return Completion(completed, num_element_ids, completed_frac)
+
+
+class SubmissionRunPair(Timestamped):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
+    public_run = models.ForeignKey(
+        SubmissionRun, on_delete=models.CASCADE, related_name="%(class)s_public_run"
+    )
+    private_run = models.ForeignKey(
+        SubmissionRun, on_delete=models.CASCADE, related_name="%(class)s_private_run"
+    )
+
+    class Meta:
+        unique_together = ["public_run", "private_run"]
+
+    def __str__(self):
+        return (
+            f"{self.submission}: public {self.public_run}, private {self.private_run}"
+        )
 
 
 class InputElement(Timestamped):

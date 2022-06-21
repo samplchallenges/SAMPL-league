@@ -1,0 +1,28 @@
+[Unit]
+Description=This is scheduler daemon
+#Requires=gunicorn.socket
+After=network.target
+#PartOf=app.target
+
+
+[Service]
+User=webapp
+Type=simple
+ExecStart=/bin/sh -c "/var/app/current/.venv/bin/dask-scheduler --host 0.0.0.0:8786"
+
+ExecStartPost=/bin/sh -c "systemctl show -p MainPID scheduler.service | cut -d= -f2 > /var/pids/scheduler.pid"
+ExecStopPost=/bin/sh -c "rm -f /var/pids/scheduler.pid"
+ExecStopPost=/bin/sh -c ""
+Restart=always
+
+
+EnvironmentFile=/opt/env/env 
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=scheduler
+WorkingDirectory=/var/app/current/ 
+
+
+[Install]
+WantedBy=multi-user.target
