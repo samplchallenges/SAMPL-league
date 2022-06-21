@@ -7,5 +7,3 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Settings file for webapp (running on AWS) when the
 # dask workers and scheduler will be on HPC3
 REMOTE_SCHEDULER = True
-
-DEBUG = True
