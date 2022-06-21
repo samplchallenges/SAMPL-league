@@ -53,6 +53,17 @@ class TimestampedAdmin(admin.ModelAdmin):
 class ChallengeAdmin(TimestampedAdmin):
     list_display = ("name", "start_at", "end_at")
     date_hierarchy = "start_at"
+    readonly_fields = ["batch_status", "created_at", "updated_at"]
+
+    def batch_status(self, instance):
+        batch_group = instance.current_batch_group()
+        if batch_group is None:
+            return "No batches yet"
+        return format_html(
+            "{} batches, created {}",
+            batch_group.inputbatch_set.count(),
+            batch_group.created_at,
+        )
 
 
 @register(models.Container)
@@ -85,7 +96,7 @@ class ScoreTypeAdmin(TimestampedAdmin):
 
 @register(models.EvaluationScore)
 class EvaluationScoreAdmin(TimestampedAdmin):
-    list_display = ("evaluation", "score_type", "value")
+    list_display = ("submission_run", "input_element", "score_type", "value")
     list_filter = ("score_type__challenge",)
 
 
@@ -239,7 +250,8 @@ class PredictionAdmin(TimestampedAdmin):
     list_display = (
         "pk",
         "challenge",
-        "evaluation",
+        "submission_run",
+        "input_element",
         "value_type",
         "content_type",
     )
@@ -337,3 +349,25 @@ class FloatValueAdmin(GenericValueAdmin):
 @register(models.FileValue)
 class FileValueAdmin(GenericValueAdmin):
     pass
+
+
+@register(models.InputBatchGroup)
+class InputBatchGroupAdmin(TimestampedAdmin):
+    list_filter = ("challenge",)
+    list_display = ("id", "challenge", "created_at")
+
+
+@register(models.InputBatch)
+class InputBatchAdmin(TimestampedAdmin):
+    list_display = ("id", "batch_group", "is_public")
+
+
+@register(models.InputBatchMembership)
+class InputBatchMembershipAdmin(TimestampedAdmin):
+    list_display = ("id", "batch_group", "batch", "input_element")
+
+
+@register(models.BatchFile)
+class BatchFileAdmin(TimestampedAdmin):
+    list_display = ("id", "batch", "value_type")
+    readonly_fields = ("batch", "value_type", *TimestampedAdmin.readonly_fields)

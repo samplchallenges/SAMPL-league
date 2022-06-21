@@ -15,6 +15,20 @@ TestConfig = namedtuple(
     "TestConfig", ["challenge", "input_type", "output_type", "submission_run"]
 )
 
+# Allow command-line test runs to hit just docker, just singularity, or both
+def pytest_addoption(parser):
+    parser.addoption("--docker", dest="engines", action="append_const", const="docker")
+    parser.addoption(
+        "--singularity", dest="engines", action="append_const", const="singularity"
+    )
+    # default=["docker", "singularity"])
+
+
+def pytest_generate_tests(metafunc):
+    if "container_engine" in metafunc.fixturenames:
+        engines = metafunc.config.getoption("engines")
+        metafunc.parametrize("container_engine", engines)
+
 
 @pytest.fixture(scope="session")
 def dask_client():
@@ -76,6 +90,7 @@ def config_factory(challenge_factory, container_factory, db):
         score_label,
         input_key,
         input_model,
+        batch_method,
         output_key,
         output_model,
     ):
@@ -96,6 +111,7 @@ def config_factory(challenge_factory, container_factory, db):
             content_type=ContentType.objects.get_for_model(input_model),
             key=input_key,
             description="N/A",
+            batch_method=batch_method,
         )
         output_type = models.ValueType.objects.create(
             challenge=challenge,
@@ -209,12 +225,27 @@ def testing_data_path():
 
 @pytest.fixture
 def elem_factory(testing_data_path, db):
-    def elem_maker(challenge, file_type, name, file_name):
+    def elem_maker(
+        challenge,
+        file_type,
+        name,
+        file_name,
+        parent=None,
+        is_parent=False,
+        is_public=True,
+    ):
         elem = models.InputElement.objects.create(
-            name=name, challenge=challenge, is_public=True
+            name=name,
+            challenge=challenge,
+            is_public=is_public,
+            is_parent=is_parent,
+            parent=parent,
         )
+        elem.full_clean()
         file_path = os.path.join(testing_data_path, file_name)
-        file_value = models.FileValue.from_string(file_path, challenge=challenge)
+        file_value = models.FileValue.from_string(
+            file_path, challenge=challenge, input_element=elem
+        )
         file_value.save()
         models.InputValue.objects.create(
             input_element=elem, value_type=file_type, value_object=file_value
@@ -256,7 +287,9 @@ def submission_run_factory(db):
 @pytest.fixture
 def float_answer_key_factory(db):
     def fak_maker(challenge, elem, value_type, value):
-        float_value = models.FloatValue.from_string("72.0", challenge=challenge)
+        float_value = models.FloatValue.from_string(
+            "72.0", challenge=challenge, input_element=elem
+        )
         float_value.save()
         answer_key = models.AnswerKey.objects.create(
             challenge=challenge,
@@ -273,7 +306,9 @@ def float_answer_key_factory(db):
 def file_answer_key_factory(testing_data_path, db):
     def fak_maker(challenge, elem, value_type, file_name):
         file_path = os.path.join(testing_data_path, file_name)
-        file_value = models.FileValue.from_string(file_path, challenge=challenge)
+        file_value = models.FileValue.from_string(
+            file_path, challenge=challenge, input_element=elem
+        )
         answer_key = models.AnswerKey.objects.create(
             challenge=challenge,
             input_element=elem,
@@ -293,6 +328,7 @@ def molfile_molw_config(config_factory):
         "megosato/score-coords",
         "molfile",
         models.FileValue,
+        "mol",
         "molWeight",
         models.FloatValue,
     )
@@ -306,9 +342,62 @@ def smiles_molw_config(config_factory):
         "megosato/score-coords",
         "smiles",
         models.TextValue,
+        "csv",
         "molWeight",
         models.FloatValue,
     )
+
+
+@pytest.fixture
+def smiles_docking_config_and_func(config_factory, elem_factory):
+    config = config_factory(
+        "smiles_docking",
+        "megosato/calc-molwt",
+        "megosato/score-coords",
+        "smiles",
+        models.TextValue,
+        "csv",
+        "molWeight",
+        models.FloatValue,
+    )
+
+    protein_type = models.ValueType.objects.create(
+        challenge=config.challenge,
+        is_input_flag=True,
+        on_parent_flag=True,
+        content_type=ContentType.objects.get_for_model(models.FileValue),
+        key="protein_pdb",
+        description="Protein structure (shared among input elements)",
+    )
+    parent = elem_factory(
+        config.challenge,
+        protein_type,
+        "5QCR",
+        "5qcr.pdb",
+        is_parent=True,
+        is_public=True,
+    )
+
+    def add_element(name, smiles):
+        element = models.InputElement.objects.create(
+            challenge=config.challenge,
+            parent=parent,
+            is_parent=False,
+            name=name,
+            is_public=True,
+        )
+        smiles_value = models.TextValue.from_string(
+            smiles, challenge=config.challenge, input_element=element
+        )
+        smiles_value.save()
+        models.InputValue.objects.create(
+            input_element=element,
+            value_type=config.input_type,
+            value_object=smiles_value,
+        )
+        return element
+
+    return config, add_element
 
 
 @pytest.fixture
@@ -364,12 +453,16 @@ def input_elements(smiles_molw_config, db):
         elem = models.InputElement.objects.create(
             name=name, challenge=challenge, is_public=idx % 2
         )
-        smiles_value = models.TextValue.from_string(smiles, challenge=challenge)
+        smiles_value = models.TextValue.from_string(
+            smiles, challenge=challenge, input_element=elem
+        )
         smiles_value.save()
         models.InputValue.objects.create(
             input_element=elem, value_type=smiles_type, value_object=smiles_value
         )
-        float_value = models.FloatValue.from_string("72.0", challenge=challenge)
+        float_value = models.FloatValue.from_string(
+            "72.0", challenge=challenge, input_element=elem
+        )
         float_value.save()
         models.AnswerKey.objects.create(
             challenge=challenge,

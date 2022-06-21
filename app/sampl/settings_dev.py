@@ -45,11 +45,5 @@ else:
         }
     }
 
-ECR_BASE_URL = os.environ["ECR_BASE_URL"]
-ECR_SAMPLLEAGUE_URL = os.environ["ECR_SAMPLLEAGUE_URL"]
-
-AWS_LOGIN_FUNCTION = partial(aws_login.run_aws_login, ECR_BASE_URL)
-
-AWS_LOGOUT_FUNCTION = aws_login.run_aws_logout
-LOGIN_TO_AWS = True
+LOGIN_TO_AWS = False
 CONTAINER_ENGINE = "docker"
