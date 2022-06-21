@@ -389,8 +389,12 @@ class SubmissionRun(Logged):
                 self.evaluation_set.update(status=Status.CANCELLED)
             else:
                 self.update_status(status=Status.CANCEL_PENDING)
-                self.evaluation_set.update(status=Status.CANCELLED)
-                self.evaluation_set.update(status=Status.CANCEL_PENDING)
+                self.evaluation_set.filter(status=Status.PENDING).update(
+                    status=Status.CANCELLED
+                )
+                self.evaluation_set.filter(status=Status.RUNNING).update(
+                    status=Status.CANCEL_PENDING
+                )
 
     def completion(self):
         completed = self.evaluation_set.filter(

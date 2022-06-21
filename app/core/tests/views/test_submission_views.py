@@ -359,7 +359,6 @@ def test_cancel_request_remote(client, user, draft_submission, submission_run_fa
         submission_run = submission_run_factory(draft_submission)
         submission_run.status = Status.PENDING_REMOTE
         submission_run.save(update_fields=["status"])
-        submission_run.refresh_from_db()
         client.force_login(user)
         response = client.post(f"/submissionrun/{submission_run.pk}/cancel/")
         assert response.status_code == 302

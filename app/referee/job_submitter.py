@@ -51,11 +51,6 @@ def start_cluster(config_file, preload_file, worker_outfile):
     return cluster
 
 
-def set_submission_run_status(submission_run, status):
-    submission_run.status = status
-    submission_run.save(update_fields=["status"])
-
-
 def job_submitter_alive(start_time, check_interval, job_lifetime):
     return time.time() - start_time + (3 * check_interval) < job_lifetime
 
@@ -71,12 +66,9 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
     while job_submitter_alive(start_time, check_interval, job_lifetime):
         logger.debug("Checking for submission runs n=%d", n)
         with transaction.atomic():
-            submission_run_query = (
-                SubmissionRun.objects.select_for_update()
-                .filter(status=Status.PENDING_REMOTE)
-                .all()
-            )
-            for run in submission_run_query:
+            for run in SubmissionRun.objects.select_for_update().filter(
+                status=Status.PENDING_REMOTE
+            ):
                 if run.is_public:
                     logger.debug("Added run=%d", run.id)
                     run.update_status(Status.PENDING)
@@ -103,10 +95,9 @@ def check_for_submission_runs(start_time, client, check_interval, job_lifetime):
 def reset_unfinished_to_pending_submission():
     for status in [Status.PENDING, Status.RUNNING]:
         with transaction.atomic():
-            submission_run_query = (
-                SubmissionRun.objects.select_for_update().filter(status=status).all()
-            )
-            for submission_run in submission_run_query:
+            for submission_run in SubmissionRun.objects.select_for_update().filter(
+                status=status
+            ):
                 logger.debug(
                     "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
                     submission_run.id,
@@ -114,10 +105,7 @@ def reset_unfinished_to_pending_submission():
                 submission_run.update_status(Status.PENDING_REMOTE)
                 logger.debug("SubmissionRun status is now: %s", submission_run.status)
 
-                evaluation_query = (
-                    submission_run.evaluation_set.select_for_update().all()
-                )
-                for evaluation in evaluation_query:
+                for evaluation in submission_run.evaluation_set.select_for_update():
                     if evaluation.status == Status.RUNNING:
                         logger.debug(
                             "   Resetting RUNNING back to PENDING: %d", evaluation.id
