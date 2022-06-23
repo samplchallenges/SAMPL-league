@@ -12,6 +12,10 @@ from .utils import LogHandlerBase
 GUEST_INPUT_DIR = Path("/mnt") / "inputs"
 
 
+class ContainerFailedException(Exception):
+    "If the container process exits with a non-zero return value"
+
+
 def _guest_input_path(filename: str) -> Path:
     return GUEST_INPUT_DIR / Path(filename).name
 
@@ -21,6 +25,7 @@ def prepare_command_list(command: str, args_dict: typing.Dict[str, str]):
     for key, value in args_dict.items():
         command_list.extend([f"--{key}", str(value)]) 
     return command_list
+
 
 def _parse_output(
     host_output_path: typing.Optional[str],
@@ -71,11 +76,13 @@ def _convert_file_kwargs(
         final_file_kwargs[key] = str(dirpaths[dirpath] / basename)
     return dirpaths, final_file_kwargs
 
+
 def _get_container_uri(container_uri, container_type, engine_name):
     if engine_name == "singularity":
         return REGISTERED_ENGINES["singularity"].make_uri(container_uri, container_type)
     else:
         return container_uri
+
 
 def run(
     container_uri: str,
@@ -130,7 +137,10 @@ def run(
         yield from _parse_output(output_dir, result, output_file_keys).items()
     finally:
         running_container.reload()
-        if running_container.status() != "exited":
+
+        status = running_container.status()
+        print("container status is ", status)
+        if status == running_container.RUNNING:
             log_handler.handle_stderr("Killing running container\n")
             running_container.kill()
             running_container.reload()
@@ -139,4 +149,6 @@ def run(
                 f"After killing running container, status is {status}\n"
             )
             print(f"Container status is {status}", file=sys.stderr)
+        if status == running_container.FAILURE:
+            raise ContainerFailedException()
         running_container.remove()

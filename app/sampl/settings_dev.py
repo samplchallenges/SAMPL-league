@@ -45,5 +45,6 @@ else:
         }
     }
 
+LOCAL_CONTAINERS = os.environ.get("SAMPL_LOCAL_CONTAINERS") == "yes"
 LOGIN_TO_AWS = False
 CONTAINER_ENGINE = "docker"

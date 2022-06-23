@@ -21,8 +21,8 @@ def _create_challenge_inputs(challenge, file_based):
             is_input_flag=True,
             content_type=ContentType.objects.get_for_model(models.FileValue),
             key="molfile",
-            description="MOL File",
-            batch_method="mol",
+            description="SD File",
+            batch_method="sdf",
         )
 
         output_type = models.ValueType.objects.create(

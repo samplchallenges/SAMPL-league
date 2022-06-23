@@ -1,6 +1,8 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic.detail import DetailView
 
+from core.models.run_related import BatchEvaluation
+
 from ..models import Evaluation
 
 
@@ -12,8 +14,8 @@ class EvaluationUserTestMixin(LoginRequiredMixin, UserPassesTestMixin):
         return evaluation.submission_run.submission.user == self.request.user
 
 
-class EvaluationDetail(EvaluationUserTestMixin, DetailView):
-    model = Evaluation
+class BaseEvaluationDetail(EvaluationUserTestMixin, DetailView):
+    context_object_name = "evaluation"
 
     def get_queryset(self):
         return (
@@ -29,8 +31,15 @@ class EvaluationDetail(EvaluationUserTestMixin, DetailView):
         return context
 
 
-class EvaluationLog(EvaluationUserTestMixin, DetailView):
+class EvaluationDetail(BaseEvaluationDetail):
     model = Evaluation
+
+
+class BatchEvaluationDetail(BaseEvaluationDetail):
+    model = BatchEvaluation
+
+
+class BaseEvaluationLog(EvaluationUserTestMixin, DetailView):
     logtype = None
     template_name = "core/evaluation_log.html"
 
@@ -47,3 +56,11 @@ class EvaluationLog(EvaluationUserTestMixin, DetailView):
         else:
             raise ValueError(f"Invalid logtype: {self.logtype}")
         return context
+
+
+class EvaluationLog(BaseEvaluationLog):
+    model = Evaluation
+
+
+class BatchEvaluationLog(BaseEvaluationLog):
+    model = BatchEvaluation

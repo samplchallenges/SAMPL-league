@@ -132,16 +132,19 @@ class GenericValue(models.Model):
         raw_value,
         *,
         challenge,
-        input_element,
+        input_element=None,
+        input_element_id=None,
         evaluation=None,
         batch_evaluation=None,
     ):
+        if input_element_id is None:
+            input_element_id = input_element.id
         value_field = cls._meta.get_field("value")
         value = value_field.to_python(raw_value)
         return cls(
             value=value,
             challenge=challenge,
-            input_element=input_element,
+            input_element_id=input_element_id,
             evaluation=evaluation,
             batch_evaluation=batch_evaluation,
         )
@@ -205,16 +208,19 @@ class FileValue(GenericValue):
         raw_value,
         *,
         challenge,
-        input_element,
+        input_element=None,
+        input_element_id=None,
         evaluation=None,
         batch_evaluation=None,
     ):
+        if input_element_id is None:
+            input_element_id = input_element.id
         filepath = raw_value
         filename = os.path.basename(filepath)
         instance = cls(
             value=filename,
             challenge=challenge,
-            input_element=input_element,
+            input_element_id=input_element_id,
             evaluation=evaluation,
             batch_evaluation=batch_evaluation,
         )

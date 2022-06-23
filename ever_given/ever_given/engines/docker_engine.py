@@ -29,7 +29,14 @@ class DockerContainerInstance(ContainerInstance):
         self.container.remove()
 
     def status(self):
-        return self.container.status
+        if self.container.status == "exited":
+            if self.container.attrs["State"]["ExitCode"] == 0:
+                return ContainerInstance.SUCCESS
+            
+            return ContainerInstance.FAILURE
+        if self.container.status == "running":
+            return ContainerInstance.RUNNING
+        raise ValueError(f"Unknown docker container status: {self.container.status}")
 
 
 class DockerEngine(Engine):

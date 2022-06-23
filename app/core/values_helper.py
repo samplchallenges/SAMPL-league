@@ -57,7 +57,10 @@ def all_values(input_element: "InputElement"):
 
 
 def batch_values(batch: "InputBatch"):
-    if batch.parent_input_element is not None:
+    if batch.parent_input_element is None:
+        values = {}
+        file_values = {}
+    else:
         values, file_values = all_values(batch.parent_input_element)
     for batch_file in batch.batchfile_set.select_related("value_type"):
         file_values[batch_file.value_type.key] = filecache.ensure_local_copy(

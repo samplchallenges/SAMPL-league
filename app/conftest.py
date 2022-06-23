@@ -158,7 +158,7 @@ def container_factory(user, db):
 def container(container_factory, challenge):
     return container_factory(
         challenge,
-        label="megosato/calc-molwt",
+        label="robbason/calc-molwt",
         tag="latest",
     )
 
@@ -214,7 +214,7 @@ def molfile_type(challenge, db):
         is_input_flag=True,
         content_type=ContentType.objects.get_for_model(models.FileValue),
         key="molfile",
-        description="MOL file",
+        description="SD file",
     )
 
 
@@ -324,11 +324,11 @@ def file_answer_key_factory(testing_data_path, db):
 def molfile_molw_config(config_factory):
     return config_factory(
         "molfile_molw",
-        "megosato/calc-molwt",
+        "robbason/calc-molwt",
         "megosato/score-coords",
         "molfile",
         models.FileValue,
-        "mol",
+        "sdf",
         "molWeight",
         models.FloatValue,
     )
@@ -338,7 +338,7 @@ def molfile_molw_config(config_factory):
 def smiles_molw_config(config_factory):
     return config_factory(
         "smiles_molw",
-        "megosato/calc-molwt",
+        "robbason/calc-molwt",
         "megosato/score-coords",
         "smiles",
         models.TextValue,
@@ -352,7 +352,7 @@ def smiles_molw_config(config_factory):
 def smiles_docking_config_and_func(config_factory, elem_factory):
     config = config_factory(
         "smiles_docking",
-        "megosato/calc-molwt",
+        "robbason/calc-molwt",
         "megosato/score-coords",
         "smiles",
         models.TextValue,

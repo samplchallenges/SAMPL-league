@@ -109,15 +109,19 @@ def score_element(
                     value=float(score_value),
                 )
     except Exception as exc:  # pylint: disable=broad-except
+        log_messages.append(stderr=f"Scoring failed: {exc}")
         raise ScoringFailureException from exc
-    log_messages.append(f"Scoring completed for {input_element.name}")
+    log_messages.append(f"Scoring completed for {input_element.name}\n")
     return log_messages
 
 
-def _score_submission_run(container, submission_run, score_types):
+def _score_submission_run(container, submission_run, score_types, is_batch):
     submission_run_score_types = score_types[models.ScoreType.Level.SUBMISSION_RUN]
 
-    evaluations = submission_run.evaluation_set.all()
+    if is_batch:
+        evaluations = submission_run.batchevaluation_set.all()
+    else:
+        evaluations = submission_run.evaluation_set.all()
 
     run_scores_dicts = [
         {score.score_type.key: score.value for score in evaluation.scores.all()}
@@ -168,9 +172,11 @@ def score_submission_run(submission_run):
     submission = submission_run.submission
     challenge = submission.challenge
     container = models.ScoreMaker.objects.get(challenge=challenge).container
-
+    is_batch = challenge.max_batch_size > 0
     try:
-        _score_submission_run(container, submission_run, challenge.score_types)
+        _score_submission_run(
+            container, submission_run, challenge.score_types, is_batch
+        )
     except IncompleteRunException as ire:
         submission_run.append(stderr=str(ire))
     except Exception as exc:

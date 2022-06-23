@@ -73,6 +73,28 @@ def _run_and_check_evaluation(submission_run, evaluation):
     return prediction
 
 
+def _run_and_check_batch_evaluation(submission_run, batch_evaluation):
+
+    delayed = tasks.run_batch_evaluation(
+        submission_run.submission.id,
+        batch_evaluation.id,
+        submission_run.id,
+        True,
+    )
+    delayed.compute(scheduler="synchronous")
+    assert submission_run.batchevaluation_set.count() == 1
+    batch_evaluation = submission_run.batchevaluation_set.get()
+    assert (
+        batch_evaluation.status == models.Status.SUCCESS
+    ), f"Batch evaluation failed: {batch_evaluation.log_stdout};; {batch_evaluation.log_stderr}"
+    elements = list(batch_evaluation.input_batch.elements())
+    assert len(elements) == 1
+    prediction = models.Prediction.objects.get(
+        submission_run=submission_run, input_element=elements[0]
+    )
+    return prediction
+
+
 def test_run_element_mol(molfile_molw_config, benzene_from_mol, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         submission_run = molfile_molw_config.submission_run
@@ -80,6 +102,20 @@ def test_run_element_mol(molfile_molw_config, benzene_from_mol, container_engine
             input_element=benzene_from_mol, submission_run=submission_run
         )
         prediction = _run_and_check_evaluation(submission_run, evaluation)
+        assert prediction.value == pytest.approx(78.046950192)
+
+
+def test_run_batch(molfile_molw_config, benzene_from_mol, container_engine):
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        challenge = molfile_molw_config.challenge
+        challenge.max_batch_size = 2
+        challenge.save()
+        submission_run = molfile_molw_config.submission_run
+        batch_evaluation = models.BatchEvaluation.objects.create(
+            input_batch=challenge.current_batch_group().inputbatch_set.first(),
+            submission_run=submission_run,
+        )
+        prediction = _run_and_check_batch_evaluation(submission_run, batch_evaluation)
         assert prediction.value == pytest.approx(78.046950192)
 
 

@@ -1,6 +1,7 @@
 from functools import cached_property
 
 import django.contrib.auth.models as auth_models
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -43,6 +44,11 @@ class Challenge(Timestamped):
         if self.__output_types_dict is None:
             self.__load_output_types()
         return self.__output_file_keys
+
+    def output_keys(self):
+        if self.__output_types_dict is None:
+            self.__load_output_types()
+        return self.__output_types_dict.keys()
 
     def output_type(self, key):
         if self.__output_types_dict is None:
@@ -109,6 +115,10 @@ class Container(Timestamped):
     @property
     def uri(self):
         suffix = f":{self.tag}" if self.tag else ""
+        # TODO: revert this change for local testing
+        if settings.LOCAL_CONTAINERS:
+            # return  "{self.label}{suffix}"
+            return self.label
         return f"{self.registry}/{self.label}{suffix}"
 
     def custom_args(self):
@@ -184,7 +194,7 @@ class ValueType(Timestamped):
         max_length=10,
         blank=True,
         default="csv",
-        choices=(("", "None"), ("csv", "CSV"), ("mol", "MOL or SDF")),
+        choices=(("", "None"), ("csv", "CSV"), ("sdf", "MOL or SDF")),
     )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     description = models.TextField()

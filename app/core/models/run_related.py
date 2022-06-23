@@ -302,7 +302,7 @@ class Prediction(Solution):
                 challenge=challenge,
                 value_type=output_type,
                 input_element_id=input_element_id,
-                batch_evaluation=batch_evaluation,
+                submission_run_id=batch_evaluation.submission_run_id,
             )
             output_type_model = output_type.content_type.model_class()
             value_object = output_type_model.from_string(
@@ -341,9 +341,9 @@ class BatchEvaluation(BaseEvaluation):
         return self.input_batch
 
     def clear_old_predictions(self, output_type):
-        matching_objects = models.Prediction.objects.filter(
+        matching_objects = Prediction.objects.filter(
             submission_run_id=self.submission_run_id,
-            input_element_id__in=self.input_batch.element_ids(),
+            input_element_id__in=[el.id for el in self.input_batch.elements()],
             value_type=output_type,
         )
         if matching_objects.exists():

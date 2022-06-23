@@ -18,7 +18,7 @@ rollbar = "*"
 jupyterlab = "*"
 ipython = "*"
 dask-jobqueue = "*"
-rdkit-pypi = "*"
+rdkit = "*"
 
 [dev-packages]
 black = "*"

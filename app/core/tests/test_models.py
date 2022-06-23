@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db import models as django_models
 
-from core import models
+from core import batching, models
 from core.models import values
 from core.tests import mocktime
 
@@ -78,8 +78,13 @@ def test_challenge(challenge, mocknow, compareval):
         assert challenge.is_active() == compareval
 
 
+@pytest.mark.parametrize("batch", (False, True))
 def test_load_prediction_file(
-    container_factory, submission_factory, submission_run_factory, benzene_from_mol
+    container_factory,
+    submission_factory,
+    submission_run_factory,
+    benzene_from_mol,
+    batch,
 ):
     challenge = benzene_from_mol.challenge
     coordsfile_type = models.ValueType.objects.create(
@@ -88,6 +93,7 @@ def test_load_prediction_file(
         content_type=ContentType.objects.get_for_model(models.FileValue),
         key="conformation",
         description="3D output MOL file",
+        batch_method="fake",
     )
     container = container_factory(challenge, "megosato/score-coords", "latest")
     submission = submission_factory(container)
@@ -97,20 +103,57 @@ def test_load_prediction_file(
     )
     filename = "Conformer3D_CID_241.mdl"
     output_path = TEST_DATA_PATH / filename
-
-    mock_field_file_save = Mock()
-
-    def mock_save_side_effect(name, content, **kwargs):
-        assert name == filename
-
-    mock_field_file_save.side_effect = mock_save_side_effect
-
-    with patch("django.db.models.fields.files.FieldFile.save", mock_field_file_save):
-
-        models.Prediction.load_evaluation_output(
-            challenge, evaluation, coordsfile_type, output_path
+    if batch:
+        challenge.max_batch_size = 2
+        challenge.save()
+        batch_group = challenge.current_batch_group()
+        batch = batch_group.inputbatch_set.first()
+        batch_evaluation = batch.batchevaluation_set.create(
+            submission_run=submission_run
         )
-        assert mock_field_file_save.call_count == 1
+        batch_path = str(TEST_DATA_PATH / "batched_mols.sdf")
+
+        def mock_batch_save_side_effect(name, content, **kwargs):
+            from rdkit import Chem
+
+            assert Chem.MolFromMolFile(content.name) is not None
+
+        mock_batch_file_save = Mock()
+        mock_batch_file_save.side_effect = mock_batch_save_side_effect
+
+        class FakeBatcher:
+            @classmethod
+            def invert(cls, batchfile):
+                for _, value in batching.SDFBatcher.invert(batchfile):
+                    yield benzene_from_mol.id, value
+                    break
+
+        batching.BATCHERS["fake"] = FakeBatcher
+
+        with patch(
+            "django.db.models.fields.files.FieldFile.save", mock_batch_file_save
+        ):
+            models.Prediction.load_batch_output(
+                challenge, batch_evaluation, coordsfile_type, batch_path
+            )
+            assert mock_batch_file_save.call_count == 1
+
+    else:
+        mock_field_file_save = Mock()
+
+        def mock_save_side_effect(name, content, **kwargs):
+            assert name == filename
+
+        mock_field_file_save.side_effect = mock_save_side_effect
+
+        with patch(
+            "django.db.models.fields.files.FieldFile.save", mock_field_file_save
+        ):
+
+            models.Prediction.load_evaluation_output(
+                challenge, evaluation, coordsfile_type, output_path
+            )
+            assert mock_field_file_save.call_count == 1
 
 
 def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):

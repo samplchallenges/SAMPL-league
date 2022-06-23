@@ -17,12 +17,12 @@ class BatcherBase(ABC):
     @staticmethod
     @abstractmethod
     def call(elements, key, output_path):
-        pass
+        "Assemble values for key into a file stored at output_path"
 
     @staticmethod
     @abstractmethod
     def invert(batchfile):
-        pass
+        "Given a file, yield tuples of ID, value"
 
 
 def register_batcher(cls):
@@ -55,36 +55,35 @@ class CSVBatcher(BatcherBase):
         with open(batchfile, encoding="utf8") as csvfp:
             reader = csv.DictReader(csvfp)
             for row in reader:
-                yield row["id"], row["value"]
+                yield int(row["id"]), row["value"]
 
 
 @register_batcher
-class MolBatcher(BatcherBase):
-    name = "mol"
-    suffix = "mol"
+class SDFBatcher(BatcherBase):
+    name = "sdf"
+    suffix = "sdf"
 
     @staticmethod
     def call(elements, key, output_path):
-        with Chem.SDWriter(output_path) as molwriter:
+        with Chem.SDWriter(output_path) as writer:
             for element in elements:
                 _, file_values = values_helper.all_values(element)
-                mol_file = file_values[key]
-                mol = Chem.MolFromMolFile(mol_file)
+                sdfile = file_values[key]
+                with Chem.SDMolSupplier(sdfile) as reader:
+                    mol = next(reader)
                 if mol is None:
-                    raise Exception(f"Mol file {mol_file} could not be read")
+                    raise Exception(f"SDF {sdfile} could not be read")
                 mol.SetIntProp("SAMPL_ID", element.id)
                 mol.SetProp("SAMPL_NAME", element.name)
-                molwriter.write(mol)
+                writer.write(mol)
 
     @staticmethod
     def invert(batchfile):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with Chem.SDMolSupplier(batchfile) as mol_supplier:
-                for mol in mol_supplier:
-                    element_id = mol.GetIntProp("SAMPL_ID")
-                    molpath = os.path.join(temp_dir, f"mol_{element_id}.sdf")
-                    print(
-                        Chem.MolToMolBlock(mol),
-                        file=open(molpath, "w+", encoding="utf8"),
-                    )
-                    yield element_id, molpath
+        temp_dir = tempfile.mkdtemp()
+        with Chem.SDMolSupplier(batchfile) as mol_supplier:
+            for mol in mol_supplier:
+                element_id = mol.GetIntProp("SAMPL_ID")
+                sdpath = os.path.join(temp_dir, f"mol_{element_id}.sdf")
+                with Chem.SDWriter(sdpath) as writer:
+                    writer.write(mol)
+                yield element_id, sdpath

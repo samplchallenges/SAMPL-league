@@ -204,12 +204,25 @@ class InputValueAdmin(ValueParentAdminMixin):
     )
     list_filter = ("input_element__challenge",)
     fields = (
+        "download_file",
         ("value_type", "value_type_challenge"),
         ("content_type", "object_id"),
         ("object_link", "value_object_challenge"),
         ("input_element", "input_element_challenge"),
         ("created_at", "updated_at"),
     )
+    readonly_fields = ("download_file", *ValueParentAdminMixin.readonly_fields)
+
+    def download_file(self, instance):
+        if instance.value_type.content_type.model != "filevalue":
+            return "not a file"
+
+        return format_html(
+            HREF_TEMPLATE,
+            reverse("download-input", args=[instance.pk]),
+            instance.value_type.content_type,
+            "",
+        )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         url_name = request.resolver_match.url_name
@@ -370,4 +383,30 @@ class InputBatchMembershipAdmin(TimestampedAdmin):
 @register(models.BatchFile)
 class BatchFileAdmin(TimestampedAdmin):
     list_display = ("id", "batch", "value_type")
-    readonly_fields = ("batch", "value_type", *TimestampedAdmin.readonly_fields)
+    readonly_fields = (
+        "batch",
+        "value_type",
+        "download_batch",
+        *TimestampedAdmin.readonly_fields,
+    )
+
+    def download_batch(self, instance):
+        return format_html(
+            HREF_TEMPLATE,
+            reverse("download-batch", args=[instance.pk]),
+            instance.data,
+            "",
+        )
+
+
+@register(models.BatchEvaluation)
+class BatchEvaluationAdmin(TimestampedAdmin):
+    list_display = ("id", "input_batch", "status", "submission_run")
+    readonly_fields = (
+        "input_batch",
+        "status",
+        "submission_run",
+        "log_stdout",
+        "log_stderr",
+        *TimestampedAdmin.readonly_fields,
+    )

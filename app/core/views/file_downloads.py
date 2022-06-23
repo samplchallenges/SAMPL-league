@@ -46,3 +46,14 @@ def download_container_arg_file(request, pk):
     )
 
     return _respond_file(container_arg.file_value)
+
+
+@login_required
+def download_batch_file(request, pk):
+    kwargs = {"pk": pk}
+    if not request.user.is_staff:
+        kwargs["batch__is_public"] = True
+
+    batch_arg = get_object_or_404(models.BatchFile, **kwargs)
+
+    return _respond_file(batch_arg.data)

@@ -59,22 +59,23 @@ def batch_calc_mol_wt(output_dir, molfile, smiles):
         bondc_writer.writerow(row)
 
     if molfile:
-        with Chem.SDMolSupplier(molfile) as mol_supplier:
-            for mol in mol_supplier:
-                _printinfo(mol, mol.GetIntProp("SAMPL_ID"), mol.GetProp("SAMPL_NAME"))
-        return 0
-
-    if not smiles:
-        print("Must pass SMILES either with --smiles or directly")
-        return 1
-    with open(smiles, "r") as smiles_fp:
-        smiles_reader = csv.DictReader(smiles_fp)
-        for row in smiles_reader:
-            mol = Chem.MolFromSmiles(row["smiles"])
-            _printinfo(mol, row["id"], row["name"])
-    print(MOLW_KEY, molw_file)
-    print(ATOMCOUNT_KEY, atomc_file)
-    print(BONDCOUNT_KEY, bondc_file)
+        # TODO: why did this fail as a context mgr?
+        mol_supplier = Chem.SDMolSupplier(molfile)
+        for idx, mol in enumerate(mol_supplier):
+            _printinfo(mol, mol.GetIntProp("SAMPL_ID"), mol.GetProp("SAMPL_NAME"))
+        print("Loaded", (idx+1), "mols from", molfile)
+    else:
+        if not smiles:
+            print("Must pass SMILES either with --smiles or directly")
+            return 1
+        with open(smiles, "r") as smiles_fp:
+            smiles_reader = csv.DictReader(smiles_fp)
+            for row in smiles_reader:
+                mol = Chem.MolFromSmiles(row["smiles"])
+                _printinfo(mol, row["id"], row["name"])
+    print(MOLW_KEY, "molw.csv")
+    print(ATOMCOUNT_KEY, "atomc.csv")
+    print(BONDCOUNT_KEY, "bondc.csv")
     return 0
 
 if __name__ == "__main__":
@@ -85,6 +86,10 @@ if __name__ == "__main__":
     parser.add_argument('--batch', action="store_true", default=False, help="Input and output will be batch format")
     args = parser.parse_args()
     if args.batch:
+        print("output dir", args.output_dir, os.path.exists(args.output_dir))
+        print("molfile", args.molfile, os.path.exists(args.molfile))
+        with open(args.molfile, "r") as fp:
+            print(fp.read())
         batch_calc_mol_wt(args.output_dir, args.molfile, args.smiles)
     else:
         calc_mol_wt(args.molfile, args.smiles)
