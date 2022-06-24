@@ -132,6 +132,7 @@ class SubmissionRunAdmin(TimestampedAdmin):
     readonly_fields = (
         "submission",
         "evaluations",
+        "batch_evaluations",
         "scores",
         *TimestampedAdmin.readonly_fields,
     )
@@ -144,6 +145,9 @@ class SubmissionRunAdmin(TimestampedAdmin):
 
     def evaluations(self, instance):
         return _admin_links(instance.evaluation_set.all())
+
+    def batch_evaluations(self, instance):
+        return _admin_links(instance.batchevaluation_set.all())
 
     def scores(self, instance):
         return _scores_list(instance)

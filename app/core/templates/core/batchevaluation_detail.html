@@ -1,1 +1,60 @@
-{% extends 'core/_base_evaluation_detail.html' %}
+{% extends 'layout.html' %}
+{% load template_filters %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'challenge-detail' challenge.pk %}">Challenge: {{ challenge.name }}</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'submission-detail' submission.pk %}">Submission: {{ submission.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Evaluation: {{ evaluation.input_element.name }} {{ evaluation.input_batch }}</li>
+  </ol>
+</nav>
+
+<div class="card">
+  <div class="card-header">
+    {% include 'core/_status_refresh.html' with status=evaluation.status is_finished=evaluation.is_finished only %}
+  </div>
+  <div class="card-body">
+    <h5 class="card-title">{{evaluation.input_batch}}</h5>
+    <p class="card-text">
+        Elements:
+        <ul>
+            {% for elem in evaluation.input_batch.elements %}
+            <li>{{elem.name}}</li>
+            {% endfor %}
+        </ul>
+    </p>
+
+    <p class="card-text">
+      Predictions:
+      <dl>
+        {% for prediction in evaluation.predictions.all %}
+        <dt>({{prediction.input_element.name}}) - {{ prediction.value_type.key }}</dt>
+        <dd> {{ prediction|render_prediction }}</dd>
+        {% endfor %}
+      </dl>
+    </p>
+    {% if evaluation.log_stderr %}
+    <p class="card-text">
+      <h6>Error Output</h6>
+      <a href="{% url 'batchevaluation-log-err' evaluation.pk %}">Download Error Log</a>
+      <pre class="pre-scrollable">{{ evaluation.log_stderr }}</pre>
+    </p>
+    {% endif %}
+    {% if evaluation.log_stdout %}
+    <p class="card-text">
+      <h6>Logging Output</h6>
+       <a href="{% url 'batchevaluation-log-out' evaluation.pk %}">Download Output Log</a>
+      <pre class="pre-scrollable">{{ evaluation.log_stdout }}</pre>
+    </p>
+    {% endif %}
+  </div>
+  <div class="card-footer"><h6>Scores</h6>
+    <dl>
+      {% for score in evaluation.scores.all %}
+      <dt>{{ score.score_type }}</dt>
+      <dd>{{ score.value }}</dd>
+      {% endfor %}
+    </dl>
+  </div>
+</div>
+{% endblock %}

@@ -192,7 +192,7 @@ def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, conditio
         kwargs, file_kwargs = values_helper.batch_values(obj.input_batch)
         is_batch = True
 
-    obj.mark_started(kwargs, file_kwargs)
+    obj.mark_started()
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
     aws_login_func = (

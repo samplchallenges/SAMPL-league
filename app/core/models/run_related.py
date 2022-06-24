@@ -157,15 +157,10 @@ class BaseEvaluation(Logged):
     def clear_old_predictions(self, output_type):
         raise Exception("Must implement in subclass")
 
-    def mark_started(self, kwargs, file_kwargs):
-        self.append(
-            stdout="Started\n"
-            f"Input object: {self.input_object}\n"
-            f"kwargs: {kwargs}\n"
-            f"file_kwargs: {file_kwargs}\n"
-        )
+    def mark_started(self):
+        self.append(stdout="Started\n")
         self.status = Status.RUNNING
-        self.save()
+        self.save(update_fields=["status"])
 
     def __str__(self):
         return f"run: {self.submission_run}, local status {self.status}"
@@ -339,6 +334,12 @@ class BatchEvaluation(BaseEvaluation):
     @property
     def input_object(self):
         return self.input_batch
+
+    def predictions(self):
+        return Prediction.objects.filter(
+            submission_run_id=self.submission_run_id,
+            input_element_id__in=[el.id for el in self.input_batch.elements()],
+        )
 
     def clear_old_predictions(self, output_type):
         matching_objects = Prediction.objects.filter(

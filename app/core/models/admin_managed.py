@@ -56,7 +56,9 @@ class Challenge(Timestamped):
         return self.__output_types_dict.get(key)
 
     def current_batch_group(self):
-        return self.inputbatchgroup_set.order_by("-created_at").first()
+        if self.max_batch_size > 0:
+            return self.inputbatchgroup_set.order_by("-created_at").first()
+        return None
 
     @cached_property
     def score_types(self):
