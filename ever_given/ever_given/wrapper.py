@@ -135,9 +135,8 @@ def run(
         )
 
         yield from _parse_output(output_dir, result, output_file_keys).items()
-    finally:
-        running_container.reload()
 
+        running_container.reload()
         status = running_container.status()
         print("container status is ", status)
         if status == running_container.RUNNING:
@@ -151,4 +150,5 @@ def run(
             print(f"Container status is {status}", file=sys.stderr)
         if status == running_container.FAILURE:
             raise ContainerFailedException()
+    finally:
         running_container.remove()

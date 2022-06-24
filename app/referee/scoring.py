@@ -109,7 +109,7 @@ def score_element(
                     value=float(score_value),
                 )
     except Exception as exc:  # pylint: disable=broad-except
-        log_messages.append(stderr=f"Scoring failed: {exc}")
+        log_messages.append(f"Scoring failed: {exc}")
         raise ScoringFailureException from exc
     log_messages.append(f"Scoring completed for {input_element.name}\n")
     return log_messages

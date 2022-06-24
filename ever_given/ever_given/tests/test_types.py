@@ -6,7 +6,7 @@ import pytest
 
 import ever_given.wrapper
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+
 def test_docker_container(container_engine):
     container_uri = "ghcr.io/megosato/calc-molwt:latest"
     kwargs = {"smiles": "c1cccnc1"}
@@ -24,6 +24,7 @@ def test_docker_container(container_engine):
     molWeight = float(results["molWeight"].strip())
     assert molWeight == pytest.approx(79.04219916)
 
+
 def test_singularity_sif_container_docker_engine():
     container_sif = "calc-molwt_latest.sif"
     kwargs = {"smiles": "c1cccnc1"}
@@ -38,6 +39,7 @@ def test_singularity_sif_container_docker_engine():
                 file_kwargs={}
             )
         }
+
 
 def test_singularity_sif_container_singularity_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
