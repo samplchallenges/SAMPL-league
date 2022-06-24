@@ -15,3 +15,4 @@ pytest = "*"
 pylint = "*"
 flake8-annotations = "*"
 mypy = "*"
+sampl-pytest = {editable = true, path = "./../sampl_pytest"}

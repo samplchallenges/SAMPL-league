@@ -38,6 +38,7 @@ django-debug-toolbar = "*"
 ever-given = {editable = true, path = "./../ever_given"}
 sampl = {editable = true, path = "."}
 mypy = "*"
+sampl-pytest = {editable = true, path = "./../sampl_pytest"}
 
 [requires]
 python_version = "3.8"
