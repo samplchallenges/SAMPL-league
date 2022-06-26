@@ -381,3 +381,22 @@ def test_submit_submission_run(client, container_engine):
             result = future.result()
             print(submission_run.status)
             assert result
+
+
+@pytest.mark.parametrize(
+    ["statuses", "expected_status"],
+    [
+        ({models.Status.PENDING}, models.Status.FAILURE),
+        ({models.Status.RUNNING}, models.Status.FAILURE),
+        ({models.Status.CANCELLED}, models.Status.CANCELLED),
+        ({models.Status.CANCELLED, models.Status.SUCCESS}, models.Status.CANCELLED),
+        ({models.Status.FAILURE}, models.Status.FAILURE),
+        ({models.Status.CANCEL_PENDING}, models.Status.FAILURE),
+        (set(), models.Status.FAILURE),
+    ],
+)
+def test_get_submission_run_status(molfile_molw_config, statuses, expected_status):
+    status = tasks.get_submission_run_status(
+        statuses, molfile_molw_config.submission_run.id
+    )
+    assert status == expected_status

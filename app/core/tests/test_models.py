@@ -206,3 +206,13 @@ def test_batch_checks(smiles_molw_config, input_elements):
 
     with pytest.raises(IntegrityError):
         batch2_pub._set_elements([element])
+
+
+def test_input_value_clean(smiles_molw_config, molfile_molw_config, benzene_from_mol):
+    input_value = benzene_from_mol.inputvalue_set.first()
+
+    input_value.value_type.challenge = smiles_molw_config.challenge
+    with pytest.raises(ValidationError) as exc_info:
+        input_value.clean()
+
+    assert list(exc_info.value.error_dict.keys()) == ["input_element"]

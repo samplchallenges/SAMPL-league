@@ -63,13 +63,6 @@ def submit_submission_run(client, submission_run):
     return future
 
 
-def _trigger_submission_run(submission, delayed_conditional, *, is_public):
-    submission_run = submission.create_run(
-        is_public=is_public, status=models.Status.PENDING
-    )
-    return _run(submission_run, delayed_conditional)
-
-
 def _run(submission_run, delayed_conditional):
     if submission_run.submission.challenge.current_batch_group() is None:
         statuses = _run_evaluations(submission_run, delayed_conditional)

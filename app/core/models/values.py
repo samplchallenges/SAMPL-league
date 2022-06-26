@@ -34,7 +34,7 @@ class ValueParentMixin(Timestamped):
             raise ValidationError(
                 _(
                     f"Value object's content type {self.content_type} doesn't "
-                    "match value type's {self.value_type.content_type}"
+                    f"match value type's {self.value_type.content_type}"
                 )
             )
         if self.content_type.model_class() not in self._value_models:
@@ -59,6 +59,7 @@ class InputValue(ValueParentMixin):
         return str(self.value)
 
     def clean(self):
+        super().clean()
         if self.input_element.challenge.id != self.value_type.challenge.id:
             raise ValidationError(
                 {"input_element": "Challenge must match value_type's"}
