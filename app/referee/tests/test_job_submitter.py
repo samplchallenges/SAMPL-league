@@ -31,8 +31,8 @@ def test_reset_unfinished_to_pending_submission():
     processes = True
     if processes:
         transaction.commit()
-        call_command("migrate", "core", "zero", interactive=False)
-        call_command("migrate", "core", interactive=False)
+        call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+        call_command("migrate", "core", verbosity=0, interactive=False)
         call_command("sample_data")
         transaction.commit()
     else:
@@ -66,10 +66,6 @@ def test_reset_unfinished_to_pending_submission():
     assert submission_run2.status == models.Status.PENDING_REMOTE
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 @pytest.mark.django_db(transaction=True)
 def test_submission_run_public_private_dependency_failure(client, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
@@ -101,10 +97,6 @@ def test_submission_run_public_private_dependency_failure(client, container_engi
         assert submission_run.status == models.Status.CANCELLED
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 @pytest.mark.django_db(transaction=True)
 def test_submission_run_public_private_dependency_success(client, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
@@ -136,18 +128,14 @@ def test_submission_run_public_private_dependency_success(client, container_engi
         assert submission_run.status == models.Status.PENDING
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 @pytest.mark.django_db(transaction=True)
 def test_check_for_submission_runs(client, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         processes = True
         if processes:
             transaction.commit()
-            call_command("migrate", "core", "zero", interactive=False)
-            call_command("migrate", "core", interactive=False)
+            call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+            call_command("migrate", "core", verbosity=0, interactive=False)
             call_command("sample_data")
             transaction.commit()
         else:

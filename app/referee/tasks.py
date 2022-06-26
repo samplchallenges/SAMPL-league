@@ -8,7 +8,7 @@ import ever_given.wrapper
 from django.conf import settings
 from ever_given.log_processing import CancelledException
 
-from core import models
+from core import models, values_helper
 
 from . import scoring, utils
 
@@ -21,8 +21,12 @@ def enqueue_submission(submission):
     Records in the database that we want the job submitter to call
     submit_submission_run
     """
-    public_run = submission.create_run(is_public=True, remote=True)
-    private_run = submission.create_run(is_public=False, remote=True)
+    public_run = submission.create_run(
+        is_public=True, status=models.Status.PENDING_REMOTE
+    )
+    private_run = submission.create_run(
+        is_public=False, status=models.Status.PENDING_REMOTE
+    )
     submission.create_run_pair(public_run=public_run, private_run=private_run)
 
 
@@ -32,8 +36,8 @@ def run_and_score_submission(client, submission):
     """
     delayed_conditional = dask.delayed(True)
 
-    public_run = submission.create_run(is_public=True, remote=False)
-    private_run = submission.create_run(is_public=False, remote=False)
+    public_run = submission.create_run(is_public=True, status=models.Status.PENDING)
+    private_run = submission.create_run(is_public=False, status=models.Status.PENDING)
     submission.create_run_pair(public_run=public_run, private_run=private_run)
 
     for submission_run in (public_run, private_run):
@@ -60,16 +64,20 @@ def submit_submission_run(client, submission_run):
 
 
 def _run(submission_run, delayed_conditional):
-    evaluation_statuses = _run_evaluations(submission_run, delayed_conditional)
-    return check_and_score(submission_run.id, delayed_conditional, evaluation_statuses)
+    if submission_run.submission.challenge.current_batch_group() is None:
+        statuses = _run_evaluations(submission_run, delayed_conditional)
+    else:
+        statuses = _run_batches(submission_run, delayed_conditional)
+    return check_and_score(submission_run.id, delayed_conditional, statuses)
 
 
-def get_submission_run_status(evaluation_statuses, submission_run_id):
+def get_submission_run_status(statuses, submission_run_id):
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
-    uniq_statuses = set(evaluation_statuses)
+    uniq_statuses = set(statuses)
+    submission_run.append(stdout=f"Statuses {uniq_statuses}")
     if {models.Status.PENDING, models.Status.RUNNING} & uniq_statuses:
         submission_run.append(
-            stderr=f"Evaluations should have all completed, but have statuses {evaluation_statuses}!"
+            stderr=f"Evaluations should have all completed, but have statuses {statuses}!"
         )
         status = models.Status.FAILURE
     elif {models.Status.CANCELLED} == uniq_statuses or {
@@ -79,8 +87,14 @@ def get_submission_run_status(evaluation_statuses, submission_run_id):
         status = models.Status.CANCELLED
     elif {models.Status.FAILURE, models.Status.CANCELLED} & uniq_statuses:
         status = models.Status.FAILURE
-    else:
+    elif {models.Status.SUCCESS} == uniq_statuses:
         status = models.Status.SUCCESS
+    elif not uniq_statuses:
+        submission_run.append(stderr="No sub statuses")
+        status = models.Status.FAILURE
+    else:
+        submission_run.append(stderr=f"Sub statuses {uniq_statuses}")
+        status = models.Status.FAILURE
 
     if (
         submission_run.status == models.Status.CANCEL_PENDING
@@ -94,10 +108,10 @@ def get_submission_run_status(evaluation_statuses, submission_run_id):
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
 def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses):
     submission_run = models.SubmissionRun.objects.get(pk=submission_run_id)
-    if not delayed_conditional:
-        status = models.Status.CANCELLED
-    else:
+    if delayed_conditional:
         status = get_submission_run_status(evaluation_statuses, submission_run_id)
+    else:
+        status = models.Status.CANCELLED
 
     submission_run.status = status
     if status != models.Status.SUCCESS:
@@ -109,114 +123,164 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
     return True
 
 
-def _run_evaluations(submission_run, conditional):
+def _run_evaluations_or_batches(submission_run, conditional, object_set, run_func):
     statuses = []
-    for evaluation in submission_run.evaluation_set.all():
-        if evaluation.status == models.Status.PENDING:
+    for obj in object_set.all():
+        if obj.status == models.Status.PENDING:
             statuses.append(
-                run_evaluation(
+                run_func(
                     submission_run.submission.id,
-                    evaluation.id,
+                    obj.id,
                     submission_run.id,
                     conditional=conditional,
                 )
             )
         else:
-            statuses.append(evaluation.status)
+            statuses.append(obj.status)
     return statuses
 
 
-@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
+def _run_batches(submission_run, conditional):
+    return _run_evaluations_or_batches(
+        submission_run,
+        conditional,
+        submission_run.batchevaluation_set,
+        run_batch_evaluation,
+    )
+
+
+def _run_evaluations(submission_run, conditional):
+    return _run_evaluations_or_batches(
+        submission_run, conditional, submission_run.evaluation_set, run_evaluation
+    )
+
+
+def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, conditional):
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     challenge = submission.challenge
     submission_run = submission.submissionrun_set.get(pk=submission_run_id)
     if not conditional or submission_run.check_cancel_requested():
-        models.Evaluation.objects.filter(pk=evaluation_id).update(
-            status=models.Status.CANCELLED
-        )
+        cls.objects.filter(pk=object_id).update(status=models.Status.CANCELLED)
         return models.Status.CANCELLED
     if submission_run.status == models.Status.PENDING:
         submission_run.status = models.Status.RUNNING
         submission_run.save(update_fields=["status"])
 
     evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
-    evaluation = submission_run.evaluation_set.get(pk=evaluation_id)
+    obj = cls.objects.filter(submission_run_id=submission_run_id).get(pk=object_id)
 
-    if evaluation.status not in {models.Status.PENDING, models.Status.RUNNING}:
-        return evaluation.status
+    if obj.status not in {models.Status.PENDING, models.Status.RUNNING}:
+        return obj.status
 
-    element = evaluation.input_element
     output_file_keys = challenge.output_file_keys()
+    all_output_keys = challenge.output_keys()
 
-    kwargs, file_kwargs = element.all_values()
+    if isinstance(
+        obj, models.Evaluation
+    ):  # or duck typing hasattr(obj, "input_element")
+        kwargs, file_kwargs = values_helper.all_values(obj.input_element)
+        is_batch = False
+    else:
+        kwargs, file_kwargs = values_helper.batch_values(obj.input_batch)
+        is_batch = True
 
-    evaluation.mark_started(kwargs, file_kwargs)
+    obj.mark_started()
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
+    aws_login_func = (
+        utils.get_aws_credential_function(container.uri)
+        if settings.LOGIN_TO_AWS
+        else None
+    )
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             dirpath = Path(str(tmpdir))
             output_dir = None
 
-            if output_file_keys:
+            if output_file_keys or is_batch:
                 output_dir = dirpath / "output"
                 output_dir.mkdir()
-
             parsed_results = ever_given.wrapper.run(
                 container.uri,
+                "--batch" if is_batch else "",
                 container_type=container.container_type,
                 engine_name=settings.CONTAINER_ENGINE,
                 kwargs=kwargs,
                 file_kwargs=file_kwargs,
                 output_dir=output_dir,
-                output_file_keys=output_file_keys,
-                log_handler=models.Evaluation.LogHandler(evaluation),
+                output_file_keys=all_output_keys if is_batch else output_file_keys,
+                log_handler=cls.LogHandler(obj),
                 cancel_requested_func=submission_run.check_cancel_requested,
-                aws_login_func=utils.get_aws_credential_function(container.uri)
-                if settings.LOGIN_TO_AWS
-                else None,
+                aws_login_func=aws_login_func,
             )
 
             for key, value in parsed_results:
                 output_type = challenge.output_type(key)
-                if output_type:
-                    if models.Prediction.objects.filter(
-                        evaluation_id=evaluation.id, value_type=output_type
-                    ).exists():
-                        evaluation.append(
-                            stderr="Duplicate prediction entry, overwriting old entry"
-                        )
-                        prediction = models.Prediction.objects.get(
-                            evaluation_id=evaluation.id, value_type=output_type
-                        )
-                        prediction.delete()
-                    prediction = models.Prediction.load_output(
-                        challenge, evaluation, output_type, value
+                if not output_type:
+                    obj.append(stderr=f"Ignoring key {key} with value {value}\n")
+                    continue
+                obj.clear_old_predictions(output_type)
+                if is_batch:
+                    models.Prediction.load_batch_output(
+                        challenge, obj, output_type, value
                     )
-                    prediction.save()
                 else:
-                    evaluation.append(stderr=f"Ignoring key {key} with value {value}\n")
+                    models.Prediction.load_evaluation_output(
+                        challenge, obj, output_type, value
+                    )
 
-        scoring.score_evaluation(
-            challenge.scoremaker.container,
-            evaluation,
-            evaluation_score_types,
-        )
+        if is_batch:
+            input_elements = list(obj.input_batch.elements())
+        else:
+            input_elements = [obj.input_element]
+        for input_element in input_elements:
+            # TODO: batch up scoring?
+            for log_message in scoring.score_element(
+                challenge.scoremaker.container,
+                obj,
+                submission_run,
+                input_element,
+                evaluation_score_types,
+            ):
+                obj.append(log_message)
 
-        evaluation.status = models.Status.SUCCESS
+        obj.status = models.Status.SUCCESS
     except CancelledException:
-        evaluation.status = models.Status.CANCELLED
-        evaluation.append(stderr="Cancelled")
+        obj.status = models.Status.CANCELLED
+        obj.append(stderr="Cancelled")
     except scoring.ScoringFailureException as exc:
-        evaluation.status = models.Status.FAILURE
-        evaluation.append(stderr=f"Error scoring: {exc}")
+        obj.status = models.Status.FAILURE
+        obj.append(stderr=f"Error scoring: {exc}")
     except Exception as exc:  # pylint: disable=broad-except
-        evaluation.status = models.Status.FAILURE
-        evaluation.append(stderr=f"Execution failure: {exc}\n")
+        obj.status = models.Status.FAILURE
+        obj.append(stderr=f"Execution failure: {exc}\n")
     finally:
-        evaluation.save(update_fields=["status"])
-        evaluation.cleanup_local_outputs(output_file_keys)
+        obj.save(update_fields=["status"])
+        obj.cleanup_local_outputs(output_file_keys)
 
-    return evaluation.status
+    return obj.status
+
+
+@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
+def run_evaluation(submission_id, evaluation_id, submission_run_id, conditional):
+    return run_eval_or_batch(
+        submission_id,
+        models.Evaluation,
+        evaluation_id,
+        submission_run_id,
+        conditional,
+    )
+
+
+@dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
+def run_batch_evaluation(
+    submission_id, batch_evaluation_id, submission_run_id, conditional
+):
+    return run_eval_or_batch(
+        submission_id,
+        models.BatchEvaluation,
+        batch_evaluation_id,
+        submission_run_id,
+        conditional,
+    )

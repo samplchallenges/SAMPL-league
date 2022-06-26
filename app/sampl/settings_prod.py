@@ -43,6 +43,7 @@ AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY_S3"]
 AWS_STORAGE_BUCKET_NAME = "sampl-league-storage"
 AWS_S3_REGION_NAME = "us-east-2"
 
+LOGIN_TO_AWS = True
 ECR_BASE_URL = os.environ["ECR_BASE_URL"]
 ECR_SAMPLLEAGUE_URL = os.environ["ECR_SAMPLLEAGUE_URL"]
 
@@ -109,7 +110,6 @@ LOGGING = {
     },
 }
 
-LOGIN_TO_AWS = True
 
 # which container engine to use, must be "docker" or "singularity"
 CONTAINER_ENGINE = os.environ.get("CONTAINER_ENGINE", "docker")

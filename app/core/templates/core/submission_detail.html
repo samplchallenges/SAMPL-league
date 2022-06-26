@@ -33,6 +33,9 @@
   {% for evaluation in public_run.evaluation_set.all %}
     <li> <a href="{% url 'evaluation-detail' evaluation.pk %}">{{ evaluation.input_element.name }}</a> ({{evaluation.status}})</li>
   {% endfor %}
+  {% for batch_evaluation in public_run.batchevaluation_set.all %}
+    <li> <a href="{% url 'batchevaluation-detail' batch_evaluation.pk %}">{{ batch_evaluation.input_batch }} Batch</a> ({{batch_evaluation.status}})</li>
+  {% endfor %}
     <ul>
   </div>
 </div>

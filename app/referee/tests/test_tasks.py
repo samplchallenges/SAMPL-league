@@ -29,17 +29,13 @@ def test_get_submission_run_status_cancel_pending(molfile_molw_config):
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 def test_run_and_score_submission(container_engine):
     # This test will fail if run after another transaction=True test
     # See workaround in tests/test_views.py:test_run_submission
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         transaction.commit()
-        call_command("migrate", "core", "zero", interactive=False)
-        call_command("migrate", "core", interactive=False)
+        call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+        call_command("migrate", "core", verbosity=0, interactive=False)
         call_command("sample_data")
         transaction.commit()
 
@@ -71,29 +67,58 @@ def _run_and_check_evaluation(submission_run, evaluation):
     assert (
         evaluation.status == models.Status.SUCCESS
     ), f"Evaluation failed: {evaluation.log_stdout};; {evaluation.log_stderr}"
-    prediction = evaluation.prediction_set.get()
+    prediction = models.Prediction.objects.get(
+        submission_run=submission_run, input_element=evaluation.input_element
+    )
     return prediction
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
+def _run_and_check_batch_evaluation(submission_run, batch_evaluation):
+
+    delayed = tasks.run_batch_evaluation(
+        submission_run.submission.id,
+        batch_evaluation.id,
+        submission_run.id,
+        True,
+    )
+    delayed.compute(scheduler="synchronous")
+    assert submission_run.batchevaluation_set.count() == 1
+    batch_evaluation = submission_run.batchevaluation_set.get()
+    assert (
+        batch_evaluation.status == models.Status.SUCCESS
+    ), f"Batch evaluation failed: {batch_evaluation.log_stdout};; {batch_evaluation.log_stderr}"
+    elements = list(batch_evaluation.input_batch.elements())
+    assert len(elements) == 1
+    prediction = models.Prediction.objects.get(
+        submission_run=submission_run, input_element=elements[0]
+    )
+    return prediction
+
+
 def test_run_element_mol(molfile_molw_config, benzene_from_mol, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         submission_run = molfile_molw_config.submission_run
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-
         prediction = _run_and_check_evaluation(submission_run, evaluation)
         assert prediction.value == pytest.approx(78.046950192)
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
+def test_run_batch(molfile_molw_config, benzene_from_mol, container_engine):
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        challenge = molfile_molw_config.challenge
+        challenge.max_batch_size = 2
+        challenge.save()
+        submission_run = molfile_molw_config.submission_run
+        batch_evaluation = models.BatchEvaluation.objects.create(
+            input_batch=challenge.current_batch_group().inputbatch_set.first(),
+            submission_run=submission_run,
+        )
+        prediction = _run_and_check_batch_evaluation(submission_run, batch_evaluation)
+        assert prediction.value == pytest.approx(78.046950192)
+
+
 def test_run_element_custom(
     molfile_molw_config, benzene_from_mol, container_arg_factory, container_engine
 ):
@@ -116,10 +141,6 @@ def test_run_element_custom(
         assert "error: unrecognized arguments:" in evaluation.log_stderr
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 def test_evaluation_scoring_failure(
     molfile_molw_config, benzene_from_mol, container_engine
 ):
@@ -129,7 +150,7 @@ def test_evaluation_scoring_failure(
             input_element=benzene_from_mol, submission_run=submission_run
         )
 
-        with patch("referee.scoring.score_evaluation") as mock_score:
+        with patch("referee.scoring.score_element") as mock_score:
             mock_score.side_effect = scoring.ScoringFailureException("Mock failure")
             delayed = tasks.run_evaluation(
                 submission_run.submission.id,
@@ -159,10 +180,6 @@ def evaluation_scores(smiles_molw_config, evaluations):
     return [_score(evaluation) for evaluation in evaluations]
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 def test_submission_run_scoring_failure(
     smiles_molw_config, evaluations, evaluation_scores, container_engine
 ):
@@ -194,10 +211,6 @@ def file_container(challenge_factory, user, db):
     )
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 def test_run_files(
     file_container,
     elem_factory,
@@ -284,16 +297,14 @@ def test_run_files(
         assert submission_run.evaluation_set.count() == 1
         evaluation = submission_run.evaluation_set.get()
         assert evaluation.status == models.Status.SUCCESS
-        prediction = prediction = evaluation.prediction_set.get(
-            value_type__key="molWeight"
+        prediction = models.Prediction.objects.get(
+            submission_run=submission_run,
+            input_element=evaluation.input_element,
+            value_type__key="molWeight",
         )
         assert prediction.value == pytest.approx(78.046950192)
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 def test_cancel_evaluation_before_run(
     molfile_molw_config, benzene_from_mol, container_engine
 ):
@@ -315,16 +326,14 @@ def test_cancel_evaluation_before_run(
         assert evaluation.status == models.Status.CANCELLED
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 def test_cancel_submission_before_run(
     molfile_molw_config, benzene_from_mol, container_engine
 ):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         submission = molfile_molw_config.submission_run.submission
-        submission_run = submission.create_run(is_public=True, remote=False)
+        submission_run = submission.create_run(
+            is_public=True, status=models.Status.PENDING
+        )
         delayed_conditional = tasks._run(submission_run, True)
         submission.last_public_run().mark_for_cancel()
         result = delayed_conditional.compute(scheduler="synchronous")
@@ -332,10 +341,6 @@ def test_cancel_submission_before_run(
         assert submission.last_public_run().status == models.Status.CANCELLED
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 def test_cancel_submission_before_run_remote(
     molfile_molw_config, benzene_from_mol, container_engine
 ):
@@ -346,18 +351,14 @@ def test_cancel_submission_before_run_remote(
         assert submission.last_public_run().status == models.Status.CANCELLED
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 @pytest.mark.django_db(transaction=True)
 def test_submit_submission_run(client, container_engine):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         processes = True
         if processes:
             transaction.commit()
-            call_command("migrate", "core", "zero", interactive=False)
-            call_command("migrate", "core", interactive=False)
+            call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+            call_command("migrate", "core", verbosity=0, interactive=False)
             call_command("sample_data")
             transaction.commit()
         else:
@@ -380,3 +381,22 @@ def test_submit_submission_run(client, container_engine):
             result = future.result()
             print(submission_run.status)
             assert result
+
+
+@pytest.mark.parametrize(
+    ["statuses", "expected_status"],
+    [
+        ({models.Status.PENDING}, models.Status.FAILURE),
+        ({models.Status.RUNNING}, models.Status.FAILURE),
+        ({models.Status.CANCELLED}, models.Status.CANCELLED),
+        ({models.Status.CANCELLED, models.Status.SUCCESS}, models.Status.CANCELLED),
+        ({models.Status.FAILURE}, models.Status.FAILURE),
+        ({models.Status.CANCEL_PENDING}, models.Status.FAILURE),
+        (set(), models.Status.FAILURE),
+    ],
+)
+def test_get_submission_run_status(molfile_molw_config, statuses, expected_status):
+    status = tasks.get_submission_run_status(
+        statuses, molfile_molw_config.submission_run.id
+    )
+    assert status == expected_status

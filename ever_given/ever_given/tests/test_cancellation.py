@@ -7,7 +7,6 @@ import shlex
 import ever_given.wrapper
 from ever_given.log_processing import QUEUE_WAIT_SECONDS, CancelledException
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_cancellation(container_engine):
     # Use a slow container so we have time to cancel it
     container_uri = "ghcr.io/megosato/logging-example:latest"
@@ -40,11 +39,9 @@ def test_cancellation(container_engine):
     end_at = time.time()
     # Should cancel in not much more time than QUEUE_WAIT_SECONDS * 2
     # in log_processing
-    assert end_at - start_at < QUEUE_WAIT_SECONDS * 2 + 2
+    assert end_at - start_at < QUEUE_WAIT_SECONDS * 2 + 7
 
 
-
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_no_cancellation(container_engine):
     container_uri = "ghcr.io/megosato/calc-molwt:latest"
     kwargs = {"smiles": "c1cccnc1"}

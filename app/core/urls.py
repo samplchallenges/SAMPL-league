@@ -2,7 +2,12 @@ from django.urls import include, path
 
 from .views import file_downloads
 from .views.challenge import ChallengeDetail, ChallengeList
-from .views.evaluation import EvaluationDetail, EvaluationLog
+from .views.evaluation import (
+    BatchEvaluationDetail,
+    BatchEvaluationLog,
+    EvaluationDetail,
+    EvaluationLog,
+)
 from .views.profile import ProfileView, register
 from .views.root import IndexView
 from .views.submission import (
@@ -36,6 +41,11 @@ urlpatterns = [
         file_downloads.download_container_arg_file,
         name="download-arg",
     ),
+    path(
+        "download_batch/<int:pk>/",
+        file_downloads.download_batch_file,
+        name="download-batch",
+    ),
     path("submission/", SubmissionList.as_view(), name="submission-list"),
     path("submission/<int:pk>/", SubmissionDetail.as_view(), name="submission-detail"),
     path(
@@ -65,6 +75,11 @@ urlpatterns = [
     ),
     path("evaluation/<int:pk>/", EvaluationDetail.as_view(), name="evaluation-detail"),
     path(
+        "batch_evaluation/<int:pk>/",
+        BatchEvaluationDetail.as_view(),
+        name="batchevaluation-detail",
+    ),
+    path(
         "evaluation/<int:pk>/errorlog/",
         EvaluationLog.as_view(),
         {"log": "err"},
@@ -75,5 +90,17 @@ urlpatterns = [
         EvaluationLog.as_view(),
         {"log": "out"},
         name="evaluation-log-out",
+    ),
+    path(
+        "batch_evaluation/<int:pk>/errorlog/",
+        BatchEvaluationLog.as_view(),
+        {"log": "err"},
+        name="batchevaluation-log-err",
+    ),
+    path(
+        "batch_evaluation/<int:pk>/log/",
+        BatchEvaluationLog.as_view(),
+        {"log": "out"},
+        name="batchevaluation-log-out",
     ),
 ]

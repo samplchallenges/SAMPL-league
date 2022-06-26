@@ -53,6 +53,17 @@ class TimestampedAdmin(admin.ModelAdmin):
 class ChallengeAdmin(TimestampedAdmin):
     list_display = ("name", "start_at", "end_at")
     date_hierarchy = "start_at"
+    readonly_fields = ["batch_status", "created_at", "updated_at"]
+
+    def batch_status(self, instance):
+        batch_group = instance.current_batch_group()
+        if batch_group is None:
+            return "No batches yet"
+        return format_html(
+            "{} batches, created {}",
+            batch_group.inputbatch_set.count(),
+            batch_group.created_at,
+        )
 
 
 @register(models.Container)
@@ -85,7 +96,7 @@ class ScoreTypeAdmin(TimestampedAdmin):
 
 @register(models.EvaluationScore)
 class EvaluationScoreAdmin(TimestampedAdmin):
-    list_display = ("evaluation", "score_type", "value")
+    list_display = ("submission_run", "input_element", "score_type", "value")
     list_filter = ("score_type__challenge",)
 
 
@@ -121,6 +132,7 @@ class SubmissionRunAdmin(TimestampedAdmin):
     readonly_fields = (
         "submission",
         "evaluations",
+        "batch_evaluations",
         "scores",
         *TimestampedAdmin.readonly_fields,
     )
@@ -133,6 +145,9 @@ class SubmissionRunAdmin(TimestampedAdmin):
 
     def evaluations(self, instance):
         return _admin_links(instance.evaluation_set.all())
+
+    def batch_evaluations(self, instance):
+        return _admin_links(instance.batchevaluation_set.all())
 
     def scores(self, instance):
         return _scores_list(instance)
@@ -193,12 +208,25 @@ class InputValueAdmin(ValueParentAdminMixin):
     )
     list_filter = ("input_element__challenge",)
     fields = (
+        "download_file",
         ("value_type", "value_type_challenge"),
         ("content_type", "object_id"),
         ("object_link", "value_object_challenge"),
         ("input_element", "input_element_challenge"),
         ("created_at", "updated_at"),
     )
+    readonly_fields = ("download_file", *ValueParentAdminMixin.readonly_fields)
+
+    def download_file(self, instance):
+        if instance.value_type.content_type.model != "filevalue":
+            return "not a file"
+
+        return format_html(
+            HREF_TEMPLATE,
+            reverse("download-input", args=[instance.pk]),
+            instance.value_type.content_type,
+            "",
+        )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         url_name = request.resolver_match.url_name
@@ -239,7 +267,8 @@ class PredictionAdmin(TimestampedAdmin):
     list_display = (
         "pk",
         "challenge",
-        "evaluation",
+        "submission_run",
+        "input_element",
         "value_type",
         "content_type",
     )
@@ -337,3 +366,51 @@ class FloatValueAdmin(GenericValueAdmin):
 @register(models.FileValue)
 class FileValueAdmin(GenericValueAdmin):
     pass
+
+
+@register(models.InputBatchGroup)
+class InputBatchGroupAdmin(TimestampedAdmin):
+    list_filter = ("challenge",)
+    list_display = ("id", "challenge", "created_at")
+
+
+@register(models.InputBatch)
+class InputBatchAdmin(TimestampedAdmin):
+    list_display = ("id", "batch_group", "is_public")
+
+
+@register(models.InputBatchMembership)
+class InputBatchMembershipAdmin(TimestampedAdmin):
+    list_display = ("id", "batch_group", "batch", "input_element")
+
+
+@register(models.BatchFile)
+class BatchFileAdmin(TimestampedAdmin):
+    list_display = ("id", "batch", "value_type")
+    readonly_fields = (
+        "batch",
+        "value_type",
+        "download_batch",
+        *TimestampedAdmin.readonly_fields,
+    )
+
+    def download_batch(self, instance):
+        return format_html(
+            HREF_TEMPLATE,
+            reverse("download-batch", args=[instance.pk]),
+            instance.data,
+            "",
+        )
+
+
+@register(models.BatchEvaluation)
+class BatchEvaluationAdmin(TimestampedAdmin):
+    list_display = ("id", "input_batch", "status", "submission_run")
+    readonly_fields = (
+        "input_batch",
+        "status",
+        "submission_run",
+        "log_stdout",
+        "log_stderr",
+        *TimestampedAdmin.readonly_fields,
+    )

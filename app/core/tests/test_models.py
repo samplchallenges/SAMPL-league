@@ -9,24 +9,28 @@ import pytest
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.db import models as django_models
 
-from core import models
+from core import batching, models
+from core.models import values
 from core.tests import mocktime
 
 TEST_DATA_PATH = Path(__file__).parent / "data"
+
+# pylint: disable=protected-access
 
 
 def test_value_registration():
     with pytest.raises(ValidationError):
 
-        @models.register_value_model
-        class InvalidValueModel(models.GenericValue):
+        @values.register_value_model
+        class InvalidValueModel(values.GenericValue):
             class Meta:
                 app_label = "core.apps.CoreConfig"
 
-    @models.register_value_model
-    class CharValueModel(models.GenericValue):
+    @values.register_value_model
+    class CharValueModel(values.GenericValue):
         value = django_models.CharField(max_length=100)
 
         class Meta:
@@ -51,27 +55,14 @@ def test_file_value(input_elements, molfile_type):
         with open(hellopath, "w", encoding="utf-8") as fp:
             fp.write("Hello world")
             fp.flush()
-        file_value = models.FileValue.from_string(hellopath, challenge=challenge)
+        file_value = models.FileValue.from_string(
+            hellopath, challenge=challenge, input_element=elem
+        )
         file_value.save()
         expected_dirpath = Path(f"file_uploads/challenges/{challenge.id}")
         dirpath = Path(file_value.value.name).parent
         assert dirpath == expected_dirpath
         assert file_value.challenge == challenge
-
-
-def test_input_element(input_elements, benzene_from_mol):
-    elem = input_elements[0]
-    kwargs, file_kwargs = elem.all_values()
-    assert kwargs == {"smiles": "c1ccccc1"}
-    assert file_kwargs == {}
-
-    kwargs, file_kwargs = benzene_from_mol.all_values()
-    assert kwargs == {}
-    molfile = file_kwargs["molfile"]
-    dirpath = Path(molfile).parent
-    relative_path = dirpath.relative_to(settings.MEDIA_ROOT)
-    expected_path = f"file_uploads/challenges/{benzene_from_mol.challenge_id}"
-    assert relative_path == Path(expected_path)
 
 
 @pytest.mark.parametrize(
@@ -87,16 +78,22 @@ def test_challenge(challenge, mocknow, compareval):
         assert challenge.is_active() == compareval
 
 
+@pytest.mark.parametrize("batch", (False, True))
 def test_load_prediction_file(
-    container_factory, submission_factory, submission_run_factory, benzene_from_mol
+    container_factory,
+    submission_factory,
+    submission_run_factory,
+    benzene_from_mol,
+    batch,
 ):
     challenge = benzene_from_mol.challenge
-    coordsfile_type = models.ValueType(
+    coordsfile_type = models.ValueType.objects.create(
         challenge=challenge,
         is_input_flag=False,
         content_type=ContentType.objects.get_for_model(models.FileValue),
         key="conformation",
         description="3D output MOL file",
+        batch_method="fake",
     )
     container = container_factory(challenge, "megosato/score-coords", "latest")
     submission = submission_factory(container)
@@ -106,20 +103,57 @@ def test_load_prediction_file(
     )
     filename = "Conformer3D_CID_241.mdl"
     output_path = TEST_DATA_PATH / filename
-
-    mock_field_file_save = Mock()
-
-    def mock_save_side_effect(name, content, **kwargs):
-        assert name == filename
-
-    mock_field_file_save.side_effect = mock_save_side_effect
-
-    with patch("django.db.models.fields.files.FieldFile.save", mock_field_file_save):
-
-        models.Prediction.load_output(
-            challenge, evaluation, coordsfile_type, output_path
+    if batch:
+        challenge.max_batch_size = 2
+        challenge.save()
+        batch_group = challenge.current_batch_group()
+        batch = batch_group.inputbatch_set.first()
+        batch_evaluation = batch.batchevaluation_set.create(
+            submission_run=submission_run
         )
-        assert mock_field_file_save.call_count == 1
+        batch_path = str(TEST_DATA_PATH / "batched_mols.sdf")
+
+        def mock_batch_save_side_effect(name, content, **kwargs):
+            from rdkit import Chem
+
+            assert Chem.MolFromMolFile(content.name) is not None
+
+        mock_batch_file_save = Mock()
+        mock_batch_file_save.side_effect = mock_batch_save_side_effect
+
+        class FakeBatcher:
+            @classmethod
+            def invert(cls, batchfile):
+                for _, value in batching.SDFBatcher.invert(batchfile):
+                    yield benzene_from_mol.id, value
+                    break
+
+        batching.BATCHERS["fake"] = FakeBatcher
+
+        with patch(
+            "django.db.models.fields.files.FieldFile.save", mock_batch_file_save
+        ):
+            models.Prediction.load_batch_output(
+                challenge, batch_evaluation, coordsfile_type, batch_path
+            )
+            assert mock_batch_file_save.call_count == 1
+
+    else:
+        mock_field_file_save = Mock()
+
+        def mock_save_side_effect(name, content, **kwargs):
+            assert name == filename
+
+        mock_field_file_save.side_effect = mock_save_side_effect
+
+        with patch(
+            "django.db.models.fields.files.FieldFile.save", mock_field_file_save
+        ):
+
+            models.Prediction.load_evaluation_output(
+                challenge, evaluation, coordsfile_type, output_path
+            )
+            assert mock_field_file_save.call_count == 1
 
 
 def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):
@@ -140,3 +174,45 @@ def test_cancel_requested(draft_submission, submission_run_factory):
     submission_run.save()
 
     assert submission_run.check_cancel_requested()
+
+
+def test_batch_build_works(smiles_molw_config, input_elements):
+    group1 = models.InputBatchGroup.objects.create(
+        challenge=smiles_molw_config.challenge, max_batch_size=1
+    )
+    batch1_priv = models.InputBatch.objects.create(batch_group=group1, is_public=False)
+    batch1_pub = models.InputBatch.objects.create(batch_group=group1, is_public=True)
+
+    public_elements = [element for element in input_elements if element.is_public]
+    private_elements = [element for element in input_elements if not element.is_public]
+
+    batch1_pub.batchup(public_elements)
+    batch1_priv.batchup(private_elements)
+
+
+def test_batch_checks(smiles_molw_config, input_elements):
+    element = input_elements[1]
+    assert element.is_public
+    group = models.InputBatchGroup.objects.create(
+        challenge=smiles_molw_config.challenge, max_batch_size=1
+    )
+    batch_priv = models.InputBatch.objects.create(batch_group=group)
+    batch1_pub = models.InputBatch.objects.create(batch_group=group, is_public=True)
+    batch2_pub = models.InputBatch.objects.create(batch_group=group, is_public=True)
+    with pytest.raises(ValidationError):
+        batch_priv._set_elements([element])
+
+    batch1_pub._set_elements([element])
+
+    with pytest.raises(IntegrityError):
+        batch2_pub._set_elements([element])
+
+
+def test_input_value_clean(smiles_molw_config, molfile_molw_config, benzene_from_mol):
+    input_value = benzene_from_mol.inputvalue_set.first()
+
+    input_value.value_type.challenge = smiles_molw_config.challenge
+    with pytest.raises(ValidationError) as exc_info:
+        input_value.clean()
+
+    assert list(exc_info.value.error_dict.keys()) == ["input_element"]

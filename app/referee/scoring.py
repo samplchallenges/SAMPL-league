@@ -20,6 +20,10 @@ class ScoringFailureException(Exception):
     pass
 
 
+class IncompleteRunException(Exception):
+    pass
+
+
 class AnswerPredictionPair:
     def __init__(self, answer, prediction):
         self.answer = answer
@@ -37,11 +41,12 @@ class AnswerPredictionPair:
         return args_dict
 
 
-def _build_kwargs(evaluation):
+def _build_kwargs(submission_run, input_element):
     predictions_by_key, file_predictions_by_key = models.Prediction.dicts_by_key(
-        evaluation.prediction_set.all()
+        models.Prediction.objects.filter(
+            submission_run=submission_run, input_element=input_element
+        )
     )
-    input_element = evaluation.input_element
 
     answer_keys, file_answer_keys = models.AnswerKey.dicts_by_key(
         input_element.answerkey_set.all()
@@ -71,46 +76,64 @@ def _build_kwargs(evaluation):
     return kwargs, file_kwargs
 
 
-def score_evaluation(container, evaluation, evaluation_score_types):
-    kwargs, file_kwargs = _build_kwargs(evaluation)
+def score_element(
+    container, log_owner, submission_run, input_element, evaluation_score_types
+):
+    log_messages = []
+    kwargs, file_kwargs = _build_kwargs(submission_run, input_element)
     command = "score-evaluation"
-    evaluation.append(stdout=f"Scoring with {container.uri} {command}\n")
+    log_messages.append(f"Scoring with {container.uri} {command}\n")
     kwargs.update(container.custom_args())
     file_kwargs.update(container.custom_file_args())
-
+    aws_login_func = (
+        utils.get_aws_credential_function(container.uri)
+        if settings.LOGIN_TO_AWS
+        else None
+    )
     try:
         for key, score_value in ever_given.wrapper.run(
             container.uri,
             command,
             file_kwargs=file_kwargs,
             kwargs=kwargs,
-            log_handler=models.Evaluation.LogHandler(evaluation),
+            log_handler=models.Logged.LogHandler(log_owner),
             container_type=container.container_type,
             engine_name=settings.CONTAINER_ENGINE,
-            aws_login_func=utils.get_aws_credential_function(container.uri)
-            if settings.LOGIN_TO_AWS
-            else None,
+            aws_login_func=aws_login_func,
         ):
             if key in evaluation_score_types:
                 models.EvaluationScore.objects.create(
-                    evaluation=evaluation,
+                    submission_run=submission_run,
+                    input_element=input_element,
                     score_type=evaluation_score_types[key],
                     value=float(score_value),
                 )
     except Exception as exc:  # pylint: disable=broad-except
+        log_messages.append(f"Scoring failed: {exc}")
         raise ScoringFailureException from exc
+    log_messages.append(f"Scoring completed for {input_element.name}\n")
+    return log_messages
 
 
-def _score_submission_run(container, submission_run, score_types):
+def _score_submission_run(container, submission_run, score_types, is_batch):
     submission_run_score_types = score_types[models.ScoreType.Level.SUBMISSION_RUN]
 
-    evaluations = submission_run.evaluation_set.all()
+    if is_batch:
+        evaluations = submission_run.batchevaluation_set.all()
+    else:
+        evaluations = submission_run.evaluation_set.all()
 
     run_scores_dicts = [
         {score.score_type.key: score.value for score in evaluation.scores.all()}
         for evaluation in evaluations
     ]
-
+    if any(len(score_dict) == 0 for score_dict in run_scores_dicts):
+        raise IncompleteRunException("Scores are not present for all evaluations")
+    aws_login_func = (
+        utils.get_aws_credential_function(container.uri)
+        if settings.LOGIN_TO_AWS
+        else None
+    )
     with tempfile.NamedTemporaryFile(suffix=".json", mode="w") as fp:
         json.dump(run_scores_dicts, fp)
         fp.flush()
@@ -127,9 +150,7 @@ def _score_submission_run(container, submission_run, score_types):
             kwargs=kwargs,
             container_type=container.container_type,
             engine_name=settings.CONTAINER_ENGINE,
-            aws_login_func=utils.get_aws_credential_function(container.uri)
-            if settings.LOGIN_TO_AWS
-            else None,
+            aws_login_func=aws_login_func,
         ):
             if key in submission_run_score_types:
                 models.SubmissionRunScore.objects.create(
@@ -151,9 +172,13 @@ def score_submission_run(submission_run):
     submission = submission_run.submission
     challenge = submission.challenge
     container = models.ScoreMaker.objects.get(challenge=challenge).container
-
+    is_batch = challenge.max_batch_size > 0
     try:
-        _score_submission_run(container, submission_run, challenge.score_types)
+        _score_submission_run(
+            container, submission_run, challenge.score_types, is_batch
+        )
+    except IncompleteRunException as ire:
+        submission_run.append(stderr=str(ire))
     except Exception as exc:
         submission_run.append(stderr=str(exc))
         submission_run.status = models.Status.FAILURE
