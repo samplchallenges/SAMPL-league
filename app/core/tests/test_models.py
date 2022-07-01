@@ -190,6 +190,17 @@ def test_batch_build_works(smiles_molw_config, input_elements):
     batch1_priv.batchup(private_elements)
 
 
+def test_generate_batches(smiles_molw_config, input_elements):
+    challenge = smiles_molw_config.challenge
+    challenge.max_batch_size = 2
+    challenge.save()
+    batch_group = challenge.current_batch_group()
+    assert batch_group.inputbatch_set.count() == 2
+    batch = batch_group.inputbatch_set.filter(is_public=True).get()
+    assert batch.inputbatchmembership_set.count() == 2
+    assert batch.batchfile_set.count() == 1
+
+
 def test_batch_checks(smiles_molw_config, input_elements):
     element = input_elements[1]
     assert element.is_public
@@ -206,13 +217,3 @@ def test_batch_checks(smiles_molw_config, input_elements):
 
     with pytest.raises(IntegrityError):
         batch2_pub._set_elements([element])
-
-
-def test_input_value_clean(smiles_molw_config, molfile_molw_config, benzene_from_mol):
-    input_value = benzene_from_mol.inputvalue_set.first()
-
-    input_value.value_type.challenge = smiles_molw_config.challenge
-    with pytest.raises(ValidationError) as exc_info:
-        input_value.clean()
-
-    assert list(exc_info.value.error_dict.keys()) == ["input_element"]

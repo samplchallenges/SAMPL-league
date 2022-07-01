@@ -109,9 +109,11 @@ class InputBatchMembership(Timestamped):
 def batch_upload_location(instance, filename):
     batch_group = instance.batch.batch_group
     challenge = batch_group.challenge
+    challenge_path = os.path.join("batches", f"{challenge.id}")
     group_path = os.path.join("batch_group", f"{batch_group.id}")
+    batch_path = os.path.join("b", f"{instance.batch.id}")
     return os.path.join(
-        "batches", f"{challenge.id}", group_path, instance.value_type.key, filename
+        challenge_path, group_path, batch_path, instance.value_type.key, filename
     )
 
 
