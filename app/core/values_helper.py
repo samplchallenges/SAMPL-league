@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 from . import filecache
 
 
-def _element_values(input_values: List["InputValue"]):
+def element_values(input_values: List["InputValue"]):
     file_values = {}
     values = {}
 
@@ -38,7 +38,7 @@ def _values(input_element: "InputElement"):
     input_values = input_element.inputvalue_set.select_related(
         "value_type", "value_type__content_type"
     ).all()
-    return _element_values(input_values)
+    return element_values(input_values)
 
 
 def all_values(input_element: "InputElement"):

@@ -206,3 +206,23 @@ class ValueType(Timestamped):
 
     def __str__(self):
         return self.key
+
+    def type_input_note(self):
+        if self.challenge.max_batch_size > 0 and not self.on_parent_flag:
+            if self.batch_method == "csv":
+                return "CSV file with columns ID, name, value"
+            elif self.batch_method == "sdf":
+                return "multi-molecule SDF with properties SAMPL_ID, SAMPL_NAME"
+            else:
+                return "Configuration error! Contact administrator."
+        return self.content_type.name
+
+    def type_output_note(self):
+        if self.challenge.max_batch_size > 0:
+            if self.batch_method == "csv":
+                return "CSV file with columns ID, name, value, where the ID matches up with the values in the inputs"
+            elif self.batch_method == "sdf":
+                return "multi-molecule SDF with property SAMPL_ID that must match up with the inputs"
+            else:
+                return "Configuration error! Contact administrator."
+        return self.content_type.name
