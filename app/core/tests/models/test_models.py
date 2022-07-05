@@ -1,40 +1,17 @@
 # pylint: disable=unused-argument, unused-variable
-import os.path
+
 import re
-import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
-from django.db import IntegrityError
-from django.db import models as django_models
 
 from core import batching, models
-from core.models import values
 from core.tests import mocktime
 
-TEST_DATA_PATH = Path(__file__).parent / "data"
-
-# pylint: disable=protected-access
-
-
-def test_value_registration():
-    with pytest.raises(ValidationError):
-
-        @values.register_value_model
-        class InvalidValueModel(values.GenericValue):
-            class Meta:
-                app_label = "core.apps.CoreConfig"
-
-    @values.register_value_model
-    class CharValueModel(values.GenericValue):
-        value = django_models.CharField(max_length=100)
-
-        class Meta:
-            app_label = "core.apps.CoreConfig"
+TEST_DATA_PATH = Path(__file__).parent.parent / "data"
 
 
 def test_container(scoring_container):
@@ -43,26 +20,6 @@ def test_container(scoring_container):
     scoring_container.tag = None
 
     assert scoring_container.uri == "ghcr.io/megosato/score-coords"
-
-
-def test_file_value(input_elements, molfile_type):
-    elem = input_elements[0]
-    challenge = elem.challenge
-    hellofile = "hello.txt"
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        hellopath = os.path.join(tmpdir, hellofile)
-        with open(hellopath, "w", encoding="utf-8") as fp:
-            fp.write("Hello world")
-            fp.flush()
-        file_value = models.FileValue.from_string(
-            hellopath, challenge=challenge, input_element=elem
-        )
-        file_value.save()
-        expected_dirpath = Path(f"file_uploads/challenges/{challenge.id}")
-        dirpath = Path(file_value.value.name).parent
-        assert dirpath == expected_dirpath
-        assert file_value.challenge == challenge
 
 
 @pytest.mark.parametrize(
@@ -159,11 +116,11 @@ def test_load_prediction_file(
 def test_container_arg(draft_submission, custom_string_arg, custom_file_arg):
     container = draft_submission.container
     assert container.custom_args() == {"stringarg": "hello world"}
-    filepath = os.path.join(
-        settings.MEDIA_ROOT,
-        "container_args/{}/{}/filearg/example.*.txt".format(
+    filepath = str(
+        Path(settings.MEDIA_ROOT)
+        / "container_args/{}/{}/filearg/example.*.txt".format(
             container.user_id, container.id
-        ),
+        )
     )
     assert re.match(filepath, container.custom_file_args()["filearg"])
 
@@ -174,46 +131,3 @@ def test_cancel_requested(draft_submission, submission_run_factory):
     submission_run.save()
 
     assert submission_run.check_cancel_requested()
-
-
-def test_batch_build_works(smiles_molw_config, input_elements):
-    group1 = models.InputBatchGroup.objects.create(
-        challenge=smiles_molw_config.challenge, max_batch_size=1
-    )
-    batch1_priv = models.InputBatch.objects.create(batch_group=group1, is_public=False)
-    batch1_pub = models.InputBatch.objects.create(batch_group=group1, is_public=True)
-
-    public_elements = [element for element in input_elements if element.is_public]
-    private_elements = [element for element in input_elements if not element.is_public]
-
-    batch1_pub.batchup(public_elements)
-    batch1_priv.batchup(private_elements)
-
-
-def test_generate_batches(smiles_molw_config, input_elements):
-    challenge = smiles_molw_config.challenge
-    challenge.max_batch_size = 2
-    challenge.save()
-    batch_group = challenge.current_batch_group()
-    assert batch_group.inputbatch_set.count() == 2
-    batch = batch_group.inputbatch_set.filter(is_public=True).get()
-    assert batch.inputbatchmembership_set.count() == 2
-    assert batch.batchfile_set.count() == 1
-
-
-def test_batch_checks(smiles_molw_config, input_elements):
-    element = input_elements[1]
-    assert element.is_public
-    group = models.InputBatchGroup.objects.create(
-        challenge=smiles_molw_config.challenge, max_batch_size=1
-    )
-    batch_priv = models.InputBatch.objects.create(batch_group=group)
-    batch1_pub = models.InputBatch.objects.create(batch_group=group, is_public=True)
-    batch2_pub = models.InputBatch.objects.create(batch_group=group, is_public=True)
-    with pytest.raises(ValidationError):
-        batch_priv._set_elements([element])
-
-    batch1_pub._set_elements([element])
-
-    with pytest.raises(IntegrityError):
-        batch2_pub._set_elements([element])
