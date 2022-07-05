@@ -263,7 +263,6 @@ class Prediction(Solution):
             raise ValueError("Evaluation is not set")
         if output_type is None:
             raise ValueError("Output type is not set")
-
         prediction = cls(
             challenge=challenge,
             submission_run=evaluation.submission_run,

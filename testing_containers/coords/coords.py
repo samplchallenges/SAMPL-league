@@ -30,9 +30,8 @@ def batch_coords(output_dir, sdfile, smilesfile):
     bondc_writer = csv.DictWriter(bondc_fp, fieldnames=fieldnames)
     bondc_writer.writeheader()
 
-
-    def _printinfo(mol, id, name):
-        row = {"id": id, "name": name}
+    def _printinfo(mol, idx, name):
+        row = {"id": idx, "name": name}
         row["value"] = ExactMolWt(mol)
         molw_writer.writerow(row)
         row["value"] = mol.GetNumAtoms()
@@ -42,7 +41,7 @@ def batch_coords(output_dir, sdfile, smilesfile):
 
     output_file = os.path.join(output_dir, "coords.sdf")
     writer = Chem.SDWriter(output_file)
-    
+
     for id, name, mol in _itermols(sdfile, smilesfile):
         mol2 = Chem.AddHs(mol)
         AllChem.EmbedMolecule(mol2)
@@ -52,7 +51,6 @@ def batch_coords(output_dir, sdfile, smilesfile):
     print(MOLW_KEY, "molw.csv")
     print(ATOMCOUNT_KEY, "atomc.csv")
     print(BONDCOUNT_KEY, "bondc.csv")
-        
 
 
 def _itermols(sdfile, smilesfile):
@@ -70,7 +68,11 @@ def _itermols(sdfile, smilesfile):
         raise ValueError("Either molfile or smilesfile must be set")
 
 
-def calc_coords(output_dir, molfile, smiles,):
+def calc_coords(
+    output_dir,
+    molfile,
+    smiles,
+):
 
     if not output_dir:
         output_dir = ""
@@ -101,18 +103,21 @@ def calc_coords(output_dir, molfile, smiles,):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output-dir', help="Output Directory")
-    parser.add_argument('--molfile', help="MOL File")
-    parser.add_argument('--smiles', help="SMILES string")
-
-    parser.add_argument('--batch', action="store_true", default=False, help="Input and output will be batch format")
+    parser.add_argument("--output-dir", help="Output Directory")
+    parser.add_argument("--molfile", help="MOL File")
+    parser.add_argument("--smiles", help="SMILES string")
+    parser.add_argument("--protein_pdb", help="For testing")
+    parser.add_argument(
+        "--batch",
+        action="store_true",
+        default=False,
+        help="Input and output will be batch format",
+    )
 
     args = parser.parse_args()
+    if args.protein_pdb:
+        print("Protein PDB:", args.protein_pdb)
     if args.batch:
         batch_coords(args.output_dir, args.molfile, args.smiles)
     else:
         calc_coords(args.output_dir, args.molfile, args.smiles)
-
-
-
-

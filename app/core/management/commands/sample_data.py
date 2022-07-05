@@ -1,3 +1,4 @@
+import datetime
 import os.path
 
 from django.contrib.auth import get_user_model
@@ -13,8 +14,34 @@ SAMPLE_OUTPUT_FILE = os.path.join(
     os.path.dirname(__file__), "data", "Conformer3D_CID_241.mdl"
 )
 
+SAMPLE_PDB_FILE = os.path.join(os.path.dirname(__file__), "data", "5qcr.pdb")
 
-def _create_challenge_inputs(challenge, file_based):
+
+def _create_challenge_inputs(challenge, file_based, with_pdb):
+    if with_pdb:
+        pdb_type = models.ValueType.objects.create(
+            challenge=challenge,
+            is_input_flag=True,
+            on_parent_flag=True,
+            content_type=ContentType.objects.get_for_model(models.FileValue),
+            key="protein_pdb",
+            description="Protein structure (shared among input elements)",
+        )
+        parent_elem = models.InputElement.objects.create(
+            name="Protein", challenge=challenge, is_public=True, is_parent=True
+        )
+        value_object = models.FileValue.from_string(
+            SAMPLE_PDB_FILE, challenge=challenge, input_element=parent_elem
+        )
+        value_object.save()
+        models.InputValue.objects.create(
+            input_element=parent_elem,
+            value_type=pdb_type,
+            value_object=value_object,
+        )
+    else:
+        parent_elem = None
+
     if file_based:
         input_type = models.ValueType.objects.create(
             challenge=challenge,
@@ -31,6 +58,7 @@ def _create_challenge_inputs(challenge, file_based):
             content_type=ContentType.objects.get_for_model(models.FileValue),
             key="conformation",
             description="Conformation",
+            batch_method="sdf",
         )
     else:
         input_type = models.ValueType.objects.create(
@@ -55,15 +83,17 @@ def _create_challenge_inputs(challenge, file_based):
         ("benzene", "phenylalanine", "octane", "toluene", "heptane", "hexane")
     ):
         elem = models.InputElement.objects.create(
-            name=name, challenge=challenge, is_public=idx % 2
+            name=name, challenge=challenge, parent=parent_elem, is_public=idx % 2
         )
         if file_based:
             value_object = models.FileValue.from_string(
                 SAMPLE_INPUT_FILE, challenge=challenge, input_element=elem
             )
+            value_object.save()
             expected_value = models.FileValue.from_string(
                 SAMPLE_OUTPUT_FILE, challenge=challenge, input_element=elem
             )
+            expected_value.save()
         else:
             smiles = "c1ccccc1"
             value_object = models.TextValue.objects.create(
@@ -94,6 +124,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--delete", action="store_true", help="Delete old challenges with this name"
         )
+        parser.add_argument(
+            "--withpdb", action="store_true", help="Show how to pass PDB file"
+        )
 
     def handle(self, *args, **options):  # pylint:disable=unused-argument
         if options["delete"]:
@@ -113,7 +146,7 @@ class Command(BaseCommand):
             name=options["name"],
             defaults={
                 "start_at": timezone.now(),
-                "end_at": timezone.now(),
+                "end_at": timezone.now() + datetime.timedelta(days=100),
                 "repo_url": foo_url,
             },
         )
@@ -124,7 +157,7 @@ class Command(BaseCommand):
             challenge=challenge,
             container_type="docker",
             registry="ghcr.io",
-            label="megosato/calc-coords",
+            label="robbason/calc-coords",
             tag="latest",
         )
 
@@ -164,4 +197,4 @@ class Command(BaseCommand):
             status=models.Status.SUCCESS,
         )
 
-        _create_challenge_inputs(challenge, options["files"])
+        _create_challenge_inputs(challenge, options["files"], options["withpdb"])
