@@ -113,14 +113,23 @@ class SubmissionRun(Logged):
                 )
 
     def completion(self):
-        completed = self.evaluation_set.filter(
-            status__in=(Status.SUCCESS, Status.FAILURE)
-        ).count()
-        num_element_ids = self.submission.challenge.inputelement_set.filter(
-            is_public=self.is_public
-        ).count()
-        completed_frac = completed / num_element_ids if num_element_ids else 0
-        return Completion(completed, num_element_ids, completed_frac)
+        if self.submission.challenge.max_batch_size > 0:
+            batch_group = self.submission.challenge.current_batch_group()
+            completed = self.batchevaluation_set.filter(
+                status__in=(Status.SUCCESS, Status.FAILURE)
+            ).count()
+            num_runs = batch_group.inputbatch_set.filter(
+                is_public=self.is_public
+            ).count()
+        else:
+            completed = self.evaluation_set.filter(
+                status__in=(Status.SUCCESS, Status.FAILURE)
+            ).count()
+            num_runs = self.submission.challenge.inputelement_set.filter(
+                is_public=self.is_public, is_parent=False
+            ).count()
+        completed_frac = completed / num_runs if num_runs else 0
+        return Completion(completed, num_runs, completed_frac)
 
 
 class SubmissionRunPair(Timestamped):
