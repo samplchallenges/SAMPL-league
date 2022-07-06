@@ -122,7 +122,7 @@ class Submission(Timestamped):
         batch_group = self.challenge.current_batch_group()
         if batch_group is None:
             for element_id in self.challenge.inputelement_set.filter(
-                is_public=is_public
+                is_public=is_public, is_parent=False
             ).values_list("id", flat=True):
                 submission_run.evaluation_set.create(input_element_id=element_id)
         else:
