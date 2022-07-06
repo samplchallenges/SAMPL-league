@@ -8,13 +8,13 @@ from .models import InputValue
 
 
 class ElementTable:
-    child_types = OrderedDict()
-    parent_types = OrderedDict()
-    elems = defaultdict(OrderedDict)
-    parent_elems = defaultdict(OrderedDict)
-    rows = []
-
     def __init__(self, challenge):
+        self.child_types = OrderedDict()
+        self.parent_types = OrderedDict()
+        self.elems = defaultdict(OrderedDict)
+        self.parent_elems = defaultdict(OrderedDict)
+        self.rows = []
+
         input_values = (
             InputValue.objects.select_related(
                 "input_element",
@@ -29,7 +29,6 @@ class ElementTable:
             .order_by("input_element_id", "value_type__key")
             .all()
         )
-
         for input_value in input_values:
             key = input_value.value_type.key
             elem = input_value.input_element
@@ -46,6 +45,7 @@ class ElementTable:
 
             holder[elem.id]["name"] = elem.name
             holder[elem.id][key] = input_value
+
         for elem in self.elems.values():
             self.rows.append(self.__collate_row(elem))
 

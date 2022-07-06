@@ -4,7 +4,7 @@ import pytest
 from django.db import connection, reset_queries
 from pytest_django.asserts import assertContains
 
-from core.views import challenge as challenge_views
+from core import template_helpers
 
 
 @pytest.mark.django_db
@@ -26,13 +26,12 @@ def test_challenge_list(client, user, benzene_from_mol):
 def test_query_count_elements_context(settings, benzene_from_mol):
     settings.DEBUG = True  # So that connection.queries will have data
     reset_queries()
-    elements, input_types = challenge_views._input_elements(benzene_from_mol.challenge)
+    element_table = template_helpers.ElementTable(benzene_from_mol.challenge)
     query_count = len(connection.queries)
     expected_query_count = (
         1 + 1  # for list of input values  # for getting the file value
     )
 
     assert query_count == expected_query_count
-
-    assert len(elements) == 1
-    assert len(input_types) == 1
+    assert len(element_table.rows) == 1
+    assert len(element_table.types) == 1
