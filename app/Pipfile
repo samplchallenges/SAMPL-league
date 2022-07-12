@@ -14,16 +14,15 @@ dask = "*"
 distributed = "*"
 docker = "*"
 six = "*"
-ever-given = "0.0.13"
-sampl = {path = "."}
 rollbar = "*"
 jupyterlab = "*"
 ipython = "*"
 dask-jobqueue = "*"
+rdkit = "*"
 
 [dev-packages]
 black = "*"
-click = "8.0.4" # https://github.com/psf/black/issues/2964
+click = "*"
 isort = "*"
 pylint = "*"
 pytest = "*"
@@ -31,13 +30,15 @@ flake8 = "*"
 pylint-django = "*"
 pytest-django = "*"
 bokeh = ">=0.13.0"
+pre-commit = "*"
 pytest-cov = "*"
 pytest-xdist = {extras = ["psutil"], version = "*"}
 django-debug-toolbar = "*"
 # For local development
-#ever-given = {editable = true, path = "./../ever_given"}
-#sampl = {editable = true, path = "."}
-pre-commit = "*"
+ever-given = {editable = true, path = "./../ever_given"}
+sampl = {editable = true, path = "."}
+mypy = "*"
+sampl-pytest = {editable = true, path = "./../sampl_pytest"}
 
 [requires]
 python_version = "3.8"

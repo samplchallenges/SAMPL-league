@@ -1,3 +1,4 @@
+from asyncore import poll
 import io
 from pathlib import Path
 import subprocess
@@ -51,7 +52,14 @@ class SingularityContainerInstance(ContainerInstance):
         # to remove specific containers
 
     def status(self):
-        return self.process.poll()
+        poll_status = self.process.poll()
+        if poll_status is None:
+            return ContainerInstance.RUNNING
+        
+        if poll_status == 0:
+            return ContainerInstance.SUCCESS
+        
+        return ContainerInstance.FAILURE
 
 
 class SingularityEngine(Engine):

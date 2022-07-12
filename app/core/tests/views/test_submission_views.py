@@ -239,10 +239,6 @@ def test_update_expired_submission(client, user, draft_submission):
         assert getattr(submission, key) == getattr(submission_old, key)
 
 
-@pytest.mark.parametrize(
-    ["container_engine"],
-    [["docker"], ["singularity"]],
-)
 @pytest.mark.django_db(transaction=True)
 def test_run_submission(client, container_engine):
 
@@ -255,8 +251,8 @@ def test_run_submission(client, container_engine):
         processes = True
         if processes:
             transaction.commit()
-            call_command("migrate", "core", "zero", interactive=False)
-            call_command("migrate", "core", interactive=False)
+            call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+            call_command("migrate", "core", verbosity=0, interactive=False)
             call_command("sample_data")
             transaction.commit()
         else:
@@ -372,8 +368,8 @@ def test_remote_scheduler(client):
     processes = True
     if processes:
         transaction.commit()
-        call_command("migrate", "core", "zero", interactive=False)
-        call_command("migrate", "core", interactive=False)
+        call_command("migrate", "core", "zero", verbosity=0, interactive=False)
+        call_command("migrate", "core", verbosity=0, interactive=False)
         call_command("sample_data")
         transaction.commit()
     else:

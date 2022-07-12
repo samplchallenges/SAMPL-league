@@ -5,6 +5,7 @@ Django settings for SAMPL project.
 VISUALIZE_DASK_GRAPH = False
 DASK_SCHEDULER_URL = "localhost:8786"
 ENABLE_REGISTRATION = False  # Disables self-registration
+LOCAL_CONTAINERS = False
 # End of custom settings for SAMPL
 
 ALLOWED_HOSTS = []
@@ -85,7 +86,7 @@ TIME_ZONE = "UTC"
 
 USE_I18N = True
 
-USE_L10N = True
+# USE_L10N = True
 
 USE_TZ = True
 

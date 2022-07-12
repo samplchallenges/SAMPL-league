@@ -1,0 +1,1 @@
+Pytest plugin to allow evergiven and app to share config for container engines test parameterization. Without this, the conftest hook conflicted when running both sets of tests at the same time.

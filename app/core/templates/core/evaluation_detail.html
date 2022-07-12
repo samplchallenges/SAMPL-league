@@ -5,7 +5,7 @@
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="{% url 'challenge-detail' challenge.pk %}">Challenge: {{ challenge.name }}</a></li>
     <li class="breadcrumb-item"><a href="{% url 'submission-detail' submission.pk %}">Submission: {{ submission.name }}</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Evaluation: {{ evaluation.input_element.name }}</li>
+    <li class="breadcrumb-item active" aria-current="page">Evaluation: {{ evaluation.input_element.name }} {{ evaluation.input_batch }}</li>
   </ol>
 </nav>
 

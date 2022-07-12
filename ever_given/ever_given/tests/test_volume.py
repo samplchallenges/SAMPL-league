@@ -5,7 +5,7 @@ import pytest
 
 import ever_given.wrapper
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
+
 def test_run_inputfile_only(container_engine):
     test_mdlfile_rel = "data/ChEBI_16716.mdl"
     print(os.path.dirname(__file__))
@@ -28,7 +28,6 @@ def test_run_inputfile_only(container_engine):
     assert molWeight == pytest.approx(78.046950192)
 
 
-@pytest.mark.parametrize(["container_engine"], [["docker"], ["singularity"]])
 def test_run_outputfile_only(tmp_path, container_engine):
     container_uri = "ghcr.io/megosato/calc-molwt-outfile:latest"
     kwargs = {"smiles": "c1cccnc1"}

@@ -9,6 +9,10 @@ GUEST_OUTPUT_DIR = Path("/mnt") / "outputs"
 
 
 class ContainerInstance(abc.ABC):
+    SUCCESS = "success"
+    FAILURE = "failure"
+    RUNNING = "running"
+
     @abc.abstractmethod
     def logs(
         self, *, want_stdout: bool, want_stderr: bool
