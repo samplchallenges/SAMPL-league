@@ -176,7 +176,7 @@ def scoring_container(challenge, user, db):
         container_type=models.ContainerType.DOCKER,
         challenge=challenge,
         registry="ghcr.io",
-        label="robbason/score-coords",
+        label="megosato/score-coords",
         tag="latest",
     )
 
@@ -311,7 +311,7 @@ def molfile_molw_config(config_factory):
     return config_factory(
         "molfile_molw",
         "robbason/calc-molwt",
-        "robbason/score-coords",
+        "megosato/score-coords",
         "molfile",
         models.FileValue,
         "sdf",
@@ -325,7 +325,7 @@ def smiles_molw_config(config_factory):
     return config_factory(
         "smiles_molw",
         "robbason/calc-molwt",
-        "robbason/score-coords",
+        "megosato/score-coords",
         "smiles",
         models.TextValue,
         "csv",
@@ -339,7 +339,7 @@ def smiles_docking_config_and_func(config_factory, elem_factory):
     config = config_factory(
         "smiles_docking",
         "robbason/calc-molwt",
-        "robbason/score-coords",
+        "megosato/score-coords",
         "smiles",
         models.TextValue,
         "csv",
