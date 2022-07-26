@@ -17,7 +17,6 @@ def test_score_submission_run(
 ):
     with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
         submission_run = smiles_molw_config.submission_run
-
         scoring.score_submission_run(submission_run)
 
         score_type = models.ScoreType.objects.get(
@@ -35,6 +34,29 @@ def test_score_submission_run(
         assert evaluation.scores.count() == 1
         score = evaluation.scores.first()
         assert score.value == pytest.approx(3.0)
+
+
+@pytest.mark.parametrize("max_batch_size", [1, 2])
+def test_score_submission_run_batch(
+    smiles_molw_config,
+    batch_evaluation_factory,
+    batch_evaluation_score_factory,
+    container_engine,
+    max_batch_size,
+):
+    batch_evaluations = batch_evaluation_factory(max_batch_size)
+    scores = batch_evaluation_score_factory(batch_evaluations)
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        submission_run = smiles_molw_config.submission_run
+        scoring.score_submission_run(submission_run)
+
+    score_type = models.ScoreType.objects.get(
+        challenge=smiles_molw_config.challenge, key="rmse"
+    )
+    assert models.SubmissionRunScore.objects.count() == 1
+
+    submission_run_score = models.SubmissionRunScore.objects.get(score_type=score_type)
+    assert submission_run_score.value == pytest.approx(3.0)
 
 
 def _save_file_arg(container, key, file_body):

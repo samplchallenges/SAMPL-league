@@ -1,5 +1,5 @@
 import time
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 
 from django.db import models, transaction
 from django.db.models.functions import Concat
@@ -338,6 +338,12 @@ class BatchEvaluation(BaseEvaluation):
             submission_run_id=self.submission_run_id,
             input_element__in=self.input_batch.elements(),
         )
+
+    def scores_dicts(self):
+        by_elem = defaultdict(dict)
+        for score in self.scores:
+            by_elem[score.input_element_id][score.score_type.key] = score.value
+        return by_elem.values()
 
     @property
     def input_object(self):
