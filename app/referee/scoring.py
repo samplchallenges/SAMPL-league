@@ -118,15 +118,23 @@ def score_element(
 def _score_submission_run(container, submission_run, score_types, is_batch):
     submission_run_score_types = score_types[models.ScoreType.Level.SUBMISSION_RUN]
 
+    # run_scores_dicts is a list of dicts, each of which contains key:value pairs for the scores
+    # for each element
+
     if is_batch:
-        evaluations = submission_run.batchevaluation_set.all()
+        batch_evaluations = submission_run.batchevaluation_set.all()
+        run_scores_dicts = [
+            score_dict
+            for batch_evaluation in batch_evaluations
+            for score_dict in batch_evaluation.scores_dicts()
+        ]
     else:
         evaluations = submission_run.evaluation_set.all()
+        run_scores_dicts = [
+            {score.score_type.key: score.value for score in evaluation.scores.all()}
+            for evaluation in evaluations
+        ]
 
-    run_scores_dicts = [
-        {score.score_type.key: score.value for score in evaluation.scores.all()}
-        for evaluation in evaluations
-    ]
     if any(len(score_dict) == 0 for score_dict in run_scores_dicts):
         raise IncompleteRunException("Scores are not present for all evaluations")
     aws_login_func = (
