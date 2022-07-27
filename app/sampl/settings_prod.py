@@ -28,6 +28,7 @@ MAIN_WEBSITE_URL = os.environ.get("MAIN_WEBSITE_URL", "app.samplchallenges.org")
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
+    "localhost",
     MAIN_WEBSITE_URL,
     os.environ.get("EC2_PRIVATE_IP", "172.31.43.228"),
     os.environ.get("SAMPL_DNS_1", ""),
