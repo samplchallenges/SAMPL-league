@@ -7,7 +7,7 @@ jobqueue:
 
       # Dask worker options
       cores: 1                    # Total number of cores per job
-      memory: '4 GB'              # Total amount of memory per job
+      memory: '8 GB'              # Total amount of memory per job
       processes: 1                # Number of Python processes per job
 
       #interface: null             # Network interface to use like eth0 or ib0
@@ -19,7 +19,7 @@ jobqueue:
       shebang: "#!/usr/bin/env bash"
       queue: 'free'                # Queue to use: 'free' or 'standard' if standard is used project must be DMOBLEY_LAB
       #project: 'DMOBLEY_LAB'
-      walltime: '02:00:00'
+      walltime: '06:00:00'
       #env-extra: []
       #job-cpu: null
       #job-mem: null
@@ -30,6 +30,6 @@ jobqueue:
 
     adapt_settings:
       minimum_jobs: 0
-      maximum_jobs: 1
+      maximum_jobs: 50
       wait_count: 3
       interval: '30000 ms'

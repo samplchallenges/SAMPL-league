@@ -166,6 +166,9 @@ class BaseEvaluation(Logged):
     def clear_old_predictions(self, output_type):
         raise Exception("Must implement in subclass")
 
+    def clear_old_scores(self):
+        raise Exception("Must implement in subclass")
+
     def mark_started(self):
         self.append(stdout="Started\n")
         self.status = Status.RUNNING
@@ -201,6 +204,10 @@ class Evaluation(BaseEvaluation):
         if matching_prediction.exists():
             self.append(stderr="Duplicate prediction entry, overwriting old entry")
             matching_prediction.delete()
+
+    def clear_old_scores(self):
+        if self.scores.exists():
+            self.scores.delete()
 
     def cleanup_local_outputs(self, output_file_keys):
         # TODO: copied between this and BatchEvaluation with minor changes
@@ -364,6 +371,10 @@ class BatchEvaluation(BaseEvaluation):
         if matching_objects.exists():
             self.append(stderr="Duplicate prediction entry, overwriting old entry")
             matching_objects.delete()
+
+    def clear_old_scores(self):
+        if self.scores.exists():
+            self.scores.delete()
 
     def cleanup_local_outputs(self, output_file_keys):
         for prediction in Prediction.objects.filter(

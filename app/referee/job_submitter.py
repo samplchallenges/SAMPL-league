@@ -115,6 +115,15 @@ def reset_unfinished_to_pending_submission():
                             "   Evaluation status is now: %s", evaluation.status
                         )
 
+                for batch_evaluation in submission_run.batchevaluation_set.select_for_update():
+                    if batch_evaluation.status == Status.RUNNING:
+                        logger.debug(
+                            "   BATCHEVAL: Resetting RUNNING back to PENDING: %d", batch_evaluation.id
+                        )
+                        batch_evaluation.update_status(Status.PENDING)
+                        logger.debug(
+                            "   BATCHEVAL: Evaluation status is now: %s", batch_evaluation.status
+                        )
 
 def job_submitter_main():
     start_time = time.time()
