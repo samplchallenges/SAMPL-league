@@ -166,6 +166,9 @@ class BaseEvaluation(Logged):
     def clear_old_predictions(self, output_type):
         raise Exception("Must implement in subclass")
 
+    def clear_old_scores(self):
+        self.scores.delete()
+
     def mark_started(self):
         self.append(stdout="Started\n")
         self.status = Status.RUNNING

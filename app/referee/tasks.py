@@ -235,6 +235,8 @@ def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, conditio
             input_elements = list(obj.input_batch.elements())
         else:
             input_elements = [obj.input_element]
+
+        obj.clear_old_scores()
         for input_element in input_elements:
             # TODO: batch up scoring?
             for log_message in scoring.score_element(
