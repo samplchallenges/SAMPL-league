@@ -342,6 +342,11 @@ class BatchEvaluation(BaseEvaluation):
             input_element__in=self.input_batch.elements(),
         )
 
+    def __str__(self):
+        visibility = "Public" if self.submission_run.is_public else "Private"
+        num_elements = self.input_batch.inputbatchmembership_set.count()
+        return f"{visibility} Batch #{self.input_batch.id} ({num_elements} elements)"
+
     def scores_dicts(self):
         by_elem = defaultdict(dict)
         for score in self.scores:
