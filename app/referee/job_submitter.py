@@ -98,20 +98,20 @@ def reset_unfinished_to_pending_submission():
             for submission_run in SubmissionRun.objects.select_for_update().filter(
                 status=status
             ):
-                logger.debug(
+                logger.info(
                     "Resetting PENDING/RUNNING submission_runs back to PENDING_REMOTE: %d",
                     submission_run.id,
                 )
                 submission_run.update_status(Status.PENDING_REMOTE)
-                logger.debug("SubmissionRun status is now: %s", submission_run.status)
+                logger.info("SubmissionRun status is now: %s", submission_run.status)
 
                 for evaluation in submission_run.evaluation_set.select_for_update():
                     if evaluation.status == Status.RUNNING:
-                        logger.debug(
+                        logger.info(
                             "   Resetting RUNNING back to PENDING: %d", evaluation.id
                         )
                         evaluation.update_status(Status.PENDING)
-                        logger.debug(
+                        logger.info(
                             "   Evaluation status is now: %s", evaluation.status
                         )
 
@@ -119,12 +119,12 @@ def reset_unfinished_to_pending_submission():
                     batch_evaluation
                 ) in submission_run.batchevaluation_set.select_for_update():
                     if batch_evaluation.status == Status.RUNNING:
-                        logger.debug(
+                        logger.info(
                             "   BATCHEVAL: Resetting RUNNING back to PENDING: %d",
                             batch_evaluation.id,
                         )
                         batch_evaluation.update_status(Status.PENDING)
-                        logger.debug(
+                        logger.info(
                             "   BATCHEVAL: Evaluation status is now: %s",
                             batch_evaluation.status,
                         )
