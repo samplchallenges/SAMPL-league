@@ -58,8 +58,8 @@ def run_and_score_submission(client, submission):
 def submit_submission_run(client, submission_run):
     delayed_conditional = dask.delayed(True)
     delayed_conditional = _run(submission_run, delayed_conditional)
-
-    delayed_conditional.visualize(filename="task_graph.svg")
+    if settings.VISUALIZE_DASK_GRAPH:
+        delayed_conditional.visualize(filename="task_graph.svg")
     future = client.submit(delayed_conditional.compute)  # pylint:disable=no-member
     logger.info("Future key: %s", future.key)
 
