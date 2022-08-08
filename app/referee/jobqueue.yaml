@@ -30,6 +30,6 @@ jobqueue:
 
     adapt_settings:
       minimum_jobs: 0
-      maximum_jobs: 50
+      maximum_jobs: 60
       wait_count: 3
       interval: '30000 ms'

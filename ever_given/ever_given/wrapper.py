@@ -83,6 +83,8 @@ def _get_container_uri(container_uri, container_type, engine_name):
     else:
         return container_uri
 
+def pull_container(container_uri, container_type, engine_name, save_path, aws_login_func=None):
+    return REGISTERED_ENGINES[engine_name].pull_container(container_uri, container_type, save_path, aws_login_func)
 
 def run(
     container_uri: str,
