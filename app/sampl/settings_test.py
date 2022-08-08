@@ -8,7 +8,8 @@ DEBUG = False
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_ROOT = BASE_DIR / "media"
-CONTAINER_FILES_ROOT = Path(os.environ.get("CONTAINER_FILES_ROOT", None))
+CONTAINER_FILES_ROOT = Path(os.environ["CONTAINER_FILES_ROOT"]) if os.environ.get("CONTAINER_FILES_ROOT", None) else None
+
 SECRET_KEY = "7&gz49!+qmxwltqo*!_g$n+i)%qcn9c^%2kbwzlnwiuofj29!%"
 
 CRISPY_FAIL_SILENTLY = False

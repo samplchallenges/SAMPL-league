@@ -70,6 +70,9 @@ def submit_submission_run(client, submission_run):
 @dask.delayed(pure=False)
 def cache_containers(submission_run, delayed_conditional):
 
+    if not delayed_conditional:
+        return 1
+
     container = submission_run.submission.container
     aws_login_func = (
         utils.get_aws_credential_function(container.uri)
