@@ -102,7 +102,7 @@ def cache_containers(submission_run, delayed_conditional):
 
 def _run(submission_run, delayed_conditional):
 
-    pull_code = cache_container(submission_run, delayed_conditional)
+    pull_code = cache_containers(submission_run, delayed_conditional)
 
     if submission_run.submission.challenge.current_batch_group() is None:
         statuses = _run_evaluations(submission_run, pull_code, delayed_conditional)
