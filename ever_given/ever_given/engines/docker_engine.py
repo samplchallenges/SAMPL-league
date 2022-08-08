@@ -78,6 +78,7 @@ class DockerEngine(Engine):
         )
         return DockerContainerInstance(client, docker_container)
 
+    @classmethod
     def pull_container(cls, container_uri, container_type, save_path=None, aws_login_func=None):
         client = docker.from_env()
         client.containers.get(container_uri)
