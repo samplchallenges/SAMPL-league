@@ -1,7 +1,7 @@
 import logging
 import tempfile
-from pathlib import Path
 import time
+from pathlib import Path
 
 import dask
 import dask.distributed as dd
@@ -79,19 +79,23 @@ def cache_containers(submission_run, delayed_conditional):
     submission_run.append(stdout=f"{container.uri}\n")
     submission_run.append(stdout=f"{container.container_type}\n")
 
-    container_save_path = settings.CONTAINER_FILES_ROOT / f"{container.label.replace('/', '_')}_{container.tag}.sif"
+    container_save_path = (
+        settings.CONTAINER_FILES_ROOT
+        / f"{container.label.replace('/', '_')}_{container.tag}.sif"
+    )
 
-    pull_code,stdout,stderr = ever_given.wrapper.pull_container(
-        container.uri, 
-        container.container_type, 
-        settings.CONTAINER_ENGINE, 
+    pull_code, stdout, stderr = ever_given.wrapper.pull_container(
+        container.uri,
+        container.container_type,
+        settings.CONTAINER_ENGINE,
         container_save_path,
-        aws_login_func
+        aws_login_func,
     )
     submission_run.append(stderr=stderr)
     submission_run.append(stdout=stdout)
     submission_run.append(stdout=f"PULL EXIT CODE: {pull_code} {type(pull_code)}\n")
     return pull_code
+
 
 def _run(submission_run, delayed_conditional):
 
@@ -156,7 +160,9 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
     return True
 
 
-def _run_evaluations_or_batches(submission_run, pull_code, conditional, object_set, run_func):
+def _run_evaluations_or_batches(
+    submission_run, pull_code, conditional, object_set, run_func
+):
     statuses = []
     submitted_ct = 0
     for obj in object_set.all():
@@ -190,11 +196,17 @@ def _run_batches(submission_run, pull_code, conditional):
 
 def _run_evaluations(submission_run, pull_code, conditional):
     return _run_evaluations_or_batches(
-        submission_run, pull_code, conditional, submission_run.evaluation_set, run_evaluation
+        submission_run,
+        pull_code,
+        conditional,
+        submission_run.evaluation_set,
+        run_evaluation,
     )
 
 
-def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, pull_code, conditional):
+def run_eval_or_batch(
+    submission_id, cls, object_id, submission_run_id, pull_code, conditional
+):
     submission = models.Submission.objects.get(pk=submission_id)
     container = submission.container
     challenge = submission.challenge
@@ -215,7 +227,11 @@ def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, pull_cod
 
     if pull_code != 0:
         obj.status = models.Status.FAILURE
-        obj.save(update_fields=["status",])
+        obj.save(
+            update_fields=[
+                "status",
+            ]
+        )
         obj.append(stderr=f"Failed to pull container: {container.uri}")
         return models.Status.FAILURE
 
@@ -311,7 +327,9 @@ def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, pull_cod
 
 
 @dask.delayed(pure=False)  # pylint:disable=no-value-for-parameter
-def run_evaluation(submission_id, evaluation_id, submission_run_id, pull_code, conditional):
+def run_evaluation(
+    submission_id, evaluation_id, submission_run_id, pull_code, conditional
+):
     return run_eval_or_batch(
         submission_id,
         models.Evaluation,
