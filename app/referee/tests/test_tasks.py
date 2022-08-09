@@ -150,7 +150,7 @@ def test_evaluation_scoring_failure(
             input_element=benzene_from_mol, submission_run=submission_run
         )
 
-        pull_code,stdout,stderr = tasks.cache_containers(
+        pull_code, stdout, stderr = tasks.cache_containers(
             submission_run,
             True
         )
@@ -293,7 +293,7 @@ def test_run_files(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-        pull_code,stdout,stderr = tasks.cache_containers(
+        pull_code, stdout, stderr = tasks.cache_containers(
             submission_run,
             True,
         )
