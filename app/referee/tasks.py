@@ -82,12 +82,15 @@ def cache_containers(submission_run, delayed_conditional):
     submission_run.append(stdout=f"{container.uri}\n")
     submission_run.append(stdout=f"{container.container_type}\n")
 
-    container_save_path = (
-        settings.CONTAINER_FILES_ROOT
-        / f"{container.label.replace('/', '_')}_{container.tag}.sif"
-        if container.tag
-        else settings.CONTAINER_FILES_ROOT / f"{container.label.replace('/', '_')}.sif"
-    )
+    if settings.CONTAINER_FILES_ROOT:
+        container_save_path = (
+            settings.CONTAINER_FILES_ROOT
+            / f"{container.label.replace('/', '_')}_{container.tag}.sif"
+            if container.tag
+            else settings.CONTAINER_FILES_ROOT / f"{container.label.replace('/', '_')}.sif"
+        )
+    else:
+        container_save_path = None
 
     pull_code, stdout, stderr = ever_given.wrapper.pull_container(
         container.uri,
