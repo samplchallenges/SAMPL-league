@@ -110,6 +110,11 @@ class SingularityEngine(Engine):
 
     @classmethod
     def pull_container(cls, container_uri, container_type, save_path=None, aws_login_func=None):
+        if container_type not in SINGULARITY_CONTAINER_TYPES:
+            raise ValueError(
+                f"Container type {container_type} not supported by singularity engine"
+            )
+
         if aws_login_func:
             aws_login_func("singularity")
 
