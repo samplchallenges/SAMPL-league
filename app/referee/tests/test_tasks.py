@@ -57,6 +57,8 @@ def _run_and_check_evaluation(submission_run, evaluation):
 
     pull_code = tasks.cache_containers(submission_run, True)
 
+    pull_code.compute(scheduler="synchronous")
+    
     print(pull_code)
 
     delayed = tasks.run_evaluation(
@@ -81,6 +83,8 @@ def _run_and_check_evaluation(submission_run, evaluation):
 def _run_and_check_batch_evaluation(submission_run, batch_evaluation):
 
     pull_code = tasks.cache_containers(submission_run, True)
+
+    pull_code.compute(scheduler="synchronous")
 
     print(pull_code)
 
