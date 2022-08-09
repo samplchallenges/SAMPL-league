@@ -150,7 +150,7 @@ def test_evaluation_scoring_failure(
             input_element=benzene_from_mol, submission_run=submission_run
         )
 
-        pull_code,stdout,stderr = tasks.cache_containers(
+        pull_code, stdout, stderr = tasks.cache_containers(
             submission_run,
             container_engine,
         )
@@ -293,7 +293,7 @@ def test_run_files(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-        pull_code,stdout,stderr = tasks.cache_containers(
+        pull_code, stdout, stderr = tasks.cache_containers(
             submission_run,
             container_engine,
         )
@@ -324,9 +324,8 @@ def test_cancel_evaluation_before_run(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-        pull_code,stdout,stderr = tasks.cache_containers(
-            submission_run,
-            container_engine
+        pull_code, stdout, stderr = tasks.cache_containers(
+            submission_run, container_engine
         )
         submission_run.mark_for_cancel()
         delayed = tasks.run_evaluation(
