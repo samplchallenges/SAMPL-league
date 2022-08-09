@@ -55,10 +55,13 @@ def test_run_and_score_submission(container_engine):
 
 def _run_and_check_evaluation(submission_run, evaluation):
 
+    pull_code = tasks.cache_containers(submission_run, True)
+
     delayed = tasks.run_evaluation(
         submission_run.submission.id,
         evaluation.id,
         submission_run.id,
+        pull_code,
         True,
     )
     delayed.compute(scheduler="synchronous")
@@ -75,10 +78,13 @@ def _run_and_check_evaluation(submission_run, evaluation):
 
 def _run_and_check_batch_evaluation(submission_run, batch_evaluation):
 
+    pull_code = tasks.cache_containers(submission_run, True)
+
     delayed = tasks.run_batch_evaluation(
         submission_run.submission.id,
         batch_evaluation.id,
         submission_run.id,
+        pull_code,
         True,
     )
     delayed.compute(scheduler="synchronous")
