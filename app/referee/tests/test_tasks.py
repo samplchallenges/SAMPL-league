@@ -59,7 +59,7 @@ def _run_and_check_evaluation(submission_run, evaluation):
 
     pull_code.compute(scheduler="synchronous")
 
-    print(pull_code)
+    print(pull_code.result())
 
     delayed = tasks.run_evaluation(
         submission_run.submission.id,
@@ -86,7 +86,7 @@ def _run_and_check_batch_evaluation(submission_run, batch_evaluation):
 
     pull_code.compute(scheduler="synchronous")
 
-    print(pull_code)
+    print(pull_code.result())
 
     delayed = tasks.run_batch_evaluation(
         submission_run.submission.id,

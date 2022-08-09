@@ -80,17 +80,16 @@ class DockerEngine(Engine):
 
     @classmethod
     def pull_container(cls, container_uri, container_type, save_path=None, aws_login_func=None):
-        stderr = ""
-        stdout = f"{container_uri}\n"
-        pull_code = 0
-        try:
-            client = docker.from_env()
-            client.containers.get(container_uri)
-        except docker.errors.NotFound as exc:
-            stderr = f"Container {container_uri} not found\n{exc}"
-            pull_code = 1
-        except docker.errors.APIError as exc:
-            stderr = f"API error, Could not pull container {container_uri}\n{exc}"
-            pull_code = 2
-        finally:
-            return pull_code,stdout,stderr
+        if aws_login_func:
+            aws_login_func("singularity")
+
+        pull_cmd = ['docker', 'pull', container_uri]
+
+        ended_proc = subprocess.run(
+            pull_cmd, capture_output=True
+        )
+        code = ended_proc.returncode
+        stdout = ended_proc.stdout.decode("utf-8")
+        stderr = ended_proc.stderr.decode("utf-8")
+        return code, stdout, stderr
+        
