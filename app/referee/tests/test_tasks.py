@@ -150,10 +150,7 @@ def test_evaluation_scoring_failure(
             input_element=benzene_from_mol, submission_run=submission_run
         )
 
-        pull_code, stdout, stderr = tasks.cache_containers(
-            submission_run,
-            True
-        )
+        pull_code, stdout, stderr = tasks.cache_containers(submission_run, True)
 
         with patch("referee.scoring.score_element") as mock_score:
             mock_score.side_effect = scoring.ScoringFailureException("Mock failure")
@@ -324,7 +321,7 @@ def test_cancel_evaluation_before_run(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-        pull_code,stdout,stderr = tasks.cache_containers(
+        pull_code, stdout, stderr = tasks.cache_containers(
             submission_run,
             True,
         )
