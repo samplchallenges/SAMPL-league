@@ -87,7 +87,8 @@ def cache_containers(submission_run, delayed_conditional):
             settings.CONTAINER_FILES_ROOT
             / f"{container.label.replace('/', '_')}_{container.tag}.sif"
             if container.tag
-            else settings.CONTAINER_FILES_ROOT / f"{container.label.replace('/', '_')}.sif"
+            else settings.CONTAINER_FILES_ROOT
+            / f"{container.label.replace('/', '_')}.sif"
         )
     else:
         container_save_path = None
