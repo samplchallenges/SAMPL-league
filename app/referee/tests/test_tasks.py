@@ -152,7 +152,7 @@ def test_evaluation_scoring_failure(
 
         pull_code,stdout,stderr = tasks.cache_containers(
             submission_run,
-            container_engine,
+            True
         )
 
         with patch("referee.scoring.score_element") as mock_score:
@@ -295,7 +295,7 @@ def test_run_files(
         )
         pull_code,stdout,stderr = tasks.cache_containers(
             submission_run,
-            container_engine,
+            True,
         )
         delayed = tasks.run_evaluation(
             submission_run.submission.id,
@@ -326,7 +326,7 @@ def test_cancel_evaluation_before_run(
         )
         pull_code,stdout,stderr = tasks.cache_containers(
             submission_run,
-            container_engine
+            True,
         )
         submission_run.mark_for_cancel()
         delayed = tasks.run_evaluation(
