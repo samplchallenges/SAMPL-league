@@ -1,11 +1,11 @@
 import os
-import path
 import shutil
 import tempfile
 import time
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
+import path
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
