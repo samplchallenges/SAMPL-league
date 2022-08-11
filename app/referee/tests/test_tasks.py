@@ -1,4 +1,5 @@
 import os
+import pathlib
 import shutil
 import tempfile
 import time
@@ -58,7 +59,7 @@ def test_run_and_score_submission(container_engine):
 
 def _run_and_check_evaluation(submission_run, evaluation):
 
-    temp_dir = path.Path(tempfile.mkdtemp())
+    temp_dir = pathlib.Path(tempfile.mkdtemp())
     with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
         pull_code = tasks.cache_containers(submission_run, True)
 
@@ -87,7 +88,7 @@ def _run_and_check_evaluation(submission_run, evaluation):
 
 
 def _run_and_check_batch_evaluation(submission_run, batch_evaluation):
-    temp_dir = path.Path(tempfile.mkdtemp())
+    temp_dir = pathlib.Path(tempfile.mkdtemp())
     with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
         pull_code = tasks.cache_containers(submission_run, True)
 
@@ -171,7 +172,7 @@ def test_evaluation_scoring_failure(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-        temp_dir = path.Path(tempfile.mkdtemp())
+        temp_dir = pathlib.Path(tempfile.mkdtemp())
         with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
             pull_code = tasks.cache_containers(submission_run, True)
 
@@ -314,7 +315,7 @@ def test_run_files(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-        temp_dir = path.Path(tempfile.mkdtemp())
+        temp_dir = pathlib.Path(tempfile.mkdtemp())
         with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
             pull_code = tasks.cache_containers(
                 submission_run,
@@ -348,7 +349,7 @@ def test_cancel_evaluation_before_run(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-        temp_dir = path.Path(tempfile.mkdtemp())
+        temp_dir = pathlib.Path(tempfile.mkdtemp())
         with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
             pull_code = tasks.cache_containers(
                 submission_run,
