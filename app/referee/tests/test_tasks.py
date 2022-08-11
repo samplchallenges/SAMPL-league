@@ -55,11 +55,13 @@ def test_run_and_score_submission(container_engine):
 
 def _run_and_check_evaluation(submission_run, evaluation):
 
-    pull_code = tasks.cache_containers(submission_run, True)
+    temp_dir = tempfile.mkdtemp()
+    with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
+        pull_code = tasks.cache_containers(submission_run, True)
 
-    pull_code.compute(scheduler="synchronous")
+        pull_code.compute(scheduler="synchronous")
 
-    print(pull_code.result())
+        print(pull_code.result())
 
     delayed = tasks.run_evaluation(
         submission_run.submission.id,
@@ -77,16 +79,18 @@ def _run_and_check_evaluation(submission_run, evaluation):
     prediction = models.Prediction.objects.get(
         submission_run=submission_run, input_element=evaluation.input_element
     )
+    shutil.rmtree(temp_dir)
     return prediction
 
 
 def _run_and_check_batch_evaluation(submission_run, batch_evaluation):
+    temp_dir = tempfile.mkdtemp()
+    with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
+        pull_code = tasks.cache_containers(submission_run, True)
 
-    pull_code = tasks.cache_containers(submission_run, True)
+        pull_code.compute(scheduler="synchronous")
 
-    pull_code.compute(scheduler="synchronous")
-
-    print(pull_code.result())
+        print(pull_code.result())
 
     delayed = tasks.run_batch_evaluation(
         submission_run.submission.id,
@@ -106,6 +110,7 @@ def _run_and_check_batch_evaluation(submission_run, batch_evaluation):
     prediction = models.Prediction.objects.get(
         submission_run=submission_run, input_element=elements[0]
     )
+    shutil.rmtree(temp_dir)
     return prediction
 
 
@@ -163,8 +168,9 @@ def test_evaluation_scoring_failure(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-
-        pull_code = tasks.cache_containers(submission_run, True)
+        temp_dir = tempfile.mkdtemp()
+        with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
+            pull_code = tasks.cache_containers(submission_run, True)
 
         with patch("referee.scoring.score_element") as mock_score:
             mock_score.side_effect = scoring.ScoringFailureException("Mock failure")
@@ -180,6 +186,7 @@ def test_evaluation_scoring_failure(
         evaluation.refresh_from_db()
         assert evaluation.log_stderr.endswith("Mock failure")
         assert evaluation.status == models.Status.FAILURE
+        shutil.rmtree(temp_dir)
 
 
 @pytest.fixture
@@ -304,10 +311,12 @@ def test_run_files(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-        pull_code = tasks.cache_containers(
-            submission_run,
-            True,
-        )
+        temp_dir = tempfile.mkdtemp()
+        with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
+            pull_code = tasks.cache_containers(
+                submission_run,
+                True,
+            )
         delayed = tasks.run_evaluation(
             submission_run.submission.id,
             evaluation.id,
@@ -325,6 +334,7 @@ def test_run_files(
             value_type__key="molWeight",
         )
         assert prediction.value == pytest.approx(78.046950192)
+        shutil.rmtree(temp_dir)
 
 
 def test_cancel_evaluation_before_run(
@@ -335,10 +345,12 @@ def test_cancel_evaluation_before_run(
         evaluation = models.Evaluation.objects.create(
             input_element=benzene_from_mol, submission_run=submission_run
         )
-        pull_code = tasks.cache_containers(
-            submission_run,
-            True,
-        )
+        temp_dir = tempfile.mkdtemp()
+        with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
+            pull_code = tasks.cache_containers(
+                submission_run,
+                True,
+            )
         submission_run.mark_for_cancel()
         delayed = tasks.run_evaluation(
             submission_run.submission.id,
@@ -351,6 +363,7 @@ def test_cancel_evaluation_before_run(
         assert result == models.Status.CANCELLED
         evaluation.refresh_from_db()
         assert evaluation.status == models.Status.CANCELLED
+        shutil.rmtree(temp_dir)
 
 
 def test_cancel_submission_before_run(
