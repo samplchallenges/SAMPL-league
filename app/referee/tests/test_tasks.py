@@ -1,7 +1,7 @@
 import os
-import time
-import tempfile
 import shutil
+import tempfile
+import time
 from unittest.mock import Mock, patch
 
 import dask.distributed as dd
