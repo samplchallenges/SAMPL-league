@@ -173,7 +173,6 @@ def _run_evaluations_or_batches(
     submission_run, pull_code, conditional, object_set, run_func
 ):
     statuses = []
-    submitted_ct = 0
     for obj in object_set.all():
         if obj.status == models.Status.PENDING:
             statuses.append(
@@ -185,9 +184,6 @@ def _run_evaluations_or_batches(
                     conditional=conditional,
                 )
             )
-            submitted_ct += 1
-            if submitted_ct % 10 == 0:
-                time.sleep(30)
         else:
             statuses.append(obj.status)
     return statuses
