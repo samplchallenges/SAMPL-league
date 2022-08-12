@@ -1,3 +1,4 @@
+import os
 from functools import cached_property
 
 import django.contrib.auth.models as auth_models
@@ -92,6 +93,15 @@ class ScoreType(Timestamped):
         return self.key
 
 
+def _container_sif_file_location(instance, filename):
+    return os.path.join(
+        "container_sifs",
+        str(instance.user.id),
+        str(instance.id),
+        filename,
+    )
+
+
 class Container(Timestamped):
     # Containers can be managed by admins or users, but keep with admin_managed
     #  since admins need to create scoring containers
@@ -110,6 +120,9 @@ class Container(Timestamped):
     label = models.CharField(max_length=255)
     tag = models.CharField(max_length=255, blank=True, null=True)
     digest = models.CharField(max_length=255, blank=True, null=True)
+    sif_file = models.FileField(
+        blank=True, null=True, upload_to=_container_sif_file_location
+    )
 
     def __str__(self):
         return str(self.name)
