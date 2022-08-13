@@ -12,10 +12,10 @@ from patchwork.transfers import rsync
 def build(c):
     with c.cd("app"):
         tar_cmd = """tar -cf ../current.tar \
-                        core notebooks referee sampl .platform \
+                        Pipfile Pipfile.lock Procfile \
+                        core notebooks referee sampl dist .platform \
                         daskworkerinit.py manage.py setup.py"""
         c.run("PIPENV_IGNORE_VIRTUALENVS=1 pipenv run python setup.py bdist_wheel")
-        #c.run("tar -cf ../current.tar manage.py notebooks Pipfile Pipfile.lock Procfile daskworkerinit.py .platform dist")
         c.run(tar_cmd)
     with c.cd("ever_given"):
         c.run("PIPENV_IGNORE_VIRTUALENVS=1 pipenv run python setup.py bdist_wheel")
