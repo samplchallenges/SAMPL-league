@@ -49,7 +49,7 @@ def test_singularity_sif_container_singularity_engine():
     container_sif_path = tempdir / "calc-molwt_latest-unique.sif"
     command = ["singularity", "pull", container_sif_path, f"docker://{container_uri}"]
     subprocess.run(command, check=True)
-    assert os.path.exists(container_sif)
+    assert os.path.exists(container_sif_path)
     kwargs = {"smiles": "c1cccnc1"}
     results = {
         key: value
@@ -72,7 +72,7 @@ def test_pull_container_singularity_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
     tempdir = Path(tempfile.mkdtemp())
     container_sif_path = tempdir / "calc-molwt_latest-unique.sif"
-    ever_given.wrapper.pull_container(container_uri, "docker", "singularity", container_sif_path)
+    ever_given.wrapper.pull_container(container_uri, "docker", "singularity", None)
 
     assert os.path.exists(container_sif_path)
 
