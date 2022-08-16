@@ -1,6 +1,7 @@
 import os.path
 import tempfile
 import subprocess
+import shutil
 
 import pytest
 
@@ -43,8 +44,9 @@ def test_singularity_sif_container_docker_engine():
 
 def test_singularity_sif_container_singularity_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
-    container_sif = "calc-molwt_latest-unique.sif"
-    command = ["singularity", "pull", container_sif, f"docker://{container_uri}"]
+    tempdir = os.path.Path(tempfile.mkdtemp())
+    container_sif_path = tempdir / "calc-molwt_latest-unique.sif"
+    command = ["singularity", "pull", container_sif_path, f"docker://{container_uri}"]
     subprocess.run(command, check=True)
     assert os.path.exists(container_sif)
     kwargs = {"smiles": "c1cccnc1"}
@@ -61,3 +63,26 @@ def test_singularity_sif_container_singularity_engine():
     assert set(results.keys()) == {"numAtoms", "numBonds", "molWeight"}
     molWeight = float(results["molWeight"].strip())
     assert molWeight == pytest.approx(79.04219916)
+    shutil.rmtree(tempdir)
+
+
+
+def test_pull_container_singularity_engine():
+    container_uri = "ghcr.io/megosato/calc-molwt:latest" 
+    tempdir = os.path.Path(tempfile.mkdtemp())
+    container_sif_path = tempdir / "calc-molwt_latest-unique.sif"
+    pull_container(container_uri, "docker", "singularity", container_sif_path)
+
+    assert os.path.exists(container_sif_path)
+
+def test_pull_container_docker_engine():
+    container_uri = "ghcr.io/megosato/calc-molwt:latest" 
+    pull_container(container_uri, "docker", "docker", container_sif_path)
+
+    command = ['docker', 'pull', container_uri]
+    ended_proc = subprocess.run(command, capture_output=True, check=True)
+
+    output = ended_proc.stdout.decode('utf-8')
+    assert f'Status: Image is up to date for {container_uri}' in output
+
+
