@@ -1,4 +1,5 @@
 import os.path
+from pathlib import Path
 import tempfile
 import subprocess
 import shutil
@@ -44,7 +45,7 @@ def test_singularity_sif_container_docker_engine():
 
 def test_singularity_sif_container_singularity_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
-    tempdir = os.path.Path(tempfile.mkdtemp())
+    tempdir = Path(tempfile.mkdtemp())
     container_sif_path = tempdir / "calc-molwt_latest-unique.sif"
     command = ["singularity", "pull", container_sif_path, f"docker://{container_uri}"]
     subprocess.run(command, check=True)
@@ -69,15 +70,15 @@ def test_singularity_sif_container_singularity_engine():
 
 def test_pull_container_singularity_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
-    tempdir = os.path.Path(tempfile.mkdtemp())
+    tempdir = Path(tempfile.mkdtemp())
     container_sif_path = tempdir / "calc-molwt_latest-unique.sif"
-    pull_container(container_uri, "docker", "singularity", container_sif_path)
+    ever_given.wrapper.pull_container(container_uri, "docker", "singularity", container_sif_path)
 
     assert os.path.exists(container_sif_path)
 
 def test_pull_container_docker_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
-    pull_container(container_uri, "docker", "docker", container_sif_path)
+    ever_given.wrapper.pull_container(container_uri, "docker", "docker", container_sif_path)
 
     command = ['docker', 'pull', container_uri]
     ended_proc = subprocess.run(command, capture_output=True, check=True)
