@@ -151,10 +151,11 @@ def run(
             )
             print(f"Container status is {status}", file=sys.stderr)
         if status == running_container.FAILURE:
-            if log_handler.cls:
-                bev = log_handler.cls.objects.get(id=log_handler.instance_id)
-                print(container_uri)
-                print(bev.log_stderr)
+            # if log_handler.cls:
+            #     bev = log_handler.cls.objects.get(id=log_handler.instance_id)
+            #     print(container_uri)
+            #     print(bev.log_stderr)
+            # for debugging, above four lines can be uncommented
             raise ContainerFailedException()
     finally:
         running_container.remove()
