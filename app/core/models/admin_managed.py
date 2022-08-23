@@ -177,6 +177,11 @@ class InputElement(Timestamped):
                 " Only one level of parent-child relationship is supported"
             )
 
+    def save_score(self, submission_run, score_type, value):
+        self.evaluationscore_set.create(
+            submission_run=submission_run, score_type=score_type, value=float(value)
+        )
+
     def __str__(self):
         return f"{self.name}, is public? {self.is_public}"
 

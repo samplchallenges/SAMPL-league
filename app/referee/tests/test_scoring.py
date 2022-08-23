@@ -59,6 +59,32 @@ def test_score_submission_run_batch(
     assert submission_run_score.value == pytest.approx(3.0)
 
 
+@pytest.mark.parametrize("max_batch_size", [1, 2])
+def test_score_batch(
+    smiles_molw_config,
+    batch_evaluation_factory,
+    container_engine,
+    max_batch_size,
+):
+    submission_run = smiles_molw_config.submission_run
+    challenge = smiles_molw_config.challenge
+    evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
+    batch_evaluations = batch_evaluation_factory(max_batch_size)
+    batch_evaluation = batch_evaluations[0]
+    assert batch_evaluation.batchevaluationfile_set.count() > 0
+    assert batch_evaluation.input_batch.answerkeybatchfile_set.count() > 0
+    with patch("django.conf.settings.CONTAINER_ENGINE", container_engine):
+        scoring.score_batch(
+            smiles_molw_config.submission_run.submission.challenge.scoremaker.container,
+            batch_evaluation,
+            submission_run,
+            evaluation_score_types,
+        )
+    assert models.EvaluationScore.objects.count() > 0
+    score = models.EvaluationScore.objects.first()
+    assert score.value == 705.05
+
+
 def _save_file_arg(container, key, file_body):
     # custom_file_args has the file contents as value
     arg = models.ContainerArg(container=container, key=key)

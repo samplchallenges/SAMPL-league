@@ -8,16 +8,16 @@ from abc import ABC, abstractmethod
 
 from rdkit import Chem
 
-from . import values_helper
-
 BATCHERS = {}
 
 
 class BatcherBase(ABC):
     @staticmethod
     @abstractmethod
-    def call(elements, key, output_path):
-        "Assemble values for key into a file stored at output_path"
+    def call(elements, key, output_path, get_value_func):
+        """Assemble values for key into a file stored at output_path.
+        get_value_func returns a pair of dicts of key->value,
+        first simple values and second file values"""
 
     @staticmethod
     @abstractmethod
@@ -36,13 +36,13 @@ class CSVBatcher(BatcherBase):
     suffix = "csv"
 
     @staticmethod
-    def call(elements, key, output_path):
+    def call(elements, key, output_path, get_value_func):
         fieldnames = ("id", "name", "value")
         with open(output_path, "w", encoding="utf8") as csvfp:
             writer = csv.DictWriter(csvfp, fieldnames=fieldnames)
             writer.writeheader()
             for element in elements:
-                values, _ = values_helper.all_values(element)
+                values, _ = get_value_func(element)
                 row = {
                     "id": element.id,
                     "name": element.name,
@@ -64,10 +64,10 @@ class SDFBatcher(BatcherBase):
     suffix = "sdf"
 
     @staticmethod
-    def call(elements, key, output_path):
+    def call(elements, key, output_path, get_value_func):
         with Chem.SDWriter(output_path) as writer:
             for element in elements:
-                _, file_values = values_helper.all_values(element)
+                _, file_values = get_value_func(element)
                 sdfile = file_values[key]
                 with Chem.SDMolSupplier(sdfile) as reader:
                     mol = next(reader)
@@ -87,3 +87,18 @@ class SDFBatcher(BatcherBase):
                 with Chem.SDWriter(sdpath) as writer:
                     writer.write(mol)
                 yield element_id, sdpath
+
+
+def batchup_elements(value_types, elements, create_file_func, get_value_func):
+    # Creates files (in this case, BatchFile objects) for each input type
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        for value_type in value_types:
+            batcher = BATCHERS.get(value_type.batch_method)
+            if batcher is None:
+                raise ValueError(
+                    f"Batch method must be set on value type {value_type.key}"
+                )
+            output_path = os.path.join(temp_dir, f"{value_type.key}.{batcher.suffix}")
+            batcher.call(elements, value_type.key, output_path, get_value_func)
+            create_file_func(output_path, value_type=value_type)

@@ -30,7 +30,7 @@ def element_values(input_values: List["InputValue"]):
     return values, file_values
 
 
-def _values(input_element: "InputElement"):
+def get_values(input_element: "InputElement"):
     """
     Returns a pair of key: value dicts, where the first dict is regular values
     and the second is file values
@@ -41,16 +41,34 @@ def _values(input_element: "InputElement"):
     return element_values(input_values)
 
 
+def answerkey_values(input_element: "InputElement"):
+    """
+    Returns a pair of key: value dicts, where the first dict is regular values
+    and the second is file values, but for outputs
+    """
+    input_values = input_element.answerkey_set.select_related(
+        "value_type", "value_type__content_type"
+    ).all()
+    return element_values(input_values)
+
+
+def predicted_values(input_element: "InputElement"):
+    output_values = input_element.prediction_set.select_related(
+        "value_type", "value_type__content_type"
+    ).all()
+    return element_values(output_values)
+
+
 def all_values(input_element: "InputElement"):
     """
     Includes parent values
     """
-    values, file_values = _values(input_element)
+    values, file_values = get_values(input_element)
     if input_element.parent:
         (
             parent_values,
             parent_file_values,
-        ) = _values(input_element.parent)
+        ) = get_values(input_element.parent)
         values.update(parent_values)
         file_values.update(parent_file_values)
     return values, file_values

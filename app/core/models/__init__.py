@@ -8,14 +8,17 @@ from .admin_managed import (
     ValueType,
 )
 from .batch_related import (
+    AnswerKeyBatchFile,
     BatchFile,
     InputBatch,
     InputBatchGroup,
     InputBatchMembership,
+    answer_key_batch_upload_location,
     batch_upload_location,
 )
 from .run_related import (
     BatchEvaluation,
+    BatchEvaluationFile,
     Evaluation,
     EvaluationScore,
     Logged,

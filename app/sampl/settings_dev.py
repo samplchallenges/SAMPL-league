@@ -5,6 +5,7 @@ from pathlib import Path
 
 from . import aws_login
 from .base_settings import *  # lgtm [py/polluting-import]
+from .debug_logging import LOGGING
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

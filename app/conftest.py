@@ -311,7 +311,7 @@ def molfile_molw_config(config_factory):
     return config_factory(
         "molfile_molw",
         "robbason/calc-molwt",
-        "megosato/score-coords",
+        "robbason/score-coords",
         "molfile",
         models.FileValue,
         "sdf",
@@ -325,7 +325,7 @@ def smiles_molw_config(config_factory):
     return config_factory(
         "smiles_molw",
         "robbason/calc-molwt",
-        "megosato/score-coords",
+        "robbason/score-coords",
         "smiles",
         models.TextValue,
         "csv",

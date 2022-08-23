@@ -232,16 +232,20 @@ def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, conditio
                     )
 
         if is_batch:
-            input_elements = list(obj.input_batch.elements())
+            obj.batchup()
+            for log_message in scoring.score_batch(
+                challenge.scoremaker.container,
+                obj,
+                submission_run,
+                evaluation_score_types,
+            ):
+                obj.append(log_message)
         else:
-            input_elements = [obj.input_element]
-        for input_element in input_elements:
-            # TODO: batch up scoring?
             for log_message in scoring.score_element(
                 challenge.scoremaker.container,
                 obj,
                 submission_run,
-                input_element,
+                obj.input_element,
                 evaluation_score_types,
             ):
                 obj.append(log_message)

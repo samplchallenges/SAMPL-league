@@ -1,14 +1,17 @@
+import os.path
 import time
 from collections import defaultdict, namedtuple
+from functools import partial
 
 from django.db import models, transaction
 from django.db.models.functions import Concat
 from ever_given.utils import LogHandlerBase
 
-from .. import filecache
-from ..batching import BATCHERS
+from core import values_helper
+
+from .. import batching, filecache
 from .admin_managed import InputElement, ScoreType
-from .batch_related import InputBatch
+from .batch_related import BatchFileBase, InputBatch
 from .infra_models import Timestamped
 from .user_managed import Submission
 from .values import Solution
@@ -265,22 +268,17 @@ class Prediction(Solution):
         unique_together = ["submission_run", "input_element", "value_type"]
 
     @classmethod
-    def load_evaluation_output(cls, challenge, evaluation, output_type, value):
-        if challenge is None:
-            raise ValueError("Challenge is not set")
-        if evaluation is None:
-            raise ValueError("Evaluation is not set")
-        if output_type is None:
-            raise ValueError("Output type is not set")
+    def _build_single(cls, submission_run, value_type, input_element_id, value):
+        challenge = value_type.challenge
         prediction = cls(
             challenge=challenge,
-            submission_run=evaluation.submission_run,
-            input_element=evaluation.input_element,
-            value_type=output_type,
+            submission_run=submission_run,
+            input_element_id=input_element_id,
+            value_type=value_type,
         )
-        output_type_model = output_type.content_type.model_class()
+        output_type_model = value_type.content_type.model_class()
         value_object = output_type_model.from_string(
-            value, challenge=challenge, input_element=evaluation.input_element
+            value, challenge=challenge, input_element_id=input_element_id
         )
 
         value_object.save()
@@ -291,6 +289,21 @@ class Prediction(Solution):
         prediction.save()
 
     @classmethod
+    def load_evaluation_output(cls, challenge, evaluation, output_type, value):
+        if challenge is None:
+            raise ValueError("Challenge is not set")
+        if evaluation is None:
+            raise ValueError("Evaluation is not set")
+        if output_type is None:
+            raise ValueError("Output type is not set")
+        cls._build_single(
+            submission_run=evaluation.submission_run,
+            value_type=output_type,
+            input_element_id=evaluation.input_element_id,
+            value=value,
+        )
+
+    @classmethod
     def load_batch_output(cls, challenge, batch_evaluation, output_type, value):
         if challenge is None:
             raise ValueError("Challenge is not set")
@@ -298,25 +311,24 @@ class Prediction(Solution):
             raise ValueError("Batch Evaluation is not set")
         if output_type is None:
             raise ValueError("Output type is not set")
-        batch_method = output_type.batch_method
-        batch_cls = BATCHERS[batch_method]
-        for input_element_id, unbatched_value in batch_cls.invert(value):
-            prediction = cls(
-                challenge=challenge,
+        if output_type.on_parent_flag:
+            parent_elem_id = batch_evaluation.input_batch.parent_input_element_id
+            cls._build_single(
+                submission_run=batch_evaluation.submission_run,
                 value_type=output_type,
-                input_element_id=input_element_id,
-                submission_run_id=batch_evaluation.submission_run_id,
+                input_element_id=parent_elem_id,
+                value=value,
             )
-            output_type_model = output_type.content_type.model_class()
-            value_object = output_type_model.from_string(
-                unbatched_value, challenge=challenge, input_element_id=input_element_id
-            )
-            value_object.save()
-            prediction.value_object = value_object
-            if prediction.value_object is None:
-                raise ValueError("after save, value_object must not be none")
-
-            prediction.save()
+        else:
+            batch_method = output_type.batch_method
+            batch_cls = batching.BATCHERS[batch_method]
+            for input_element_id, unbatched_value in batch_cls.invert(value):
+                cls._build_single(
+                    submission_run=batch_evaluation.submission_run,
+                    value_type=output_type,
+                    input_element_id=input_element_id,
+                    value=unbatched_value,
+                )
 
     def __str__(self):
         return f"{self.input_element}::{self.value_type.key}::{self.content_type}"
@@ -372,3 +384,46 @@ class BatchEvaluation(BaseEvaluation):
             value_type__key__in=output_file_keys,
         ):
             filecache.delete_local_cache(prediction.value)
+
+    def batchup(self):
+        create_file_func = partial(
+            BatchEvaluationFile.from_local, batch_evaluation=self
+        )
+
+        with transaction.atomic():
+            value_types = self.input_batch.batch_group.challenge.valuetype_set.filter(
+                is_input_flag=False, on_parent_flag=False
+            )
+            elements = list(self.input_batch.elements())
+
+            batching.batchup_elements(
+                value_types, elements, create_file_func, values_helper.predicted_values
+            )
+
+
+def batch_evaluation_upload_location(instance, filename):
+    batch = instance.batch_evaluation.input_batch
+    batch_group = batch.batch_group
+    challenge = batch_group.challenge
+    challenge_path = os.path.join("batch_evaluations", f"{challenge.id}")
+    group_path = os.path.join("batch_group", f"{batch_group.id}")
+    srun_path = os.path.join(
+        "submission_run", f"{instance.batch_evaluation.submission_run.id}"
+    )
+    batch_path = os.path.join("b", f"{batch.id}")
+    return os.path.join(
+        challenge_path,
+        group_path,
+        srun_path,
+        batch_path,
+        instance.value_type.key,
+        filename,
+    )
+
+
+class BatchEvaluationFile(BatchFileBase):
+    batch_evaluation = models.ForeignKey(BatchEvaluation, on_delete=models.CASCADE)
+    data = models.FileField(upload_to=batch_evaluation_upload_location)
+
+    def __str__(self):
+        return f"{self.batch_evaluation} {self.value_type} {self.data}"
