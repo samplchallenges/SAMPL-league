@@ -250,6 +250,7 @@ def run_eval_or_batch(submission_id, cls, object_id, submission_run_id, conditio
             ):
                 obj.append(log_message)
 
+        obj.clear_old_scores()
         obj.status = models.Status.SUCCESS
     except CancelledException:
         obj.status = models.Status.CANCELLED

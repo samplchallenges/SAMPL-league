@@ -169,6 +169,9 @@ class BaseEvaluation(Logged):
     def clear_old_predictions(self, output_type):
         raise Exception("Must implement in subclass")
 
+    def clear_old_scores(self):
+        self.scores.delete()
+
     def mark_started(self):
         self.append(stdout="Started\n")
         self.status = Status.RUNNING
@@ -350,6 +353,11 @@ class BatchEvaluation(BaseEvaluation):
             submission_run_id=self.submission_run_id,
             input_element__in=self.input_batch.elements(),
         )
+
+    def __str__(self):
+        visibility = "Public" if self.submission_run.is_public else "Private"
+        num_elements = self.input_batch.inputbatchmembership_set.count()
+        return f"{visibility} Batch #{self.input_batch.id} ({num_elements} elements)"
 
     def scores_dicts(self):
         by_elem = defaultdict(dict)

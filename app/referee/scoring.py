@@ -174,7 +174,8 @@ def _score_element_or_batch(
 
     except Exception as exc:  # pylint: disable=broad-except
         log_messages.append(f"Scoring failed: {exc}")
-        raise ScoringFailureException from exc
+        err_message = f"Scoring failed: {exc}"
+        raise ScoringFailureException(err_message) from exc
     log_messages.append(f"Scoring completed for {element_or_batch}\n")
     return log_messages
 
