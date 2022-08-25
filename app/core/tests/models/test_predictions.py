@@ -15,9 +15,14 @@ def test_load_prediction_file(
     container_factory,
     submission_factory,
     submission_run_factory,
+    file_answer_key_factory,
     benzene_from_mol,
     batch,
+    caplog,
 ):
+    import logging
+
+    caplog.set_level(logging.DEBUG)
     challenge = benzene_from_mol.challenge
     coordsfile_type = models.ValueType.objects.create(
         challenge=challenge,
@@ -25,7 +30,7 @@ def test_load_prediction_file(
         content_type=ContentType.objects.get_for_model(models.FileValue),
         key="conformation",
         description="3D output MOL file",
-        batch_method="fake",
+        batch_method="sdf",
     )
     container = container_factory(challenge, "megosato/score-coords", "latest")
     submission = submission_factory(container)
@@ -35,6 +40,9 @@ def test_load_prediction_file(
     )
     filename = "Conformer3D_CID_241.mdl"
     output_path = TEST_DATA_PATH / filename
+    _akey = file_answer_key_factory(
+        challenge, benzene_from_mol, coordsfile_type, output_path
+    )
     if batch:
         challenge.max_batch_size = 2
         challenge.save()
@@ -68,7 +76,11 @@ def test_load_prediction_file(
             models.Prediction.load_batch_output(
                 challenge, batch_evaluation, coordsfile_type, batch_path
             )
-            assert mock_batch_file_save.call_count == 1
+            # Need to explicitly delete the FileValue objects created here since
+            # they will not have reasonable input_element_id values
+            assert batch_evaluation.filevalue_set.count() == 2
+            batch_evaluation.filevalue_set.all().delete()
+            assert mock_batch_file_save.call_count == 2
 
         # Now verify can set values on parent
         pdbpose_type = models.ValueType.objects.create(
@@ -86,6 +98,7 @@ def test_load_prediction_file(
             name="Batch 1",
             is_public=True,
         )
+
         benzene_from_mol.parent = parent_elem
         benzene_from_mol.save()
         batch.parent_input_element = parent_elem

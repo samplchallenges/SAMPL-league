@@ -346,6 +346,7 @@ def smiles_docking_config_and_func(config_factory, elem_factory):
         "molWeight",
         models.FloatValue,
     )
+    molw_type = config.output_type
 
     protein_type = models.ValueType.objects.create(
         challenge=config.challenge,
@@ -364,7 +365,7 @@ def smiles_docking_config_and_func(config_factory, elem_factory):
         is_public=True,
     )
 
-    def add_element(name, smiles):
+    def add_element(name, smiles, mol_weight):
         element = models.InputElement.objects.create(
             challenge=config.challenge,
             parent=parent,
@@ -380,6 +381,16 @@ def smiles_docking_config_and_func(config_factory, elem_factory):
             input_element=element,
             value_type=config.input_type,
             value_object=smiles_value,
+        )
+        float_value = models.FloatValue.from_string(
+            str(mol_weight), challenge=config.challenge, input_element=element
+        )
+        float_value.save()
+        models.AnswerKey.objects.create(
+            challenge=config.challenge,
+            input_element=element,
+            value_type=molw_type,
+            value_object=float_value,
         )
         return element
 

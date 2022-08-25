@@ -271,7 +271,9 @@ class Prediction(Solution):
         unique_together = ["submission_run", "input_element", "value_type"]
 
     @classmethod
-    def _build_single(cls, submission_run, value_type, input_element_id, value):
+    def _build_single(
+        cls, submission_run, value_type, input_element_id, value, **evaluation_attrs
+    ):
         challenge = value_type.challenge
         prediction = cls(
             challenge=challenge,
@@ -280,8 +282,17 @@ class Prediction(Solution):
             value_type=value_type,
         )
         output_type_model = value_type.content_type.model_class()
+        if len(evaluation_attrs) != 1 or set(evaluation_attrs.keys()).isdisjoint(
+            {"evaluation", "batch_evaluation"}
+        ):
+            raise ValueError(
+                f"Must pass either evaluation or batch_evaluation, not {evaluation_attrs}"
+            )
         value_object = output_type_model.from_string(
-            value, challenge=challenge, input_element_id=input_element_id
+            value,
+            challenge=challenge,
+            input_element_id=input_element_id,
+            **evaluation_attrs,
         )
 
         value_object.save()
@@ -304,6 +315,7 @@ class Prediction(Solution):
             value_type=output_type,
             input_element_id=evaluation.input_element_id,
             value=value,
+            evaluation=evaluation,
         )
 
     @classmethod
@@ -321,6 +333,7 @@ class Prediction(Solution):
                 value_type=output_type,
                 input_element_id=parent_elem_id,
                 value=value,
+                batch_evaluation=batch_evaluation,
             )
         else:
             batch_method = output_type.batch_method
@@ -331,6 +344,7 @@ class Prediction(Solution):
                     value_type=output_type,
                     input_element_id=input_element_id,
                     value=unbatched_value,
+                    batch_evaluation=batch_evaluation,
                 )
 
     def __str__(self):

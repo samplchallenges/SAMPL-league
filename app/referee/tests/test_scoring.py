@@ -144,7 +144,7 @@ def test_score_evaluation_args(
             evaluation_score_types,
         )
 
-        expected_args = ("ghcr.io/megosato/score-coords:latest", "score-evaluation")
+        expected_args = ("ghcr.io/robbason/score-coords:latest", "score-evaluation")
         expected_kwargs = {"molWeight_answerkey": 72.0, "molWeight_prediction": 97.08}
         expected_kwargs.update(custom_string_args)
         expected_file_kwargs = custom_file_args_full

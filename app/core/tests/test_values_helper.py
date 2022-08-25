@@ -22,8 +22,8 @@ def test_input_element(input_elements, benzene_from_mol):
 
 def test_parent_element(smiles_docking_config_and_func):
     _smiles_docking_config, add_element_func = smiles_docking_config_and_func
-    benz = add_element_func("benzene", "c1ccccc1")
-    _methane = add_element_func("methane", "C")
+    benz = add_element_func("benzene", "c1ccccc1", 77.0)
+    _methane = add_element_func("methane", "C", 14.0)
 
     _values, file_values = values_helper.all_values(benz)
     assert "protein_pdb" in file_values
@@ -32,9 +32,9 @@ def test_parent_element(smiles_docking_config_and_func):
 def test_batch_values(smiles_docking_config_and_func):
     smiles_docking_config, add_element_func = smiles_docking_config_and_func
     challenge = smiles_docking_config.challenge
-    mols = [("benzene", "c1ccccc1"), ("methane", "C"), ("water", "O")]
-    for name, smiles in mols:
-        add_element_func(name, smiles)
+    mols = [("benzene", "c1ccccc1", 78.0), ("methane", "C", 78.0), ("water", "O", 18.0)]
+    for name, smiles, mol_weight in mols:
+        add_element_func(name, smiles, mol_weight)
     challenge.max_batch_size = 3
     challenge.save()
     batch_group = challenge.current_batch_group()

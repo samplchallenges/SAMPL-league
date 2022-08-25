@@ -145,6 +145,7 @@ def _score_element_or_batch(
     )
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
+            output_eg_args = {}
             if isinstance(
                 element_or_batch, models.InputBatch
             ):  # TODO: fix this! code smell
