@@ -1,6 +1,8 @@
 """
 pip install fabric to run this
 """
+import os
+import os.path
 from pathlib import Path
 
 from invoke import task
@@ -25,7 +27,9 @@ DEPLOY_DIR = "deploy_files"
 PROD_HOST = "sampl.us-east-2.elasticbeanstalk.com"
 STAGING_HOST = "ec2-3-134-189-93.us-east-2.compute.amazonaws.com"
 
-KEY_FILE =  "/Users/megosato/.ssh/aws-eb"
+HOME = os.environ.get("HOME")
+default_key_file = os.path.join(HOME, ".ssh/aws-eb")
+KEY_FILE = os.environ.get("SAMPL_SSH_KEY_FILE", default_key_file)
 
 def sampl_staging(user="ec2-user"):
     return Connection(
