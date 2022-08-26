@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 awscli = "*"
-django = "4.0"
+django = "==4.1"
 psycopg2-binary = "*"
 django-crispy-forms = "*"
 django-storages = "*"
