@@ -1,0 +1,55 @@
+name: Example Docking Challenge
+#key: example_docking
+start_at: 2022-08-12 04:00:00
+end_at: 2023-09-05 22:00:00
+repo_url: https://github.com
+max_batch_size: 0
+input_types:
+  - key: receptor
+    description: 'PDB containing protein structure'
+    on_parent_flag: True
+    storage: file
+  - key: smiles
+    description: 'Ligand SMILES'
+    storage: string
+output_types:
+  - key: positioned_receptor
+    description: 'PDB containing receptor in reference frame with output ligands'
+    on_parent_flag: True
+    storage: file
+  - key: docking_score
+    description: Numerical docking score
+    storage: number
+  - key: compound_binds
+    description: '"True" if binds else "False"'
+    storage: string
+  - key: pose
+    description: 'Predicted ligand pose'
+    storage: file
+    batch_method: sdf
+scoring:
+  container:
+    registry: ghcr.io
+    label: robbason/score-coords
+    tag: latest
+    container_type: docker
+  element_types:
+    - is_correct
+    - rmsd
+  run_types:
+    - num_correct
+    - percent_correct
+    - avg_rmsd
+    - stdev_rmsd
+parent_elements:
+  - name: receptor
+    public: True
+    inputs:
+      receptor: receptor1/5qcr.pdb
+    outputs:
+      positioned_receptor: receptor1/5qcr.pdb
+    element_files:
+      - path: receptor1/public.csv
+        public: True
+      - path: receptor1/private.csv
+        public: False

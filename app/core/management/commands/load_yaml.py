@@ -1,8 +1,10 @@
 import csv
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from ruamel.yaml import YAML
 
 from core import models
@@ -30,7 +32,7 @@ def _create_output_types(challenge, itconfigs):
 def _create_types(challenge, itconfigs, **kwargs):
     types = {}
     for itconfig in itconfigs:
-        content_type = (_content_type(itconfig["storage"]),)
+        content_type = _content_type(itconfig["storage"])
         del itconfig["storage"]
         types[itconfig["key"]] = models.ValueType.objects.create(
             challenge=challenge, content_type=content_type, **itconfig, **kwargs
@@ -38,21 +40,27 @@ def _create_types(challenge, itconfigs, **kwargs):
     return types
 
 
-def _create_values(challenge, elem, input_types, output_types, values_dict):
-    for key, value in values_dict:
+def _create_values(
+    challenge, config_path, elem, input_types, output_types, values_dict
+):
+    for key, value in values_dict.items():
         input_type = input_types.get(key)
         if input_type:
-            _create_input_value(challenge, input_type, elem, value)
+            _create_input_value(challenge, config_path, input_type, elem, value)
         else:
             output_type = output_types.get(key)
-            _create_output_value(challenge, output_type, elem, value)
+            _create_output_value(challenge, config_path, output_type, elem, value)
 
 
-def _create_value(challenge, value_type, input_element, value):
+def _create_value(challenge, config_path, value_type, input_element, value):
     storage_cls = value_type.content_type.model_class()
     # TODO: to support multi-mol SDF inputs, need to:
     # look up input element name in attributes of file when loading
     # OR allow SDF input instead of CSV in this loop - prob more elegant!
+    if storage_cls == models.FileValue:
+        # Allow relative paths in config yaml
+        # raise Exception(f"{config_path}, {config_path.parent}, {value}, {config_path.parent / value}")
+        value = config_path.parent / value
     value_object = storage_cls.from_string(
         value, challenge=challenge, input_element=input_element
     )
@@ -60,8 +68,10 @@ def _create_value(challenge, value_type, input_element, value):
     return value_object
 
 
-def _create_input_value(challenge, value_type, input_element, value):
-    value_object = _create_value(challenge, value_type, input_element, value)
+def _create_input_value(challenge, config_path, value_type, input_element, value):
+    value_object = _create_value(
+        challenge, config_path, value_type, input_element, value
+    )
     models.InputValue.objects.create(
         input_element=input_element,
         value_type=value_type,
@@ -69,8 +79,10 @@ def _create_input_value(challenge, value_type, input_element, value):
     )
 
 
-def _create_output_value(challenge, value_type, input_element, value):
-    value_object = _create_value(challenge, value_type, input_element, value)
+def _create_output_value(challenge, config_path, value_type, input_element, value):
+    value_object = _create_value(
+        challenge, config_path, value_type, input_element, value
+    )
     models.AnswerKey.objects.create(
         challenge=challenge,
         input_element=input_element,
@@ -79,7 +91,9 @@ def _create_output_value(challenge, value_type, input_element, value):
     )
 
 
-def _create_inputs_from_parents(challenge, elconfigs, input_types, output_types):
+def _create_inputs_from_parents(
+    challenge, config_path, elconfigs, input_types, output_types
+):
 
     for elconfig in elconfigs:
         parent_element = models.InputElement.objects.create(
@@ -90,9 +104,10 @@ def _create_inputs_from_parents(challenge, elconfigs, input_types, output_types)
         )
         for key, value in elconfig["inputs"].items():
             value_type = input_types[key]
-            _create_value(challenge, value_type, parent_element, value)
+            _create_value(challenge, config_path, value_type, parent_element, value)
         _create_inputs_from_files(
             challenge,
+            config_path,
             elconfig["element_files"],
             input_types,
             output_types,
@@ -101,12 +116,13 @@ def _create_inputs_from_parents(challenge, elconfigs, input_types, output_types)
 
 
 def _create_inputs_from_files(
-    challenge, elconfigs, input_types, output_types, parent_element=None
+    challenge, config_path, elconfigs, input_types, output_types, parent_element=None
 ):
     for element_file in elconfigs:
         is_public = element_file["public"]
         _create_inputs_from_file(
             challenge,
+            config_path,
             element_file["path"],
             input_types,
             output_types,
@@ -116,14 +132,30 @@ def _create_inputs_from_files(
 
 
 def _create_inputs_from_file(
-    challenge, filename, input_types, output_types, parent_element=None, is_public=False
+    challenge,
+    config_path,
+    filename,
+    input_types,
+    output_types,
+    parent_element=None,
+    is_public=False,
 ):
     is_validated = False
-    with open(filename, encoding="utf8") as fp:
+    with open(config_path.parent / filename, encoding="utf8") as fp:
         reader = csv.DictReader(fp)
         for row in reader:
             if not is_validated:
-                expected_keys = {"name", *input_types.keys(), *output_types.keys()}
+                in_keys = [
+                    input_type.key
+                    for input_type in input_types.values()
+                    if not input_type.on_parent_flag
+                ]
+                out_keys = [
+                    output_type.key
+                    for output_type in output_types.values()
+                    if not output_type.on_parent_flag
+                ]
+                expected_keys = {"name", *in_keys, *out_keys}
                 if row.keys() != expected_keys:
                     raise ValueError(
                         f"CSV issue with {filename}; expected keys {expected_keys} but found {row.keys()}"
@@ -136,7 +168,7 @@ def _create_inputs_from_file(
                 is_public=is_public,
             )
             del row["name"]
-            _create_values(challenge, elem, input_types, output_types, row)
+            _create_values(challenge, config_path, elem, input_types, output_types, row)
 
 
 class Command(BaseCommand):
@@ -147,9 +179,11 @@ class Command(BaseCommand):
         )
         parser.add_argument("--owner", default="admin", help="Scoring container owner")
 
+    @transaction.atomic
     def handle(self, *args, **options):  # pylint:disable=unused-argument
+        config_path = Path(options["filename"])
         yaml = YAML(typ="safe")  # default, if not specfied, is 'rt' (round-trip)
-        with open(options["filename"], encoding="utf8") as fp:
+        with open(config_path, encoding="utf8") as fp:
             config_dict = yaml.load(fp)
         challenge_name = config_dict["name"]
         if options["delete"]:
@@ -179,7 +213,8 @@ class Command(BaseCommand):
         scoring_container = models.Container.objects.create(
             user=user,
             challenge=challenge,
-            **config_dict["scoring"]["container"],
+            name=f"Scoring Container for {challenge.name}"
+            ** config_dict["scoring"]["container"],
         )
 
         models.ScoreMaker.objects.create(
@@ -203,9 +238,17 @@ class Command(BaseCommand):
         output_types = _create_output_types(challenge, config_dict["output_types"])
         if "parent_elements" in config_dict:
             _create_inputs_from_parents(
-                challenge, config_dict["parent_elements"], input_types, output_types
+                challenge,
+                config_path,
+                config_dict["parent_elements"],
+                input_types,
+                output_types,
             )
         else:
             _create_inputs_from_files(
-                challenge, config_dict["element_files"], input_types, output_types
+                challenge,
+                config_path,
+                config_dict["element_files"],
+                input_types,
+                output_types,
             )
