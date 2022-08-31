@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils.timezone import make_aware
 from ruamel.yaml import YAML
 
 from core import models
@@ -191,7 +192,7 @@ class Command(BaseCommand):
             for challenge in models.Challenge.objects.filter(name=challenge_name):
                 challenge.delete()
                 self.stdout.write(".", ending="")
-            self.stdout.write("Finished deleting")
+            self.stdout.write(" Finished deleting")
         if models.Challenge.objects.filter(name=challenge_name).exists():
             raise Exception(
                 f"Challenge named {challenge_name} already exists, run with --delete"
@@ -202,10 +203,14 @@ class Command(BaseCommand):
             username=options["owner"], email="braxton.robbason@gmail.com"
         )
         challenge_defaults = {
-            k: v
-            for k, v in config_dict.items()
-            if k in ("start_at", "end_at", "repo_url", "max_batch_size")
+            k: v for k, v in config_dict.items() if k in ("repo_url", "max_batch_size")
         }
+        challenge_dates = {
+            k: make_aware(v)
+            for k, v in config_dict.items()
+            if k in ("start_at", "end_at")
+        }
+        challenge_defaults.update(challenge_dates)
         challenge, _ = models.Challenge.objects.get_or_create(
             name=challenge_name, defaults=challenge_defaults
         )
@@ -213,8 +218,8 @@ class Command(BaseCommand):
         scoring_container = models.Container.objects.create(
             user=user,
             challenge=challenge,
-            name=f"Scoring Container for {challenge.name}"
-            ** config_dict["scoring"]["container"],
+            name=f"Scoring Container for {challenge.name}",
+            **config_dict["scoring"]["container"],
         )
 
         models.ScoreMaker.objects.create(
