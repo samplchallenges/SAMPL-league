@@ -108,6 +108,29 @@ class SingularityEngine(Engine):
         else:
             raise Exception("Container Type Not Implemented")
 
+    @classmethod
+    def pull_container(cls, container_uri, container_type, save_path=None, aws_login_func=None):
+        if container_type not in SINGULARITY_CONTAINER_TYPES:
+            raise ValueError(
+                f"Container type {container_type} not supported by singularity engine"
+            )
+
+        if aws_login_func:
+            aws_login_func("singularity")
+
+        uri = cls.make_uri(container_uri, container_type)
+        if save_path:   
+            pull_cmd = ["singularity", "pull", "-F", save_path, uri]
+        else:
+            pull_cmd = ["singularity", "pull", "-F", uri]
+        ended_proc = subprocess.run(
+            pull_cmd, capture_output=True
+        )
+        code = ended_proc.returncode
+        stdout = ended_proc.stdout.decode("utf-8")
+        stderr = ended_proc.stderr.decode("utf-8")
+        return code, stdout, stderr
+            
 
 def _build_singularity_command(bind_volumes, container_uri, command_list):
     #  TODO: how to decide when to load Nvidia drivers?

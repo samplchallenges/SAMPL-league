@@ -1,5 +1,6 @@
 from pathlib import Path
 import typing
+import subprocess
 
 import docker  # type: ignore
 
@@ -77,3 +78,23 @@ class DockerEngine(Engine):
             detach=True,
         )
         return DockerContainerInstance(client, docker_container)
+
+    @classmethod
+    def pull_container(cls, container_uri, container_type, save_path=None, aws_login_func=None):
+        # pylint: disable=unused-argument
+        if container_type not in DOCKER_CONTAINER_TYPES:
+            raise ValueError(f"Container type: {container_type} not supported by Docker Engine")
+
+        if aws_login_func:
+            aws_login_func("singularity")
+
+        pull_cmd = ['docker', 'pull', container_uri]
+
+        ended_proc = subprocess.run(
+            pull_cmd, capture_output=True
+        )
+        code = ended_proc.returncode
+        stdout = ended_proc.stdout.decode("utf-8")
+        stderr = ended_proc.stderr.decode("utf-8")
+        return code, stdout, stderr
+        

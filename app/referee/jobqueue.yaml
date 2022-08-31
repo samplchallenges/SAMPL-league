@@ -7,7 +7,7 @@ jobqueue:
 
       # Dask worker options
       cores: 1                    # Total number of cores per job
-      memory: '8 GB'              # Total amount of memory per job
+      memory: '4 GB'              # Total amount of memory per job
       processes: 1                # Number of Python processes per job
 
       #interface: null             # Network interface to use like eth0 or ib0
@@ -30,6 +30,6 @@ jobqueue:
 
     adapt_settings:
       minimum_jobs: 0
-      maximum_jobs: 50
+      maximum_jobs: 45
       wait_count: 3
       interval: '30000 ms'
