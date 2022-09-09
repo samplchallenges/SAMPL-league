@@ -6,7 +6,6 @@ import docker  # type: ignore
 
 from .utils import ContainerInstance, Engine, GUEST_OUTPUT_DIR
 
-DOCKER_CONTAINER_TYPES = ["docker"]
 
 class DockerContainerInstance(ContainerInstance):
     def __init__(self, client, container):
@@ -42,6 +41,7 @@ class DockerContainerInstance(ContainerInstance):
 
 class DockerEngine(Engine):
     _engine_name = "docker"
+    _valid_container_types = ["docker"]
 
     @classmethod
     def run_container(
@@ -54,10 +54,7 @@ class DockerEngine(Engine):
         output_dir: str = None,
         aws_login_func=None,
     ) -> DockerContainerInstance:
-        if container_type not in DOCKER_CONTAINER_TYPES:
-            raise ValueError(f"Container type: {container_type} not supported by Docker Engine")
-        if aws_login_func:
-            aws_login_func("docker")
+        cls.validate_common_arguments(container_type, aws_login_func)
         command = " ".join(command_list)
         client = docker.from_env()
         volumes = {}
@@ -82,19 +79,13 @@ class DockerEngine(Engine):
     @classmethod
     def pull_container(cls, container_uri, container_type, save_path=None, aws_login_func=None):
         # pylint: disable=unused-argument
-        if container_type not in DOCKER_CONTAINER_TYPES:
-            raise ValueError(f"Container type: {container_type} not supported by Docker Engine")
-
-        if aws_login_func:
-            aws_login_func("singularity")
+        cls.validate_common_arguments(container_type, aws_login_func)
 
         pull_cmd = ['docker', 'pull', container_uri]
 
-        ended_proc = subprocess.run(
-            pull_cmd, capture_output=True
-        )
+        ended_proc = subprocess.run(pull_cmd, capture_output=True)
         code = ended_proc.returncode
         stdout = ended_proc.stdout.decode("utf-8")
         stderr = ended_proc.stderr.decode("utf-8")
-        return code, stdout, stderr
+        return code == 0, stdout, stderr
         

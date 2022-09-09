@@ -1,3 +1,4 @@
+import re
 from functools import cached_property
 
 import django.contrib.auth.models as auth_models
@@ -134,6 +135,26 @@ class Container(Timestamped):
             for arg in self.args.all()
             if arg.file_value
         }
+
+    @property
+    def local_save_path(self):
+        if not settings.CONTAINER_FILES_ROOT:
+            return
+
+        def _sanitize_user_str(user_str):
+            MAX_USER_STR_LEN = 20
+            return re.sub(r"\W", "_", user_str[:MAX_USER_STR_LEN])
+
+        clean_label = _sanitize_user_str(self.label)
+        if self.tag:
+            suffix = "_" + _sanitize_user_str(self.tag)
+        else:
+            suffix = ""
+        return (
+            settings.CONTAINER_FILES_ROOT
+            / f"container_{self.id}"
+            / f"{clean_label}{suffix}.sif"
+        )
 
 
 class ScoreMaker(Timestamped):

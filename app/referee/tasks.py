@@ -78,29 +78,23 @@ def cache_containers(submission_run, delayed_conditional):
         if settings.LOGIN_TO_AWS
         else None
     )
-    submission_run.append(stdout=f"{container.uri}\n")
-    submission_run.append(stdout=f"{container.container_type}\n")
-
-    if settings.CONTAINER_FILES_ROOT:
-        container_save_path = (
-            settings.CONTAINER_FILES_ROOT
-            / f"{container.label.replace('/', '_')}_{container.tag}.sif"
-            if container.tag
-            else settings.CONTAINER_FILES_ROOT
-            / f"{container.label.replace('/', '_')}.sif"
-        )
-    else:
-        container_save_path = None
+    submission_run.append(
+        stdout=f"Container details: {container.uri}\n{container.container_type}\n"
+    )
 
     pull_code, stdout, stderr = ever_given.wrapper.pull_container(
         container.uri,
         container.container_type,
         settings.CONTAINER_ENGINE,
-        container_save_path,
+        container.local_save_path,
         aws_login_func,
     )
-    submission_run.append(stderr=stderr)
-    submission_run.append(stdout=stdout)
+    if stderr:
+        submission_run.append(stderr="Error message when pulling container:\n")
+        submission_run.append(stderr=stderr)
+    if stdout:
+        submission_run.append(stdout="From pulling container:\n")
+        submission_run.append(stdout=stdout)
     submission_run.append(stdout=f"PULL EXIT CODE: {pull_code} {type(pull_code)}\n")
     return pull_code
 
@@ -158,10 +152,9 @@ def check_and_score(submission_run_id, delayed_conditional, evaluation_statuses)
     else:
         status = models.Status.CANCELLED
 
-    submission_run.status = status
+    submission_run.update_status(status)
     if status != models.Status.SUCCESS:
         submission_run.append(stderr=f"Submission run failed {status}")
-        submission_run.save(update_fields=["status"])
         return False
     submission_run.append(stdout="Running check_and_score")
     scoring.score_submission_run(submission_run)
@@ -220,24 +213,17 @@ def run_eval_or_batch(
         return models.Status.CANCELLED
 
     if submission_run.status == models.Status.PENDING:
-        submission_run.status = models.Status.RUNNING
-        submission_run.save(update_fields=["status"])
+        submission_run.update_status(models.Status.RUNNING)
 
     evaluation_score_types = challenge.score_types[models.ScoreType.Level.EVALUATION]
     obj = cls.objects.filter(submission_run_id=submission_run_id).get(pk=object_id)
 
+    if not pull_code:
+        obj.update_status(models.Status.FAILURE)
+        obj.append(stderr=f"Failed to pull container: {container.uri}")
+
     if obj.status not in {models.Status.PENDING, models.Status.RUNNING}:
         return obj.status
-
-    if pull_code != 0:
-        obj.status = models.Status.FAILURE
-        obj.save(
-            update_fields=[
-                "status",
-            ]
-        )
-        obj.append(stderr=f"Failed to pull container: {container.uri}")
-        return models.Status.FAILURE
 
     output_file_keys = challenge.output_file_keys()
     all_output_keys = challenge.output_keys()

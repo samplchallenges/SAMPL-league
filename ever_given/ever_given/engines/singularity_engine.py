@@ -9,7 +9,6 @@ import os
 from .utils import ContainerInstance, Engine, GUEST_OUTPUT_DIR
 
 AFTER_TERMINATE_WAIT = 5  # Seconds to wait after 'terminate' signal before 'kill'
-SINGULARITY_CONTAINER_TYPES = ["docker", "singularity_remote", "singularity_local"]
 
 
 class SingularityContainerInstance(ContainerInstance):
@@ -64,6 +63,11 @@ class SingularityContainerInstance(ContainerInstance):
 
 class SingularityEngine(Engine):
     _engine_name = "singularity"
+    uri_prefixes: typing.Dict[str, str] = {
+        "docker": "docker://",
+        "singularity_remote": "shub://",
+        "singularity_local": ""}
+    _valid_container_types = list(uri_prefixes.keys())
 
     @classmethod
     def run_container(
@@ -76,13 +80,8 @@ class SingularityEngine(Engine):
         output_dir=None,
         aws_login_func=None,
     ):
-        # Check the container type
-        if container_type not in SINGULARITY_CONTAINER_TYPES:
-            raise ValueError(
-                f"Container type {container_type} not supported by singularity engine"
-            )
-        if aws_login_func:
-            aws_login_func("singularity")
+        cls.validate_common_arguments(container_type, aws_login_func)
+
         bind_volumes = []
         for inputdir, guest_input_dir in inputdir_map.items():
             bind_volumes.append(f"{inputdir}:{guest_input_dir}")  #:ro")
@@ -99,37 +98,29 @@ class SingularityEngine(Engine):
 
     @classmethod
     def make_uri(cls, container_uri, container_type):
-        if container_type == "docker":
-            return f"docker://{container_uri}"
-        elif container_type == "singularity_remote":
-            return f"shub://{container_uri}"
-        elif container_type == "singularity_local":
-            return container_uri
-        else:
-            raise Exception("Container Type Not Implemented")
+
+        try:
+            return f"{cls.uri_prefixes[container_type]}{container_uri}"
+        except KeyError:
+            raise Exception(
+                f"Container Type {container_type} not implemented,"
+                f" valid options are {cls.uri_prefixes.keys()}")
+
 
     @classmethod
     def pull_container(cls, container_uri, container_type, save_path=None, aws_login_func=None):
-        if container_type not in SINGULARITY_CONTAINER_TYPES:
-            raise ValueError(
-                f"Container type {container_type} not supported by singularity engine"
-            )
-
-        if aws_login_func:
-            aws_login_func("singularity")
+        cls.validate_common_arguments(container_type, aws_login_func)
 
         uri = cls.make_uri(container_uri, container_type)
         if save_path:   
             pull_cmd = ["singularity", "pull", "-F", save_path, uri]
         else:
             pull_cmd = ["singularity", "pull", "-F", uri]
-        ended_proc = subprocess.run(
-            pull_cmd, capture_output=True
-        )
+        ended_proc = subprocess.run(pull_cmd, capture_output=True)
         code = ended_proc.returncode
         stdout = ended_proc.stdout.decode("utf-8")
         stderr = ended_proc.stderr.decode("utf-8")
-        return code, stdout, stderr
+        return code == 0, stdout, stderr
             
 
 def _build_singularity_command(bind_volumes, container_uri, command_list):

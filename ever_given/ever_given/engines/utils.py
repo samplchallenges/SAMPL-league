@@ -20,19 +20,19 @@ class ContainerInstance(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def reload(self):
+    def reload(self) -> None:
         pass
 
     @abc.abstractmethod
-    def kill(self):
+    def kill(self) -> None:
         pass
 
     @abc.abstractmethod
-    def remove(self):
+    def remove(self) -> None:
         pass
 
     @abc.abstractmethod
-    def status(self):
+    def status(self) -> str:
         pass
 
 
@@ -42,6 +42,7 @@ class Engine(abc.ABC):
     """
 
     _engine_name: typing.Optional[str] = None
+    _valid_container_types: typing.List[str] = None
 
     @classmethod
     def name(cls) -> str:
@@ -59,6 +60,18 @@ class Engine(abc.ABC):
         *,
         inputdir_map: typing.Dict[str, str] = None,
         output_dir: str = None,
-        aws_login_func=None
+        aws_login_func: typing.Callable[[str], None]=None
     ) -> ContainerInstance:
         pass
+
+    @classmethod
+    @abc.abstractmethod
+    def pull_container(cls, container_uri: str, container_type: str, save_path: str=None, aws_login_func: typing.Callable[[str], None]=None) -> typing.Tuple(bool, str, str):
+        """Returns False, stdout, stderr on failure, True, stdout, stderr on success"""
+
+    @classmethod
+    def validate_common_arguments(cls, container_type: str, aws_login_func: typing.Callable[[str], None]) -> None:
+        if container_type not in cls._valid_container_types:
+            raise ValueError(f"Container type: {container_type} not supported by {cls._engine_name} Engine")
+        if aws_login_func:
+            aws_login_func(cls._engine_name)

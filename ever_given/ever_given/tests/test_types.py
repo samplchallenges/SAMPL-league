@@ -67,7 +67,6 @@ def test_singularity_sif_container_singularity_engine():
     shutil.rmtree(tempdir)
 
 
-
 def test_pull_container_singularity_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
     tempdir = Path(tempfile.mkdtemp())
@@ -77,6 +76,7 @@ def test_pull_container_singularity_engine():
     assert os.path.exists(container_sif_path)
 
     shutil.rmtree(tempdir)
+
 
 def test_pull_container_docker_engine():
     container_uri = "ghcr.io/megosato/calc-molwt:latest" 
