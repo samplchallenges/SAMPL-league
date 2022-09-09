@@ -41,8 +41,8 @@ class Engine(abc.ABC):
     Base class used by docker and singularity enngines
     """
 
-    _engine_name: typing.Optional[str] = None
-    _valid_container_types: typing.List[str] = None
+    _engine_name: str
+    _valid_container_types: typing.List[str]
 
     @classmethod
     def name(cls) -> str:
@@ -66,8 +66,10 @@ class Engine(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def pull_container(cls, container_uri: str, container_type: str, save_path: str=None, aws_login_func: typing.Callable[[str], None]=None) -> typing.Tuple(bool, str, str):
-        """Returns False, stdout, stderr on failure, True, stdout, stderr on success"""
+    def pull_container(cls, container_uri: str, container_type: str, save_path: str=None, aws_login_func: typing.Callable[[str], None]=None) -> typing.Tuple[bool, str, str]:
+        """
+        Returns False, stdout, stderr on failure, True, stdout, stderr on success.
+        Note this is an inversion of UNIX, where 0 exit code is success (which is falsy in Python)"""
 
     @classmethod
     def validate_common_arguments(cls, container_type: str, aws_login_func: typing.Callable[[str], None]) -> None:
