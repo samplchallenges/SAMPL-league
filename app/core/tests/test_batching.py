@@ -5,7 +5,7 @@ import tempfile
 import pytest
 from rdkit import Chem
 
-from .. import batching, models
+from .. import batching, models, values_helper
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
@@ -13,7 +13,9 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 def test_batch_csv(smiles_molw_config, input_elements):
     with tempfile.TemporaryDirectory() as dirname:
         output_path = os.path.join(dirname, "smiles_list.csv")
-        batching.BATCHERS["csv"].call(input_elements, "smiles", output_path)
+        batching.BATCHERS["csv"].call(
+            input_elements, "smiles", output_path, values_helper.get_values
+        )
         with open(output_path, encoding="utf8") as fp:
             reader = csv.DictReader(fp)
             by_name = {}
@@ -40,7 +42,9 @@ def test_invert_csv():
 def test_batch_mol(benzene_from_mol):
     with tempfile.TemporaryDirectory() as dirname:
         output_path = os.path.join(dirname, "mols.sdf")
-        batching.BATCHERS["sdf"].call([benzene_from_mol], "molfile", output_path)
+        batching.BATCHERS["sdf"].call(
+            [benzene_from_mol], "molfile", output_path, values_helper.get_values
+        )
 
         suppl = Chem.SDMolSupplier(output_path)
 
@@ -77,7 +81,9 @@ def test_batch_invalid_mol(corrupt_mol):  # pylint: disable=redefined-outer-name
     with tempfile.TemporaryDirectory() as dirname:
         output_path = os.path.join(dirname, "mols.sdf")
         with pytest.raises(Exception):
-            batching.BATCHERS["sdf"].call([corrupt_mol], "molfile", output_path)
+            batching.BATCHERS["sdf"].call(
+                [corrupt_mol], "molfile", output_path, values_helper.get_values
+            )
 
 
 def test_batch_hooks(

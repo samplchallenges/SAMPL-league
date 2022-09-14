@@ -1,5 +1,5 @@
 import copy
-import shlex
+import logging
 import sys
 from pathlib import Path
 import typing
@@ -9,7 +9,9 @@ from .engines import GUEST_OUTPUT_DIR, REGISTERED_ENGINES
 from . import log_processing
 from .utils import LogHandlerBase
 
+
 GUEST_INPUT_DIR = Path("/mnt") / "inputs"
+logger = logging.getLogger(__name__)
 
 
 class ContainerFailedException(Exception):
@@ -119,10 +121,10 @@ def run(
     inputdir_map, final_file_kwargs = _convert_file_kwargs(file_kwargs)
     final_kwargs = copy.deepcopy(kwargs)
     final_kwargs.update(final_file_kwargs)
-
     command_list = prepare_command_list(command, final_kwargs)
-
+    logger.debug("Command: %s", command_list)
     container_uri = _get_container_uri(container_uri, container_type, engine_name)
+    logger.debug("Container URI: %s", container_uri)
 
     running_container = REGISTERED_ENGINES[engine_name].run_container(
         container_type,
@@ -153,6 +155,11 @@ def run(
             )
             print(f"Container status is {status}", file=sys.stderr)
         if status == running_container.FAILURE:
+            # if log_handler.cls:
+            #     bev = log_handler.cls.objects.get(id=log_handler.instance_id)
+            #     print(container_uri)
+            #     print(bev.log_stderr)
+            # for debugging, above four lines can be uncommented
             raise ContainerFailedException()
     finally:
         running_container.remove()

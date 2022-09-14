@@ -83,10 +83,10 @@ class Solution(ValueParentMixin):
         abstract = True
 
     @classmethod
-    def dicts_by_key(cls, instances):
+    def dicts_by_key(cls, **filters):
         by_key = {}
         files_by_key = {}
-        for instance in instances:
+        for instance in cls.objects.filter(**filters):
             if isinstance(instance.value_object, FileValue):
                 files_by_key[instance.value_type.key] = filecache.ensure_local_copy(
                     instance.value

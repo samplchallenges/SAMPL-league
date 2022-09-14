@@ -35,6 +35,7 @@ def batch_evaluation_factory(smiles_molw_config, input_elements):
                 models.Prediction.load_batch_output(
                     challenge, batch_evaluation, molw_type, "foo"
                 )
+            batch_evaluation.batchup()
         return evaluations_list
 
     return batch_evaluation_maker

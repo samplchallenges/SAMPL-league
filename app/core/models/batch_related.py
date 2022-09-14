@@ -1,12 +1,12 @@
+import csv
 import os.path
-import tempfile
 from collections import defaultdict
+from functools import partial
 
 from django.core.files import File
 from django.db import models, transaction
 
-from .. import filecache
-from ..batching import BATCHERS
+from .. import batching, filecache, values_helper
 from .admin_managed import Challenge, InputElement, ValueType
 from .infra_models import Timestamped
 
@@ -70,25 +70,40 @@ class InputBatch(Timestamped):
             yield ibm.input_element
 
     def batchup(self, input_elements):
+        create_file_func = partial(BatchFile.from_local, batch=self)
+        create_akeyfile_func = partial(AnswerKeyBatchFile.from_local, input_batch=self)
         with transaction.atomic():
             self._set_elements(input_elements)
-            with tempfile.TemporaryDirectory() as temp_dir:
-                for value_type in self.batch_group.challenge.valuetype_set.filter(
-                    is_input_flag=True, on_parent_flag=False
-                ):
-                    batcher = BATCHERS.get(value_type.batch_method)
-                    if batcher is None:
-                        raise ValueError(
-                            f"Batch method must be set on value type {value_type.key}"
-                        )
-                    output_path = os.path.join(
-                        temp_dir, f"{value_type.key}.{batcher.suffix}"
-                    )
-                    batcher.call(input_elements, value_type.key, output_path)
-                    batch_file = BatchFile.from_local(
-                        output_path, batch=self, value_type=value_type
-                    )
-                    batch_file.save()
+            input_value_types = self.batch_group.challenge.valuetype_set.filter(
+                is_input_flag=True, on_parent_flag=False
+            )
+            batching.batchup_elements(
+                input_value_types,
+                list(self.elements()),
+                create_file_func,
+                values_helper.get_values,
+            )
+            output_value_types = self.batch_group.challenge.valuetype_set.filter(
+                is_input_flag=False, on_parent_flag=False
+            )
+            batching.batchup_elements(
+                output_value_types,
+                list(self.elements()),
+                create_akeyfile_func,
+                values_helper.answerkey_values,
+            )
+
+    def save_score(self, submission_run, score_type, value):
+        scores = {}
+        with open(value, encoding="utf8") as fp:
+            reader = csv.DictReader(fp)
+            for row in reader:
+                scores[int(row["id"])] = row["value"]
+        try:
+            for element in self.elements():
+                element.save_score(submission_run, score_type, scores[element.id])
+        except KeyError as kexc:
+            raise ValueError("Missing a score") from kexc
 
     def __str__(self):
         return f"Public? {self.is_public}"
@@ -117,19 +132,53 @@ def batch_upload_location(instance, filename):
     )
 
 
-class BatchFile(Timestamped):
-    batch = models.ForeignKey(InputBatch, on_delete=models.CASCADE)
+class BatchFileBase(Timestamped):
     value_type = models.ForeignKey(ValueType, on_delete=models.CASCADE)
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def files_by_key(cls, **filters):
+        by_key = {}
+        for instance in cls.objects.filter(**filters):
+            by_key[instance.value_type.key] = filecache.ensure_local_copy(instance.data)
+        return by_key
+
+    @classmethod
+    def from_local(cls, filepath, *, value_type, **kwargs):
+        filename = os.path.basename(filepath)
+        instance = cls(data=filename, value_type=value_type, **kwargs)
+        with open(filepath, "rb") as fp:
+            instance.data.save(filename, File(fp))
+        filecache.preserve_local_copy(instance.data, filepath)
+        instance.save()
+        return instance
+
+
+class BatchFile(BatchFileBase):
+    batch = models.ForeignKey(InputBatch, on_delete=models.CASCADE)
     data = models.FileField(upload_to=batch_upload_location)
 
     def __str__(self):
         return f"{self.batch} {self.value_type} {self.data}"
 
-    @classmethod
-    def from_local(cls, filepath, *, batch, value_type):
-        filename = os.path.basename(filepath)
-        instance = cls(data=filename, batch=batch, value_type=value_type)
-        with open(filepath, "rb") as fp:
-            instance.data.save(filename, File(fp))
-        filecache.preserve_local_copy(instance.data, filepath)
-        return instance
+
+def answer_key_batch_upload_location(instance, filename):
+    input_batch = instance.input_batch
+
+    challenge = input_batch.batch_group.challenge
+    challenge_path = os.path.join("batch_answer_keys", f"{challenge.id}")
+    group_path = os.path.join("batch_group", f"{input_batch.batch_group.id}")
+    batch_path = os.path.join("b", f"{input_batch.id}")
+    return os.path.join(
+        challenge_path, group_path, batch_path, instance.value_type.key, filename
+    )
+
+
+class AnswerKeyBatchFile(BatchFileBase):
+    input_batch = models.ForeignKey(InputBatch, on_delete=models.CASCADE)
+    data = models.FileField(upload_to=answer_key_batch_upload_location)
+
+    def __str__(self):
+        return f"{self.input_batch} {self.value_type} {self.data}"

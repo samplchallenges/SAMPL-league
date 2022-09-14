@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 import typing
 import subprocess
@@ -5,6 +6,8 @@ import subprocess
 import docker  # type: ignore
 
 from .utils import ContainerInstance, Engine, GUEST_OUTPUT_DIR
+
+logger = logging.getLogger(__name__)
 
 
 class DockerContainerInstance(ContainerInstance):
@@ -65,6 +68,9 @@ class DockerEngine(Engine):
             output_dir = str(Path(output_dir).resolve())
             volumes[output_dir] = {"bind": str(GUEST_OUTPUT_DIR), "mode": "rw"}
             command = f" --output-dir {GUEST_OUTPUT_DIR} {command}"
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Docker command: %s", command)
+            logger.debug("Volumes: %s", volumes)
         docker_container = client.containers.run(
             container_uri,
             command,

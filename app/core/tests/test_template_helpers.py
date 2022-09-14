@@ -1,12 +1,13 @@
 import os.path
+import re
 
 from core import template_helpers
 
 
 def test_template_table(smiles_docking_config_and_func):
     smiles_docking_config, add_element = smiles_docking_config_and_func
-    add_element("benzene", "c1ccccc1")
-    add_element("methane", "C")
+    add_element("benzene", "c1ccccc1", 99.0)
+    add_element("methane", "C", 17.0)
 
     element_table = template_helpers.ElementTable(smiles_docking_config.challenge)
 
@@ -17,8 +18,8 @@ def test_template_table(smiles_docking_config_and_func):
 
     row = element_table.rows[0]
     assert row[0] == "benzene"
-    assert os.path.basename(row[1].value.name) == "5qcr.pdb"
+    assert re.match("5qcr.+pdb", os.path.basename(row[1].value.name))
 
     assert row[2].value == "c1ccccc1"
 
-    assert row[3] == "--smiles c1ccccc1 --protein_pdb 5qcr.pdb"
+    assert re.match("--smiles c1ccccc1 --protein_pdb 5qcr.+pdb", row[3])

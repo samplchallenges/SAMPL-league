@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 from .base_settings import *  # lgtm [py/polluting-import]
+from .debug_logging import LOGGING
 
 DEBUG = False
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
