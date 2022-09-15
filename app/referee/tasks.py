@@ -1,5 +1,6 @@
 import logging
 import tempfile
+import os
 from pathlib import Path
 
 import dask
@@ -81,6 +82,8 @@ def cache_containers(submission_run, delayed_conditional):
     submission_run.append(
         stdout=f"Container details: {container.uri}\n{container.container_type}\n"
     )
+
+    os.makedirs(container.local_save_path.parent.absolute())
 
     pull_code, stdout, stderr = ever_given.wrapper.pull_container(
         container.uri,
