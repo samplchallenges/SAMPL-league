@@ -19,6 +19,7 @@ jupyterlab = "*"
 ipython = "*"
 dask-jobqueue = "*"
 rdkit = "*"
+"ruamel.yaml" = "*"
 
 [dev-packages]
 black = "*"

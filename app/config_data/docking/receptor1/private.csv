@@ -1,0 +1,4 @@
+name,smiles,docking_score,compound_binds,pose
+Chlorine,Cl,0.0,False,receptor1/private.sdf
+Acetaldehyde,CC=O,0.0,True,receptor1/private.sdf
+Caffeine,CN1C=NC2=C1C(=O)N(C(=O)N2C)C,0.0,False,receptor1/private.sdf

@@ -1,0 +1,4 @@
+name,smiles,docking_score,compound_binds,pose
+Benzene,c1ccccc1,0.0,True,receptor1/public.sdf
+Methane,C,0.0,False,receptor1/public.sdf
+Ethane,CC,0.0,False,receptor1/public.sdf
