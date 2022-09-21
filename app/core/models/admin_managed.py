@@ -202,6 +202,8 @@ class InputElement(Timestamped):
         self.evaluationscore_set.create(
             submission_run=submission_run, score_type=score_type, value=float(value)
         )
+        print("EVAL SCORE COUNT:", self.evaluationscore_set.count())
+        print("Evaluation scores:", self.evaluationscore_set.all())
 
     def __str__(self):
         return f"{self.name}, is public? {self.is_public}"

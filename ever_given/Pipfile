@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 ever-given = {editable = true, path = "."}
 docker = "*"
+build = "*"
 
 [requires]
 python_version = "3.8"

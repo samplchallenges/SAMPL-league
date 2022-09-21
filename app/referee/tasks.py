@@ -281,6 +281,7 @@ def run_eval_or_batch(
                     models.Prediction.load_evaluation_output(
                         challenge, obj, output_type, value
                     )
+        obj.clear_old_scores()
 
         if is_batch:
             obj.batchup()
@@ -301,7 +302,6 @@ def run_eval_or_batch(
             ):
                 obj.append(log_message)
 
-        obj.clear_old_scores()
         obj.status = models.Status.SUCCESS
     except CancelledException:
         obj.status = models.Status.CANCELLED

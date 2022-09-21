@@ -1,8 +1,8 @@
 #!/bin/bash -e
 
-DEPLOY_FILES_DIR="/home/ec2-user/deploy_files"
+# DEPLOY_FILES_DIR="/home/ec2-user/deploy_files"
 
-sudo mv $DEPLOY_FILES_DIR/env /opt/env/env
+# sudo mv $DEPLOY_FILES_DIR/env /opt/env/env
 
 #sudo pkill -HUP gunicorn
 

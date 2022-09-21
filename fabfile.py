@@ -25,7 +25,7 @@ def build(c):
 DEPLOY_DIR = "deploy_files"
 
 PROD_HOST = "sampl.us-east-2.elasticbeanstalk.com"
-STAGING_HOST = "ec2-3-134-189-93.us-east-2.compute.amazonaws.com"
+STAGING_HOST = "app-staging.samplchallenges.org"
 
 HOME = os.environ.get("HOME")
 default_key_file = os.path.join(HOME, ".ssh/aws-eb")
@@ -41,17 +41,18 @@ def sampl_staging(user="ec2-user"):
     )
 
 
+# TODO: pick up ever-given version automatically
 @task
 def deploy(c):
     with sampl_staging() as remote_c:
-        remote_c.put("ever_given/dist/ever_given-0.0.13-py3-none-any.whl")
+        remote_c.put("ever_given/dist/ever_given-0.0.14-py3-none-any.whl")
         if not exists(remote_c, "/var/app"):
             remote_c.sudo("mkdir /var/app/")
         if not exists(remote_c, "/var/app/current"):
             remote_c.sudo("mkdir /var/app/current")
         remote_c.put("current.tar")
         remote_c.sudo("mv current.tar /var/app/current")
-        remote_c.sudo("mv ever_given-0.0.13-py3-none-any.whl /var/app")
+        remote_c.sudo("mv ever_given-0.0.14-py3-none-any.whl /var/app")
         with remote_c.cd("/var/app/current"):
             remote_c.run("sudo tar -xvf current.tar")
             remote_c.run("sudo rm current.tar")
@@ -145,16 +146,18 @@ def install_venv(c):
     _install_dependency(install_file)
 
 @task
-def reinstall_samplapp(c):
-    install_file = "reinstall_samplapp.sh"
-    _install_dependency(install_file)
-
-@task
 def setup_djangoapp(c):
-    with sampl_staging() as remote_c:
-        _upload_dependency_install_file(remote_c, "set_staging.sh")
     install_file = "setup_djangoapp.sh"
     _install_dependency(install_file)
+
+
+@task
+def django_initial_data(c):
+    with sampl_staging() as remote_c:
+        _upload_dependency_install_file(remote_c, "set_staging.sh")
+    install_file = "django_initial_data.sh"
+    _install_dependency(install_file)
+
 
 @task
 def configure_nginx(c):
@@ -182,10 +185,10 @@ def get_cert(c):
     _install_dependency(install_file)
 
 @task
-def restart_gunicorn(c):
-    with sampl_staging() as remote_c:
-        _upload_dependency_install_file(remote_c, "env")
-    install_file = "restart_gunicorn.sh"
+def restart_all(c):
+    # with sampl_staging() as remote_c:
+    #     _upload_dependency_install_file(remote_c, "env")
+    install_file = "restart_processes.sh"
     _install_dependency(install_file)
 
 @task
@@ -210,13 +213,14 @@ def install_dependencies(c):
     get_cert(c)
 
 
-
 @task
 def deploy_full_pipeline(c):
     create_webapp_user(c)
     build(c)
     deploy(c)
     install_dependencies(c)
+    django_initial_data(c)
+
 
 @task
 def redeploy_pipeline_venv(c):
@@ -224,18 +228,16 @@ def redeploy_pipeline_venv(c):
     deploy(c)
     install_venv(c)
     setup_djangoapp(c)
-    restart_gunicorn(c)
+    restart_all(c)
 
-@task
+
+@task(pre=[build, deploy, setup_djangoapp, restart_all])
 def redeploy_samplapp(c):
-    build(c)
-    deploy(c)
-    reinstall_samplapp(c)
-    setup_djangoapp(c)
-    restart_gunicorn(c)
+    print("Redeployed")
+
 
 @task
 def deploy_env_var(c):
-    restart_gunicorn(c)
+    restart_all(c)
 
 
