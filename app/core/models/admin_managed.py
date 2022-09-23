@@ -285,7 +285,7 @@ class InputElement(Timestamped):
         expected_answer_keys = self.challenge.output_keys()
         if loaded_answer_keys != expected_answer_keys:
             valid = False
-            errors["Missing Answer Keys"] = loaded_answer_keys - expected_answer_keys
+            errors["Missing Answer Keys"] = expected_answer_keys - loaded_answer_keys
 
         if not valid:
             raise NotFullyLoadedException(str(self), errors)

@@ -92,10 +92,9 @@ def _create_output_value(challenge, config_path, value_type, input_element, valu
     )
 
 
-def _create_inputs_from_parents(
+def _create_elements_from_parents(
     challenge, config_path, elconfigs, input_types, output_types
 ):
-
     for elconfig in elconfigs:
         parent_element = models.InputElement.objects.create(
             challenge=challenge,
@@ -105,8 +104,15 @@ def _create_inputs_from_parents(
         )
         for key, value in elconfig["inputs"].items():
             value_type = input_types[key]
-            _create_value(challenge, config_path, value_type, parent_element, value)
-        _create_inputs_from_files(
+            _create_input_value(
+                challenge, config_path, value_type, parent_element, value
+            )
+        for key, value in elconfig["outputs"].items():
+            value_type = output_types[key]
+            _create_output_value(
+                challenge, config_path, value_type, parent_element, value
+            )
+        _create_elements_from_files(
             challenge,
             config_path,
             elconfig["element_files"],
@@ -116,12 +122,12 @@ def _create_inputs_from_parents(
         )
 
 
-def _create_inputs_from_files(
+def _create_elements_from_files(
     challenge, config_path, elconfigs, input_types, output_types, parent_element=None
 ):
     for element_file in elconfigs:
         is_public = element_file["public"]
-        _create_inputs_from_file(
+        _create_elements_from_file(
             challenge,
             config_path,
             element_file["path"],
@@ -132,7 +138,7 @@ def _create_inputs_from_files(
         )
 
 
-def _create_inputs_from_file(
+def _create_elements_from_file(
     challenge,
     config_path,
     filename,
@@ -242,7 +248,7 @@ class Command(BaseCommand):
         input_types = _create_input_types(challenge, config_dict["input_types"])
         output_types = _create_output_types(challenge, config_dict["output_types"])
         if "parent_elements" in config_dict:
-            _create_inputs_from_parents(
+            _create_elements_from_parents(
                 challenge,
                 config_path,
                 config_dict["parent_elements"],
@@ -250,7 +256,7 @@ class Command(BaseCommand):
                 output_types,
             )
         else:
-            _create_inputs_from_files(
+            _create_elements_from_files(
                 challenge,
                 config_path,
                 config_dict["element_files"],
