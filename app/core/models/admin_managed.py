@@ -12,6 +12,17 @@ from .. import configurator, filecache
 from .infra_models import ContainerType, Timestamped
 
 
+class NotFullyLoadedException(Exception):
+    def __init__(self, object_description, errors):
+        super().__init__()
+        self.object_description = object_description
+        self.errors = errors
+
+    def __str__(self):
+        errstr = "; ".join([f"{k}: {v}" for k, v in self.errors.items()])
+        return f"Errors for {self.object_description}: {errstr}"
+
+
 class Challenge(Timestamped):
     name = models.CharField(max_length=255, unique=True)
     start_at = models.DateTimeField()
@@ -73,6 +84,34 @@ class Challenge(Timestamped):
 
         return score_types
 
+    def fully_loaded(self):
+        # TODO: slow in case of many input elements due to ORM queries being rerun
+        errors = {}
+        valid = True
+        if not hasattr(self, "scoremaker"):
+            valid = False
+            errors["ScoreMaker"] = "Missing"
+
+        if not self.score_types[ScoreType.Level.EVALUATION]:
+            valid = False
+            errors["Evaluation Score Types"] = "Missing"
+        if not self.score_types[ScoreType.Level.SUBMISSION_RUN]:
+            valid = False
+            errors["Submission Run Score Types"] = "Missing"
+
+        element_visibilities = set()
+        for element in self.inputelement_set.all():
+            element.fully_loaded()
+            if not element.is_parent:
+                element_visibilities.add(element.is_public)
+        if element_visibilities != {False, True}:
+            valid = False
+            errors[
+                "Need both public and private elements"
+            ] = f"Found {element_visibilities}"
+        if not valid:
+            raise NotFullyLoadedException(str(self), errors)
+
 
 class ScoreType(Timestamped):
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
@@ -90,7 +129,7 @@ class ScoreType(Timestamped):
         unique_together = ["challenge", "key", "level"]
 
     def __str__(self):
-        return self.key
+        return f"{self.key}, {self.level}"
 
 
 class Container(Timestamped):
@@ -204,6 +243,52 @@ class InputElement(Timestamped):
         )
         print("EVAL SCORE COUNT:", self.evaluationscore_set.count())
         print("Evaluation scores:", self.evaluationscore_set.all())
+
+    def loaded_input_keys(self):
+        return {
+            iv.value_type.key
+            for iv in self.inputvalue_set.select_related("value_type").all()
+        }
+
+    def loaded_answer_keys(self):
+        return {
+            ak.value_type.key
+            for ak in self.answerkey_set.select_related("value_type").all()
+        }
+
+    def fully_loaded(self):
+        """
+        Ensure all input values and answer keys are loaded for this input element
+        """
+        if self.is_parent:
+            for element in self.inputelement_set.all():
+                element.fully_loaded()
+            return
+
+        valid = True
+        errors = dict()
+        if self.parent:
+            loaded_input_keys = self.parent.loaded_input_keys()
+            loaded_answer_keys = self.parent.loaded_answer_keys()
+        else:
+            loaded_input_keys = set()
+            loaded_answer_keys = set()
+        loaded_input_keys.update(self.loaded_input_keys())
+        expected_input_keys = {
+            vt.key for vt in self.challenge.valuetype_set.filter(is_input_flag=True)
+        }
+        if loaded_input_keys != expected_input_keys:
+            valid = False
+            errors["Missing Input Keys"] = expected_input_keys - loaded_input_keys
+
+        loaded_answer_keys.update(self.loaded_answer_keys())
+        expected_answer_keys = self.challenge.output_keys()
+        if loaded_answer_keys != expected_answer_keys:
+            valid = False
+            errors["Missing Answer Keys"] = loaded_answer_keys - expected_answer_keys
+
+        if not valid:
+            raise NotFullyLoadedException(str(self), errors)
 
     def __str__(self):
         return f"{self.name}, is public? {self.is_public}"
