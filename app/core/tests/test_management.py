@@ -35,7 +35,13 @@ def test_load_yaml():
         pdb_source = Path(__file__).parent / "data" / "5qcr.pdb"
         shutil.copy(pdb_source, receptor_pdb)
     out = StringIO()
-    call_command("load_yaml", config_yaml, stdout=out, stderr=StringIO())
+    call_command(
+        "load_yaml",
+        config_yaml,
+        email="tests@samplchallenges.org",
+        stdout=out,
+        stderr=StringIO(),
+    )
     challenge = models.Challenge.objects.get(name="Example Docking Challenge")
     challenge.fully_loaded()
 
