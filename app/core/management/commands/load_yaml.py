@@ -185,6 +185,7 @@ class Command(BaseCommand):
             "--delete", action="store_true", help="Delete old challenges with this name"
         )
         parser.add_argument("--owner", default="admin", help="Scoring container owner")
+        parser.add_argument("--email", help="Scoring container owner")
 
     @transaction.atomic
     def handle(self, *args, **options):  # pylint:disable=unused-argument
@@ -205,9 +206,18 @@ class Command(BaseCommand):
             )
         User = get_user_model()
 
-        (user, _) = User.objects.get_or_create(
-            username=options["owner"], email="braxton.robbason@gmail.com"
-        )
+        try:
+            user = User.objects.get(username=options["owner"])
+        except User.DoesNotExist as exc:
+            if "email" in options:
+                user = User.objects.create(
+                    username=options["owner"], email=options["email"]
+                )
+            else:
+                raise ValueError(
+                    "If owner for scoring container doesn't exist, you must pass 'email' option to create it"
+                ) from exc
+
         challenge_defaults = {
             k: v for k, v in config_dict.items() if k in ("repo_url", "max_batch_size")
         }
@@ -263,3 +273,6 @@ class Command(BaseCommand):
                 input_types,
                 output_types,
             )
+
+        challenge.fully_loaded()
+        self.stdout.write(f"Loaded challenge {challenge.name} from yaml")
