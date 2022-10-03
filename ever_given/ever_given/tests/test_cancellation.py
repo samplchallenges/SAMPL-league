@@ -7,19 +7,23 @@ import shlex
 import ever_given.wrapper
 from ever_given.log_processing import QUEUE_WAIT_SECONDS, CancelledException
 
+
 def test_cancellation(container_engine):
     # Use a slow container so we have time to cancel it
     container_uri = "ghcr.io/megosato/logging-example:latest"
     container_type = "docker"
     if container_engine == "singularity":
         command = ["singularity", "pull", f"docker://{container_uri}"]
-        subprocess.run(command, check=True)
+        completed_process = subprocess.run(command, capture_output=True)
+        if completed_process.returncode not in (0, 255):
+            # 255 means it was cached
+            completed_process.check_returncode()
         container_uri = "logging-example_latest.sif"
         container_type = "singularity_local"
         assert os.path.exists(container_uri)
     if container_engine == "docker":
         command = ["docker", "pull", container_uri]
-        subprocess.run(command, check=True)
+        subprocess.run(command, check=True, capture_output=True)
     kwargs = {"smiles": "c1cccnc1"}
 
     start_at = time.time()
