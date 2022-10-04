@@ -4,6 +4,7 @@ pip install fabric to run this
 import os
 import os.path
 from pathlib import Path
+import tempfile
 
 from invoke import task
 from fabric import Connection
@@ -66,19 +67,22 @@ def _upload_dependency_install_file(remote_c, filename):
     filepath = Path("deploy_files") / filename
     remote_c.put(filepath, remote=str(filepath))
 
-def _run_install_file(remote_c, sh_file, sudo=False):
+def _run_install_file(remote_c, sh_file, *args, sudo=False):
     deploy_files = Path("deploy_files")
     sh_file = f"{deploy_files / sh_file}"
-    cmd = sh_file if sudo else f"sudo {sh_file}" 
+    cmd = f"sudo {sh_file}" if sudo else sh_file
+     # TODO: join args in a more shell-friendly way if args may need it
+    full_cmd = cmd + " " + " ".join(args)
     try: 
-        remote_run = remote_c.run(cmd)
+        remote_run = remote_c.run(full_cmd)
     except:
-        raise Exception(f"DeployError: {sh_file}")
+        raise Exception(f"DeployError: {sh_file}, {full_cmd}")
 
-def _install_dependency(install_file, sudo=False):
+def _install_dependency(install_file, *args, sudo=False):
     with sampl_staging() as remote_c:
         _upload_dependency_install_file(remote_c, install_file)
-        _run_install_file(remote_c, install_file, sudo)
+        import pdb;pdb.set_trace()
+        _run_install_file(remote_c, install_file, *args, sudo=sudo)
 
 @task
 def download_aws_ecr_credentials(c):
@@ -241,3 +245,24 @@ def deploy_env_var(c):
     restart_all(c)
 
 
+@task
+def publish_challenge(c, config_yml):
+    """Uploads the directory containing the config_yml"""
+    config_dir = Path(config_yml).parent
+    config_basename = Path(config_yml).name
+    with sampl_staging() as remote_c:
+        _upload_dependency_install_file(remote_c, "load_yaml.sh")
+        remote_name = "/tmp/challenge_config.tar.gz"
+        with tempfile.NamedTemporaryFile(suffix=".tar.gz") as temp_tarfile:
+            with c.cd(config_dir):
+                c.run(f"tar -czf {temp_tarfile.name} .")
+            remote_c.put(temp_tarfile.name, remote_name)
+        # TODO: could clash if more than one using same path at the same time
+        remote_dir = "/tmp/challenge_config"
+        #remote_c.run("rm -rf {remote_dir}")
+        remote_c.run(f"mkdir -p {remote_dir}")
+        with remote_c.cd(remote_dir):
+            remote_c.run(f"tar xzf {remote_name}")
+
+        cmd = f"deploy_files/load_yaml.sh {remote_dir}/{config_basename}"
+        remote_c.run(cmd)

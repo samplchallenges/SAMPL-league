@@ -4,7 +4,7 @@ ci:
   autoupdate_schedule: quarterly
 
 files: (^app/|.pre-commit-config.yaml)
-exclude: (^app/core/migrations/|/tests/data/|/management/commands/data/)
+exclude: (^app/core/migrations/|/tests/data/|/management/commands/data/|^app/config_data)
 repos:
 - repo: meta
   hooks:

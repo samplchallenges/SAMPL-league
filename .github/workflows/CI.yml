@@ -78,9 +78,26 @@ jobs:
         with:
           singularity-version: 3.7.2 # same version as hpc3
 
-      - name: Run test suite
+      - name: Test ever-given
         run: |
-          pipenv run pytest --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given --docker --singularity
+          pipenv run pytest --cov=../ever_given --cov-report=xml -s ../ever_given --docker --singularity
+    
+      - name: Run app test suite on Docker
+        run: |
+          pipenv run pytest --cov-append --cov=./ --cov-report=xml -s . --docker
+        env:
+          RDS_HOSTNAME: localhost
+          RDS_DB_NAME: sampl
+          RDS_PASSWORD: postgres
+          RDS_PORT: 5432
+          RDS_USERNAME: sampl_user
+          DJANGO_SETTINGS_MODULE: sampl.settings_test
+          ECR_BASE_URL: "103125031445.dkr.ecr.us-east-2.amazonaws.com"
+          ECR_SAMPLLEAGUE_URL: "103125031445.dkr.ecr.us-east-2.amazonaws.com/sampl-league"
+
+      - name: Run app test suite on Singularity
+        run: |
+          pipenv run pytest --cov-append --cov=./ --cov=../ever_given --cov-report=xml -s . ../ever_given --singularity
         env:
           RDS_HOSTNAME: localhost
           RDS_DB_NAME: sampl
