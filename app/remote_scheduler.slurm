@@ -16,5 +16,6 @@ cd "${SAMPL_ROOT}/app"
 echo Setting environment variables
 source ${ENV_VAR_SCRIPT}
 
+
 echo Running job_submitter.py
 pipenv run python referee/job_submitter.py
