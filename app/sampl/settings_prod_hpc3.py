@@ -24,7 +24,7 @@ JOB_SUBMITTER_LIFETIME = (
 )
 CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 60))  # in seconds (1 min)
 
-VISUALIZE_DASK_GRAPH = True
+VISUALIZE_DASK_GRAPH = False
 
 LOGGING = {
     "version": 1,
