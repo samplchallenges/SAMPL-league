@@ -24,14 +24,6 @@
             "markers": "python_full_version >= '3.6.2'",
             "version": "==3.6.1"
         },
-        "appnope": {
-            "hashes": [
-                "sha256:02bd91c4de869fbb1e1c50aafc4098827a7a54ab2f39d9dcba6c9547ed920e24",
-                "sha256:265a455292d0bd8a72453494fa24df5a11eb18373a60c7c0430889f22548605e"
-            ],
-            "markers": "sys_platform == 'darwin'",
-            "version": "==0.1.3"
-        },
         "argon2-cffi": {
             "hashes": [
                 "sha256:8c976986f2c5c0e5000919e6de187906cfd81fb1c72bf9d88c01177e77da7f80",
@@ -92,11 +84,11 @@
         },
         "awscli": {
             "hashes": [
-                "sha256:00027e440b75547d72186f2c04a48515ec4c3f5bedf9dc7762c46e8ed2530a8c",
-                "sha256:99bd75ac49013fa71a0f3e8148accc153f0653e5f94545ee7e11c9cb99d212ea"
+                "sha256:3caae534c15f519b5c5159176b060098a6bf6317e7bfac7a427d4684a69e37a9",
+                "sha256:f2755c995db186a990330f898fd280880d3e0bf915326486773035646b4f6bf4"
             ],
             "index": "pypi",
-            "version": "==1.25.93"
+            "version": "==1.25.94"
         },
         "babel": {
             "hashes": [
@@ -140,7 +132,7 @@
                 "sha256:58d5c3d29f5a36ffeb94f02f0d786cd53014cf9b3b3951d42e0080d8a9498d30",
                 "sha256:ad9aa55b65ef2808eb405f46cf74df7fcb7044d5cbc26487f96eb2ef2e436693"
             ],
-            "markers": "python_full_version >= '3.6.0'",
+            "markers": "python_version >= '3.6'",
             "version": "==4.11.1"
         },
         "bleach": {
@@ -161,11 +153,11 @@
         },
         "botocore": {
             "hashes": [
-                "sha256:70cf2cb04968794ed4688cc3b07874f6f4c932e325611be4e693a995fdb481be",
-                "sha256:b49c34b80c782625905be75e669da4b42a99f074e0aa3007e15ccc6955682a07"
+                "sha256:7648891692c3c69038eef902f8d64af59f91211f713fe9072fb83ecdd310dbbc",
+                "sha256:d5200f7b9150cdb91c9d3994980870d7bb4554e19c4d9d847f64626d8ceacf95"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==1.27.92"
+            "version": "==1.27.93"
         },
         "certifi": {
             "hashes": [
@@ -249,7 +241,7 @@
                 "sha256:5a3d016c7c547f69d6f81fb0db9449ce888b418b5b9952cc5e6e66843e9dd845",
                 "sha256:83e9a75d1911279afd89352c68b45348559d1fc0506b054b346651b5e7fee29f"
             ],
-            "markers": "python_full_version >= '3.6.0'",
+            "markers": "python_version >= '3.6'",
             "version": "==2.1.1"
         },
         "click": {
@@ -690,7 +682,7 @@
                 "sha256:434c91385cf3e53084185334d675a0d33c615108b391e260915d1aa8e86661b8",
                 "sha256:a1d844efd6da9bc39d2209bf996dbd8e07bf0f36b796edfabaa8f8a9ab77c3aa"
             ],
-            "markers": "python_full_version >= '3.7.0'",
+            "markers": "python_version >= '3.7'",
             "version": "==0.7.0"
         },
         "nbconvert": {
@@ -1617,7 +1609,7 @@
                 "sha256:5a3d016c7c547f69d6f81fb0db9449ce888b418b5b9952cc5e6e66843e9dd845",
                 "sha256:83e9a75d1911279afd89352c68b45348559d1fc0506b054b346651b5e7fee29f"
             ],
-            "markers": "python_full_version >= '3.6.0'",
+            "markers": "python_version >= '3.6'",
             "version": "==2.1.1"
         },
         "click": {
@@ -2259,13 +2251,13 @@
             "editable": true,
             "path": "."
         },
-        "sampl-app": {
-            "editable": true,
-            "path": "."
-        },
         "sampl-pytest": {
             "editable": true,
             "path": "./../sampl_pytest"
+        },
+        "sanitized-package": {
+            "editable": true,
+            "path": "./../ever_given"
         },
         "setuptools": {
             "hashes": [
@@ -2304,7 +2296,7 @@
                 "sha256:571854ebbb5eac89abcb4a2e47d7ea27b89bf29e09c35395da6f03dd4ae23d1c",
                 "sha256:f2ef9da9cef846ee027947dc99a45d6b68a63b0ebc21944649505bf2e8bc5fe7"
             ],
-            "markers": "python_version >= '3.6' and python_version < '4.0'",
+            "markers": "python_version >= '3.6' and python_version < '4'",
             "version": "==0.11.5"
         },
         "tornado": {
@@ -2359,7 +2351,7 @@
                 "sha256:1511434bb92bf8dd198c12b1cc812e800d4181cfcb867674e0f8279cc93087aa",
                 "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"
             ],
-            "markers": "python_version < '3.10'",
+            "markers": "python_version >= '3.7'",
             "version": "==4.4.0"
         },
         "urllib3": {
