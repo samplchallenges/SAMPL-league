@@ -83,10 +83,10 @@ def cache_containers(submission_run, delayed_conditional):
         stdout=f"Container details: {container.uri}\n{container.container_type}\n"
     )
 
-    save_dir = container.local_save_path.parent.absolute()
-    
-    if not save_dir.exists():
-        os.makedirs(container.local_save_path.parent.absolute())
+    if container.local_save_path:
+        save_dir = container.local_save_path.parent.absolute()
+        if not save_dir.exists():
+            os.makedirs(container.local_save_path.parent.absolute())
 
     pull_code, stdout, stderr = ever_given.wrapper.pull_container(
         container.uri,
