@@ -112,14 +112,18 @@ class SingularityEngine(Engine):
         cls.validate_common_arguments(container_type, aws_login_func)
 
         uri = cls.make_uri(container_uri, container_type)
+
         if save_path:   
             pull_cmd = ["singularity", "pull", "-F", save_path, uri]
         else:
             pull_cmd = ["singularity", "pull", "-F", uri]
+
         ended_proc = subprocess.run(pull_cmd, capture_output=True)
+
         code = ended_proc.returncode
         stdout = ended_proc.stdout.decode("utf-8")
         stderr = ended_proc.stderr.decode("utf-8")
+
         return code == 0, stdout, stderr
             
 

@@ -1,6 +1,7 @@
 import logging
 import tempfile
 from pathlib import Path
+import os
 
 import dask
 import dask.distributed as dd
@@ -82,6 +83,11 @@ def cache_containers(submission_run, delayed_conditional):
         stdout=f"Container details: {container.uri}\n{container.container_type}\n"
     )
 
+    save_dir = container.local_save_path.parent.absolute()
+    
+    if not save_dir.exists():
+        os.makedirs(container.local_save_path.parent.absolute())
+
     pull_code, stdout, stderr = ever_given.wrapper.pull_container(
         container.uri,
         container.container_type,
@@ -89,6 +95,7 @@ def cache_containers(submission_run, delayed_conditional):
         container.local_save_path,
         aws_login_func,
     )
+
     if stderr:
         submission_run.append(stderr="Error message when pulling container:\n")
         submission_run.append(stderr=stderr)
