@@ -1,7 +1,7 @@
 import logging
+import os
 import tempfile
 from pathlib import Path
-import os
 
 import dask
 import dask.distributed as dd
@@ -84,7 +84,7 @@ def cache_containers(submission_run, delayed_conditional):
     )
 
     save_dir = container.local_save_path.parent.absolute()
-    
+
     if not save_dir.exists():
         os.makedirs(container.local_save_path.parent.absolute())
 
