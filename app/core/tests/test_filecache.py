@@ -10,7 +10,6 @@ TEST_DATA_PATH = Path(__file__).parent / "data"
 
 @pytest.mark.parametrize(["remote_storage"], [[False], [True]])
 def test_delete_local_copy(challenge, benzene_from_mol, settings, remote_storage):
-
     filename = "Conformer3D_CID_241.mdl"
     output_path = TEST_DATA_PATH / filename
     file_value = models.FileValue.from_string(

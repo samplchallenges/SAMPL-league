@@ -167,7 +167,6 @@ def test_load_expired_submission(client, user, draft_submission):
 @patch("django.utils.timezone.now", mocktime.inactive_after)
 @pytest.mark.django_db
 def test_update_expired_submission(client, user, draft_submission):
-
     client.force_login(user)
     response = client.get(f"/submission/{draft_submission.pk}/edit/")
     assert response.status_code == 200
@@ -241,7 +240,6 @@ def test_update_expired_submission(client, user, draft_submission):
 
 @pytest.mark.django_db(transaction=True)
 def test_run_submission(client, container_engine):
-
     # Because we have dask worker in a separate thread, we need to commit our transaction.
     # But the transaction test case will wipe out data from django's ContentTypes
     # So rerun our migrations to re-add our content types
