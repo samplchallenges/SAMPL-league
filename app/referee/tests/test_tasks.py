@@ -57,7 +57,6 @@ def test_run_and_score_submission(container_engine):
 
 
 def _run_and_check_evaluation(submission_run, evaluation):
-
     temp_dir = pathlib.Path(tempfile.mkdtemp())
     with patch("django.conf.settings.CONTAINER_FILES_ROOT", temp_dir):
         pull_code = tasks.cache_containers(submission_run, True)

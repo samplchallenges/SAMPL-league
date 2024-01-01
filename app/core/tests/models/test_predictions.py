@@ -123,7 +123,6 @@ def test_load_prediction_file(
         with patch(
             "django.db.models.fields.files.FieldFile.save", mock_field_file_save
         ):
-
             models.Prediction.load_evaluation_output(
                 challenge, evaluation, coordsfile_type, output_path
             )

@@ -69,7 +69,6 @@ def submit_submission_run(client, submission_run):
 
 @dask.delayed(pure=False)
 def cache_containers(submission_run, delayed_conditional):
-
     if not delayed_conditional:
         return 1
 
@@ -107,7 +106,6 @@ def cache_containers(submission_run, delayed_conditional):
 
 
 def _run(submission_run, delayed_conditional):
-
     pull_code = cache_containers(submission_run, delayed_conditional)
 
     if submission_run.submission.challenge.current_batch_group() is None:

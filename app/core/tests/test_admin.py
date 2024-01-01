@@ -22,7 +22,6 @@ def c(staff_user):
 
 
 def test_challenge_admin(molfile_molw_config, c):
-
     response = c.get(
         f"/admin/core/challenge/{molfile_molw_config.challenge.id}/change/"
     )
