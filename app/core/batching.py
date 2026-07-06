@@ -1,6 +1,7 @@
 """
 Batch up file types.
 """
+
 import csv
 import os.path
 import tempfile

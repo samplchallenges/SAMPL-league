@@ -106,9 +106,9 @@ class Challenge(Timestamped):
                 element_visibilities.add(element.is_public)
         if element_visibilities != {False, True}:
             valid = False
-            errors[
-                "Need both public and private elements"
-            ] = f"Found {element_visibilities}"
+            errors["Need both public and private elements"] = (
+                f"Found {element_visibilities}"
+            )
         if not valid:
             raise NotFullyLoadedException(str(self), errors)
 
