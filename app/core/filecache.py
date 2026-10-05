@@ -1,6 +1,7 @@
 """
 When we have files stored on S3, we want to seamlessly manage local copies for submission to containers.
 """
+
 import logging
 import os.path
 import shutil

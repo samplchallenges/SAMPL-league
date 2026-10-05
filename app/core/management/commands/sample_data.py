@@ -138,7 +138,7 @@ class Command(BaseCommand):
 
         User = get_user_model()
 
-        (user, _) = User.objects.get_or_create(
+        user, _ = User.objects.get_or_create(
             username="milo", email="braxton.robbason@gmail.com"
         )
         foo_url = "https://foo.com"
