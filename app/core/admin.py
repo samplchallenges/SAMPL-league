@@ -235,9 +235,9 @@ class InputValueAdmin(ValueParentAdminMixin):
             input_value = models.InputValue.objects.get(pk=input_value_id)
 
             if db_field.name == "input_element":
-                kwargs[
-                    "queryset"
-                ] = input_value.value_type.challenge.inputelement_set.order_by("name")
+                kwargs["queryset"] = (
+                    input_value.value_type.challenge.inputelement_set.order_by("name")
+                )
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
